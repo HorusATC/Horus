@@ -3,8 +3,15 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +21,9 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
- * Contract test that verifies all API endpoints used by Frontend BFF routes
- * and Backend integration tests actually exist in Spring request mappings.
- * <p>
- * This test prevents issues like PR #119 where tests called non-existent
- * endpoints (/api/aircraft/location/all with wrong method).
+ * Contract test that mechanically parses source files to extract API endpoints
+ * and verifies they exist in Spring request mappings.
+ * Prevents issues like PR #119 (wrong path/method).
  */
 @SpringBootTest
 class ApiContractTest {
@@ -26,62 +31,26 @@ class ApiContractTest {
     @Autowired
     private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
-    private static final Map<String, String> FRONTEND_BFF_ENDPOINTS = Map.ofEntries(
-            Map.entry("GET /aircraft/location/all", "aircraft/location/all/route.ts"),
-            Map.entry("POST /api/aircraft/spawn-with-flightplan", "aircraft/spawn-with-flightplan/route.ts"),
-            Map.entry("POST /api/aircraft/create-haneda-samples", "aircraft/create-haneda-samples/route.ts"),
-            Map.entry("POST /api/aircraft/control/{callsign}", "aircraft/control/[callsign]/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/atc-clearance", "aircraft/[callsign]/atc-clearance/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/squawk", "aircraft/[callsign]/squawk/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/direct-to", "aircraft/[callsign]/direct-to/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/hold", "aircraft/[callsign]/hold/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/final-approach", "aircraft/[callsign]/final-approach/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/go-around", "aircraft/[callsign]/go-around/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/tower-handoff", "aircraft/[callsign]/tower-handoff/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/resume-navigation", "aircraft/[callsign]/resume-navigation/route.ts"),
-            Map.entry("GET /api/aircraft/{callsign}/flightplan", "aircraft/[callsign]/flightplan/route.ts"),
-            Map.entry("POST /api/aircraft/{callsign}/flightplan", "aircraft/[callsign]/flightplan/route.ts"),
-            Map.entry("POST /api/scenario/load", "scenario/load/route.ts"),
-            Map.entry("POST /simulation/start", "simulation/[action]/route.ts"),
-            Map.entry("POST /simulation/pause", "simulation/[action]/route.ts"),
-            Map.entry("GET /simulation/speed", "simulation/speed/route.ts"),
-            Map.entry("PUT /simulation/speed", "simulation/speed/route.ts"),
-            Map.entry("GET /ats/route/all", "ats/route/all/route.ts"),
-            Map.entry("GET /ats/route/suggest", "ats/route/suggest/route.ts"),
-            Map.entry("GET /ats/airports", "ats/airports/route.ts"),
-            Map.entry("GET /ats/runways", "ats/runways/route.ts"),
-            Map.entry("GET /api/conflict/all", "conflict/all/route.ts"),
-            Map.entry("GET /api/conflict/critical", "conflict/critical/route.ts"),
-            Map.entry("GET /api/conflict/statistics", "conflict/statistics/route.ts"),
-            Map.entry("GET /api/conflict/violations", "conflict/violations/route.ts"),
-            Map.entry("GET /api/conflict/health", "conflict/health/route.ts"),
-            Map.entry("GET /api/conflict/filtered", "conflict/filtered/route.ts"),
-            Map.entry("GET /api/conflict/aircraft/{callsign}", "conflict/aircraft/[callsign]/route.ts")
-    );
-
-    private static final Map<String, String> BACKEND_TEST_ENDPOINTS = Map.ofEntries(
-            Map.entry("POST /api/scenario/load", "FlightPlanApiIntegrationTest"),
-            Map.entry("POST /simulation/start", "FlightPlanApiIntegrationTest"),
-            Map.entry("POST /simulation/pause", "SimulationSpeedIntegrationTest"),
-            Map.entry("GET /simulation/status", "SimulationSpeedIntegrationTest"),
-            Map.entry("PUT /simulation/speed", "SimulationSpeedIntegrationTest"),
-            Map.entry("GET /simulation/speed", "SimulationSpeedIntegrationTest")
-    );
+    private static final Path FRONTEND_API_DIR =
+            Paths.get("../Frontend/app/api").toAbsolutePath().normalize();
+    private static final Path BACKEND_TEST_DIR =
+            Paths.get("src/test/java").toAbsolutePath().normalize();
 
     @Test
-    void allFrontendBffCallsShouldMatchActualSpringMappings() {
+    void allFrontendBffCallsShouldMatchActualSpringMappings() throws IOException {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
+        Map<String, String> frontendCalls = extractFrontendBffCalls();
 
-        assertThat(FRONTEND_BFF_ENDPOINTS)
-                .as("Frontend BFF endpoint list should not be empty")
+        assertThat(frontendCalls)
+                .as("Frontend BFF extraction should find ≥20 endpoints (found " + frontendCalls.size() + ")")
                 .hasSizeGreaterThanOrEqualTo(20);
 
         List<String> missingEndpoints = new ArrayList<>();
-        for (Map.Entry<String, String> entry : FRONTEND_BFF_ENDPOINTS.entrySet()) {
+        for (Map.Entry<String, String> entry : frontendCalls.entrySet()) {
             String endpoint = entry.getKey();
             String sourceFile = entry.getValue();
 
-            if (!actualMappings.containsKey(endpoint)) {
+            if (!matchesAnyMapping(endpoint, actualMappings)) {
                 missingEndpoints.add(String.format("%s (from %s)", endpoint, sourceFile));
             }
         }
@@ -93,15 +62,20 @@ class ApiContractTest {
     }
 
     @Test
-    void allBackendTestCallsShouldMatchActualSpringMappings() {
+    void allBackendTestCallsShouldMatchActualSpringMappings() throws IOException {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
+        Map<String, String> backendTestCalls = extractBackendTestCalls();
+
+        assertThat(backendTestCalls)
+                .as("Backend test extraction should find ≥3 endpoints (found " + backendTestCalls.size() + ")")
+                .hasSizeGreaterThanOrEqualTo(3);
 
         List<String> missingEndpoints = new ArrayList<>();
-        for (Map.Entry<String, String> entry : BACKEND_TEST_ENDPOINTS.entrySet()) {
+        for (Map.Entry<String, String> entry : backendTestCalls.entrySet()) {
             String endpoint = entry.getKey();
             String sourceFile = entry.getValue();
 
-            if (!actualMappings.containsKey(endpoint)) {
+            if (!matchesAnyMapping(endpoint, actualMappings)) {
                 missingEndpoints.add(String.format("%s (from %s)", endpoint, sourceFile));
             }
         }
@@ -112,20 +86,146 @@ class ApiContractTest {
         }
     }
 
-    @Test
-    void shouldDetectWrongEndpointPath_PR119Example() {
-        Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
+    private Map<String, String> extractFrontendBffCalls() throws IOException {
+        Map<String, String> calls = new LinkedHashMap<>();
 
-        String wrongEndpoint = "GET /api/aircraft/location/all";
+        if (!Files.exists(FRONTEND_API_DIR)) {
+            return calls;
+        }
 
-        assertThat(actualMappings)
-                .as("PR #119 used wrong path: /api/aircraft/location/all (should be /aircraft/location/all)")
-                .doesNotContainKey(wrongEndpoint);
+        try (Stream<Path> paths = Files.walk(FRONTEND_API_DIR)) {
+            List<Path> routeFiles =
+                    paths.filter(p -> p.getFileName().toString().equals("route.ts"))
+                            .collect(Collectors.toList());
 
-        String correctEndpoint = "GET /aircraft/location/all";
-        assertThat(actualMappings)
-                .as("Correct endpoint should exist")
-                .containsKey(correctEndpoint);
+            for (Path routeFile : routeFiles) {
+                String content = Files.readString(routeFile);
+                String relPath = FRONTEND_API_DIR.relativize(routeFile).toString();
+
+                Pattern functionPattern = Pattern.compile(
+                        "export\\s+async\\s+function\\s+(GET|POST|PUT|DELETE|PATCH)\\s*\\(",
+                        Pattern.MULTILINE);
+                Matcher functionMatcher = functionPattern.matcher(content);
+
+                while (functionMatcher.find()) {
+                    String method = functionMatcher.group(1);
+                    int start = functionMatcher.start();
+                    int end = Math.min(start + 1000, content.length());
+                    String functionBody = content.substring(start, end);
+
+                    Pattern proxyPattern = Pattern.compile(
+                            "proxyToBackend\\s*\\(\\s*([`\"])([^`\"]+?)\\1");
+                    Matcher proxyMatcher = proxyPattern.matcher(functionBody);
+
+                    if (proxyMatcher.find()) {
+                        String path = proxyMatcher.group(2);
+                        path = normalizePath(path);
+                        calls.put(method + " " + path, relPath);
+                    }
+
+                    Pattern fetchPattern = Pattern.compile(
+                            "fetch\\s*\\(\\s*`([^`]+)`");
+                    Matcher fetchMatcher = fetchPattern.matcher(functionBody);
+
+                    if (fetchMatcher.find()) {
+                        String path = fetchMatcher.group(1);
+                        path = normalizePath(path);
+                        calls.put(method + " " + path, relPath);
+                    }
+                }
+            }
+        }
+
+        return calls;
+    }
+
+    private String normalizePath(String path) {
+        path = path.replaceAll("\\?.*$", "");
+        path = path.replaceAll("\\$\\{encodeURIComponent\\([^)]+\\)\\}", "{callsign}");
+        path = path.replaceAll("\\$\\{callsign\\}", "{callsign}");
+        path = path.replaceAll("\\$\\{action\\}", "{action}");
+        path = path.replaceAll("\\$\\{[^}]+\\}", "{param}");
+        return path;
+    }
+
+    private Map<String, String> extractBackendTestCalls() throws IOException {
+        Map<String, String> calls = new LinkedHashMap<>();
+
+        if (!Files.exists(BACKEND_TEST_DIR)) {
+            return calls;
+        }
+
+        try (Stream<Path> paths = Files.walk(BACKEND_TEST_DIR)) {
+            List<Path> testFiles = paths
+                    .filter(p -> p.toString().endsWith("IntegrationTest.java"))
+                    .collect(Collectors.toList());
+
+            for (Path testFile : testFiles) {
+                String content = Files.readString(testFile);
+                String fileName = testFile.getFileName().toString();
+
+                Pattern pattern = Pattern.compile(
+                        "\\.(?:get|post|put|delete|patch)\\(\\)\\s*\\.uri\\s*\\(\\s*[\"']([^\"']+)[\"']\\s*\\)");
+                Matcher matcher = pattern.matcher(content);
+
+                while (matcher.find()) {
+                    String fullMatch = matcher.group(0);
+                    String path = matcher.group(1);
+                    String method = "";
+
+                    if (fullMatch.contains(".get()")) method = "GET";
+                    else if (fullMatch.contains(".post()")) method = "POST";
+                    else if (fullMatch.contains(".put()")) method = "PUT";
+                    else if (fullMatch.contains(".delete()")) method = "DELETE";
+                    else if (fullMatch.contains(".patch()")) method = "PATCH";
+
+                    if (!method.isEmpty()) {
+                        calls.put(method + " " + path, fileName);
+                    }
+                }
+            }
+        }
+
+        return calls;
+    }
+
+    private boolean matchesAnyMapping(String endpoint, Map<String, RequestMappingInfo> mappings) {
+        if (mappings.containsKey(endpoint)) {
+            return true;
+        }
+
+        String[] parts = endpoint.split(" ", 2);
+        if (parts.length != 2) {
+            return false;
+        }
+        String method = parts[0];
+        String path = parts[1];
+
+        for (String mappingKey : mappings.keySet()) {
+            String[] mappingParts = mappingKey.split(" ", 2);
+            if (mappingParts.length != 2) continue;
+
+            String mappingMethod = mappingParts[0];
+            String mappingPath = mappingParts[1];
+
+            if (method.equals(mappingMethod) && pathsMatch(path, mappingPath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean pathsMatch(String requestPath, String mappingPath) {
+        String normalizedRequest = requestPath.replaceAll("\\{[^}]+\\}", "\\{[^/]+\\}");
+        String normalizedMapping = mappingPath.replaceAll("\\{[^}]+\\}", "\\{[^/]+\\}");
+
+        if (normalizedRequest.equals(normalizedMapping)) {
+            return true;
+        }
+
+        Pattern pattern = Pattern.compile("^" + normalizedRequest.replace("{[^/]+}", "([^/]+)") + "$");
+        return pattern.matcher(mappingPath).matches();
     }
 
     private Map<String, RequestMappingInfo> getActualSpringMappings() {
