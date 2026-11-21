@@ -119,7 +119,7 @@ docker compose down
     - 複数のJavaバージョンがインストールされている場合は、Java 21を使用するように環境を設定してください。
 
 3. **依存関係のダウンロード**
-    - Gradle 8.14.8を使用しています。実行時によしなにしてくれるはずです。
+    - Gradle 8.14.8 を使用しています。実行時に自動的にダウンロードされます。
 
 4. **コマンドラインで実行**
 
@@ -130,3 +130,46 @@ docker compose down
 > `JAVA_HOME=/path/to/java21 ./gradlew bootRun`
 
 ブラウザで<http://localhost:8080/docs.html>にアクセスすることで、サーバー側のコマンドを確認できます。
+
+## 開発コマンド
+
+### Frontend
+
+```bash
+cd Frontend
+
+npm run dev          # 開発サーバー起動 (http://localhost:3333)
+npm run build        # プロダクションビルド
+npm run lint         # ESLint (app, components, utility, context)
+npm run format       # Prettier で自動フォーマット
+npm run format:check # Prettier チェック (CI用)
+npm run typecheck    # TypeScript 型チェック (tsc --noEmit)
+npm run tailwind:check # Tailwind content カバレッジチェック
+npm test            # Jest テスト実行
+```
+
+### Backend
+
+```bash
+cd Backend
+
+./gradlew bootRun        # アプリケーション起動 (http://localhost:8080)
+./gradlew build          # ビルド
+./gradlew test           # テスト実行
+./gradlew spotlessApply  # コードフォーマット適用
+./gradlew spotlessCheck  # フォーマットチェック (CI用)
+```
+
+### PR 作成前のチェック
+
+すべてのチェックが pass することを確認してください：
+
+```bash
+# Frontend
+cd Frontend && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build
+
+# Backend  
+cd Backend && ./gradlew spotlessCheck && ./gradlew test
+```
+
+詳細は [AGENTS.md](AGENTS.md) の PR チェックリストを参照してください。
