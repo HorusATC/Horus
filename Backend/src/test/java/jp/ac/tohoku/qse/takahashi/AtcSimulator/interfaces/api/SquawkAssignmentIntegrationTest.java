@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -49,7 +48,6 @@ public class SquawkAssignmentIntegrationTest {
     }
 
     @Test
-    @Disabled("Manual verification only - CI uses Playwright for end-to-end squawk testing")
     void testAssignEmergencySquawk7700() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
@@ -89,7 +87,7 @@ public class SquawkAssignmentIntegrationTest {
         assertThat(squawkResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         ResponseEntity<String> locationResponse = restTemplate.getForEntity(
-                baseUrl() + "/api/aircraft/location/all",
+                baseUrl() + "/aircraft/location/all",
                 String.class
         );
         assertThat(locationResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -99,7 +97,6 @@ public class SquawkAssignmentIntegrationTest {
     }
 
     @Test
-    @Disabled("Manual verification only - CI uses Playwright for end-to-end squawk testing")
     void testAssignSquawk7500Hijack() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
@@ -137,7 +134,7 @@ public class SquawkAssignmentIntegrationTest {
         );
 
         ResponseEntity<String> locationResponse = restTemplate.getForEntity(
-                baseUrl() + "/api/aircraft/location/all",
+                baseUrl() + "/aircraft/location/all",
                 String.class
         );
 
@@ -145,7 +142,6 @@ public class SquawkAssignmentIntegrationTest {
     }
 
     @Test
-    @Disabled("Manual verification only - CI uses Playwright for end-to-end squawk testing")
     void testAssignSquawk7600RadioFailure() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
@@ -183,7 +179,7 @@ public class SquawkAssignmentIntegrationTest {
         );
 
         ResponseEntity<String> locationResponse = restTemplate.getForEntity(
-                baseUrl() + "/api/aircraft/location/all",
+                baseUrl() + "/aircraft/location/all",
                 String.class
         );
 
@@ -191,7 +187,6 @@ public class SquawkAssignmentIntegrationTest {
     }
 
     @Test
-    @Disabled("Manual verification only - CI uses Playwright for end-to-end squawk testing")
     void testAssignNormalSquawk() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
@@ -229,7 +224,7 @@ public class SquawkAssignmentIntegrationTest {
         );
 
         ResponseEntity<String> locationResponse = restTemplate.getForEntity(
-                baseUrl() + "/api/aircraft/location/all",
+                baseUrl() + "/aircraft/location/all",
                 String.class
         );
 

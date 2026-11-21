@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: Done
+- **Status**: In Progress
 - **Date**: 2026-11-21
 - **関連**: [spec/spec.md](../spec.md) フェーズ 5-5、[spec/20261017-terminal-radar-gaps/spec.md](../20261017-terminal-radar-gaps/spec.md)、Issue [#68](https://github.com/HorusATC/Horus/issues/68)
 
@@ -97,11 +97,11 @@
 
 ## 完了条件（Success Criteria）
 
-- [x] spec ファイルが作成され、Status が Done になっている
-- [x] Backend のテストが全件合格している（182 tests passed）
+- [x] spec ファイルが作成されている
+- [x] Backend のテストが全件合格している
 - [x] Frontend のビルドが全件合格している
-- [ ] CI（Docker Compose ジョブを含む）が全ジョブ合格している（Push 後に確認）
-- [ ] ブラウザでの手動検証が完了し、スクリーンショットが `/opt/cursor/artifacts/` に保存されている（環境準備後に実施）:
+- [x] CI（Docker Compose ジョブを含む）が全ジョブ合格している
+- [ ] ブラウザでの手動検証が完了し、スクリーンショットが `/opt/cursor/artifacts/` に保存されている:
   - (a) トップの START WITH SAMPLE から開始
   - (b) Operator 画面で 1 機を 7700 に変更
   - (c) Controller 画面でその機体が EMRG と強調表示される
