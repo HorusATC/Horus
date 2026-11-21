@@ -59,7 +59,7 @@ public class CreateAircraftService {
             }
     )
     @RequestMapping(path = "/create-multiple", method = RequestMethod.POST)
-    public ResponseEntity<List<String>> createMultipleAircraft(@Valid @RequestBody List<CreateAircraftDto> createAircraftDtos) {
+    public ResponseEntity<List<String>> createMultipleAircraft(@RequestBody List<CreateAircraftDto> createAircraftDtos) {
         List<String> createdAircrafts = new ArrayList<>();
         List<String> existingAircrafts = new ArrayList<>();
 
