@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 /**
  * Squawk route handler test
- * 
+ *
  * This test validates that the route handler correctly processes backend text/plain responses
  * and returns proper JSON with correct status codes. Full end-to-end testing is done via Docker Compose CI.
- * 
+ *
  * The route handler logic is tested by verifying the key behaviors:
  * - Valid squawk: backend text → {message: text} with 200
  * - Backend error: backend text → {error: text} with error status
