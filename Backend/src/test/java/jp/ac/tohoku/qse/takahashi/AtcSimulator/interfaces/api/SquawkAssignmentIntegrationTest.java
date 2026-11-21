@@ -51,19 +51,22 @@ public class SquawkAssignmentIntegrationTest {
     void testAssignEmergencySquawk7700() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
-                        "callsign", "JAL123",
-                        "aircraftType", "B773",
-                        "model", "B777-300",
-                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
-                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
-                        "originIata", "HND",
-                        "originIcao", "RJTT",
-                        "destinationIata", "ITM",
-                        "destinationIcao", "RJOO",
                         "flightPlan", Map.of(
-                                "waypoints", List.of(),
+                                "callsign", "JAL123",
+                                "aircraftType", "B773",
+                                "departureAirport", "RJTT",
+                                "arrivalAirport", "RJOO",
                                 "cruiseAltitude", 10000,
-                                "cruiseSpeed", 300
+                                "cruiseSpeed", 300,
+                                "route", List.of()
+                        ),
+                        "initialPosition", Map.of(
+                                "latitude", 35.5,
+                                "longitude", 139.5,
+                                "altitude", 10000,
+                                "heading", 90,
+                                "groundSpeed", 300,
+                                "verticalSpeed", 0
                         )
                 ))
         );
@@ -102,19 +105,22 @@ public class SquawkAssignmentIntegrationTest {
     void testAssignSquawk7500Hijack() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
-                        "callsign", "ANA456",
-                        "aircraftType", "B773",
-                        "model", "B777-300",
-                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
-                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
-                        "originIata", "HND",
-                        "originIcao", "RJTT",
-                        "destinationIata", "ITM",
-                        "destinationIcao", "RJOO",
                         "flightPlan", Map.of(
-                                "waypoints", List.of(),
+                                "callsign", "ANA456",
+                                "aircraftType", "B773",
+                                "departureAirport", "RJTT",
+                                "arrivalAirport", "RJOO",
                                 "cruiseAltitude", 10000,
-                                "cruiseSpeed", 300
+                                "cruiseSpeed", 300,
+                                "route", List.of()
+                        ),
+                        "initialPosition", Map.of(
+                                "latitude", 35.5,
+                                "longitude", 139.5,
+                                "altitude", 10000,
+                                "heading", 90,
+                                "groundSpeed", 300,
+                                "verticalSpeed", 0
                         )
                 ))
         );
@@ -147,19 +153,22 @@ public class SquawkAssignmentIntegrationTest {
     void testAssignSquawk7600RadioFailure() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
-                        "callsign", "SKY789",
-                        "aircraftType", "B773",
-                        "model", "B777-300",
-                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
-                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
-                        "originIata", "HND",
-                        "originIcao", "RJTT",
-                        "destinationIata", "ITM",
-                        "destinationIcao", "RJOO",
                         "flightPlan", Map.of(
-                                "waypoints", List.of(),
+                                "callsign", "SKY789",
+                                "aircraftType", "B773",
+                                "departureAirport", "RJTT",
+                                "arrivalAirport", "RJOO",
                                 "cruiseAltitude", 10000,
-                                "cruiseSpeed", 300
+                                "cruiseSpeed", 300,
+                                "route", List.of()
+                        ),
+                        "initialPosition", Map.of(
+                                "latitude", 35.5,
+                                "longitude", 139.5,
+                                "altitude", 10000,
+                                "heading", 90,
+                                "groundSpeed", 300,
+                                "verticalSpeed", 0
                         )
                 ))
         );
@@ -192,19 +201,22 @@ public class SquawkAssignmentIntegrationTest {
     void testAssignNormalSquawk() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
-                        "callsign", "JJP100",
-                        "aircraftType", "B773",
-                        "model", "B777-300",
-                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
-                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
-                        "originIata", "HND",
-                        "originIcao", "RJTT",
-                        "destinationIata", "ITM",
-                        "destinationIcao", "RJOO",
                         "flightPlan", Map.of(
-                                "waypoints", List.of(),
+                                "callsign", "JJP100",
+                                "aircraftType", "B773",
+                                "departureAirport", "RJTT",
+                                "arrivalAirport", "RJOO",
                                 "cruiseAltitude", 10000,
-                                "cruiseSpeed", 300
+                                "cruiseSpeed", 300,
+                                "route", List.of()
+                        ),
+                        "initialPosition", Map.of(
+                                "latitude", 35.5,
+                                "longitude", 139.5,
+                                "altitude", 10000,
+                                "heading", 90,
+                                "groundSpeed", 300,
+                                "verticalSpeed", 0
                         )
                 ))
         );
@@ -237,19 +249,22 @@ public class SquawkAssignmentIntegrationTest {
     void testInvalidSquawkRejected() {
         Map<String, Object> scenarioBody = Map.of(
                 "aircraft", List.of(Map.of(
-                        "callsign", "TEST001",
-                        "aircraftType", "B773",
-                        "model", "B777-300",
-                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
-                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
-                        "originIata", "HND",
-                        "originIcao", "RJTT",
-                        "destinationIata", "ITM",
-                        "destinationIcao", "RJOO",
                         "flightPlan", Map.of(
-                                "waypoints", List.of(),
+                                "callsign", "TEST001",
+                                "aircraftType", "B773",
+                                "departureAirport", "RJTT",
+                                "arrivalAirport", "RJOO",
                                 "cruiseAltitude", 10000,
-                                "cruiseSpeed", 300
+                                "cruiseSpeed", 300,
+                                "route", List.of()
+                        ),
+                        "initialPosition", Map.of(
+                                "latitude", 35.5,
+                                "longitude", 139.5,
+                                "altitude", 10000,
+                                "heading", 90,
+                                "groundSpeed", 300,
+                                "verticalSpeed", 0
                         )
                 ))
         );
