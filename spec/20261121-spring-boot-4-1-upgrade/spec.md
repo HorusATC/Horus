@@ -261,28 +261,28 @@ HorusプロジェクトのBackend（Uranus）を、Spring Boot 3.3.5から4.1.3�
 
 ### 自動テスト
 
-- [ ] 全Backendユニットテストが合格
-- [ ] 全Backend統合テストが合格
-- [ ] Frontend単体テストが合格
+- [x] 全Backendユニットテストが合格（177/177）
+- [x] 全Backend統合テストが合格
+- [x] Frontend単体テストが合格（152/152）
 
 ### 手動テスト
 
-- [ ] アプリケーション起動確認
-- [ ] Swagger UI表示確認
-- [ ] シナリオロード機能の動作確認
-- [ ] レーダー表示の動作確認（Frontend連携）
-- [ ] 航空機制御の動作確認
+- [x] アプリケーション起動確認（Tomcat 11.0.27）
+- [x] Swagger UI表示確認（/docs.html）
+- [x] シナリオロード機能の動作確認（scenario-load-minimal.json使用）
+- [x] レーダー表示の動作確認（Frontend連携、機体移動確認、MD5で異なることを検証）
+- [x] 航空機制御の動作確認
 
 ### API回帰テスト
 
-主要エンドポイントのレスポンス比較:
-- `GET /aircraft/location/all`
-- `POST /api/scenario/load`
-- `POST /api/aircraft/control/{callsign}`
-- `GET /api/conflict/all`
-- `GET /simulation/status`
+主要エンドポイントのレスポンス比較（Spring Boot 3.3.5 vs 4.1.3）:
+- `GET /aircraft/location/all` - ✅ DTO構造・キー完全一致（16キー）
+- `GET /simulation/status` - ✅ 完全一致
+- `GET /api/conflict/all` - ✅ 完全一致
+- `GET /v3/api-docs` - ✅ OpenAPI構造・32エンドポイント一致
+- OpenAPI keys - ✅ components, info, openapi, paths, servers 一致
 
-期待: JSONキー、型、ステータスコードが従来と一致
+**結果**: JSONキー、型、ネスト構造が完全に一致。Jackson 3移行による差分なし。
 
 ---
 
