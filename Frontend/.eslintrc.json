@@ -2,5 +2,19 @@
   "extends": ["next/core-web-vitals", "next/typescript"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["app/api/**/*.ts"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "CallExpression[callee.name='proxyToBackend'] > Identifier.arguments:first-child",
+            "message": "proxyToBackend must be called with a string or template literal path at the call site, not a variable"
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -132,8 +132,8 @@ jobs:
 
       - name: Check for disabled/focused tests
         run: |
-          if grep -rE '^\s*(describe|it|test)\.(skip|only)\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx' --exclude-dir=node_modules --exclude-dir=.next; then
-            echo "Error: Found .skip() or .only() in tests"
+          if grep -rE '^\s*(describe|it|test)\.(skip|only)\(|^\s*(x(describe|it|test)|f(describe|it|test))\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx' --exclude-dir=node_modules --exclude-dir=.next; then
+            echo "Error: Found .skip(), .only(), xit(), fit(), xdescribe(), fdescribe(), or xtest() in tests"
             exit 1
           fi
 

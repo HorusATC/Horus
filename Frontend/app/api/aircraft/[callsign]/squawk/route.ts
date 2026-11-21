@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_BASE_URL =
-  process.env.BACKEND_BASE_URL || "http://localhost:8080";
+import { proxyToBackend } from "@/utility/api/backendProxy";
 
 function isValidSquawk(squawk: unknown): squawk is string {
   return typeof squawk === "string" && /^[0-7]{4}$/.test(squawk);
@@ -32,22 +30,9 @@ export async function POST(
     );
   }
 
-  const backendUrl = `${BACKEND_BASE_URL}/api/aircraft/${encodeURIComponent(callsign)}/squawk`;
-
-  const backendResponse = await fetch(backendUrl, {
+  return proxyToBackend(`/api/aircraft/${encodeURIComponent(callsign)}/squawk`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ squawk: body.squawk }),
   });
-
-  if (!backendResponse.ok) {
-    const errorText = await backendResponse.text();
-    return NextResponse.json(
-      { error: errorText || "Backend error" },
-      { status: backendResponse.status }
-    );
-  }
-
-  const result = await backendResponse.text();
-  return NextResponse.json({ message: result });
 }

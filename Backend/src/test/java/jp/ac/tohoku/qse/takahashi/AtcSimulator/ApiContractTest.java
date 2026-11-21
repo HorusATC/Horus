@@ -39,11 +39,45 @@ class ApiContractTest {
     @Test
     void allFrontendBffCallsShouldMatchActualSpringMappings() throws IOException {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
-        Map<String, String> frontendCalls = extractFrontendBffCalls();
+        Map<String, List<String>> callsByFile = extractFrontendBffCallsByFile();
+        
+        int totalRouteFiles = callsByFile.size();
+        int totalExportedHandlers = countExportedHandlers();
+        
+        assertThat(totalRouteFiles)
+                .as("Frontend BFF extraction should find ≥25 route.ts files (found " + totalRouteFiles + ")")
+                .isGreaterThanOrEqualTo(25);
+
+        Map<String, String> frontendCalls = new LinkedHashMap<>();
+        List<String> filesWithZeroCalls = new ArrayList<>();
+        
+        for (Map.Entry<String, List<String>> entry : callsByFile.entrySet()) {
+            String file = entry.getKey();
+            List<String> calls = entry.getValue();
+            
+            if (calls.isEmpty()) {
+                filesWithZeroCalls.add(file);
+            }
+            
+            for (String call : calls) {
+                frontendCalls.put(call, file);
+            }
+        }
+        
+        if (!filesWithZeroCalls.isEmpty()) {
+            fail("Frontend BFF route.ts files with 0 extracted backend calls:\n"
+                    + String.join("\n", filesWithZeroCalls)
+                    + "\n\nEvery route.ts must call proxyToBackend with a string/template literal at the call site.");
+        }
 
         assertThat(frontendCalls)
-                .as("Frontend BFF extraction should find ≥20 endpoints (found " + frontendCalls.size() + ")")
-                .hasSizeGreaterThanOrEqualTo(20);
+                .as("Frontend BFF extraction should find ≥25 endpoints (found " + frontendCalls.size() + ")")
+                .hasSizeGreaterThanOrEqualTo(25);
+                
+        assertThat(frontendCalls.size())
+                .as("Number of extracted backend calls (" + frontendCalls.size() 
+                    + ") should match exported handlers (" + totalExportedHandlers + ")")
+                .isEqualTo(totalExportedHandlers);
 
         List<String> missingEndpoints = new ArrayList<>();
         for (Map.Entry<String, String> entry : frontendCalls.entrySet()) {
@@ -65,10 +99,15 @@ class ApiContractTest {
     void allBackendTestCallsShouldMatchActualSpringMappings() throws IOException {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
         Map<String, String> backendTestCalls = extractBackendTestCalls();
+        int integrationTestFileCount = countIntegrationTestFiles();
+
+        assertThat(integrationTestFileCount)
+                .as("Should find ≥5 IntegrationTest.java files (found " + integrationTestFileCount + ")")
+                .isGreaterThanOrEqualTo(5);
 
         assertThat(backendTestCalls)
-                .as("Backend test extraction found " + backendTestCalls.size() + " endpoints")
-                .hasSizeGreaterThanOrEqualTo(0);
+                .as("Backend test extraction should find ≥20 endpoints (found " + backendTestCalls.size() + ")")
+                .hasSizeGreaterThanOrEqualTo(20);
 
         List<String> missingEndpoints = new ArrayList<>();
         for (Map.Entry<String, String> entry : backendTestCalls.entrySet()) {
@@ -86,11 +125,11 @@ class ApiContractTest {
         }
     }
 
-    private Map<String, String> extractFrontendBffCalls() throws IOException {
-        Map<String, String> calls = new LinkedHashMap<>();
+    private Map<String, List<String>> extractFrontendBffCallsByFile() throws IOException {
+        Map<String, List<String>> callsByFile = new LinkedHashMap<>();
 
         if (!Files.exists(FRONTEND_API_DIR)) {
-            return calls;
+            return callsByFile;
         }
 
         try (Stream<Path> paths = Files.walk(FRONTEND_API_DIR)) {
@@ -101,6 +140,7 @@ class ApiContractTest {
             for (Path routeFile : routeFiles) {
                 String content = Files.readString(routeFile);
                 String relPath = FRONTEND_API_DIR.relativize(routeFile).toString();
+                List<String> fileCalls = new ArrayList<>();
 
                 Pattern functionPattern = Pattern.compile(
                         "export\\s+async\\s+function\\s+(GET|POST|PUT|DELETE|PATCH)\\s*\\(",
@@ -120,7 +160,7 @@ class ApiContractTest {
                     if (proxyMatcher.find()) {
                         String path = proxyMatcher.group(2);
                         path = normalizePath(path);
-                        calls.put(method + " " + path, relPath);
+                        fileCalls.add(method + " " + path);
                     }
 
                     Pattern fetchPattern = Pattern.compile(
@@ -130,13 +170,42 @@ class ApiContractTest {
                     if (fetchMatcher.find()) {
                         String path = fetchMatcher.group(1);
                         path = normalizePath(path);
-                        calls.put(method + " " + path, relPath);
+                        fileCalls.add(method + " " + path);
                     }
+                }
+                
+                callsByFile.put(relPath, fileCalls);
+            }
+        }
+
+        return callsByFile;
+    }
+    
+    private int countExportedHandlers() throws IOException {
+        if (!Files.exists(FRONTEND_API_DIR)) {
+            return 0;
+        }
+
+        int count = 0;
+        try (Stream<Path> paths = Files.walk(FRONTEND_API_DIR)) {
+            List<Path> routeFiles =
+                    paths.filter(p -> p.getFileName().toString().equals("route.ts"))
+                            .collect(Collectors.toList());
+
+            Pattern functionPattern = Pattern.compile(
+                    "export\\s+async\\s+function\\s+(GET|POST|PUT|DELETE|PATCH)\\s*\\(",
+                    Pattern.MULTILINE);
+
+            for (Path routeFile : routeFiles) {
+                String content = Files.readString(routeFile);
+                Matcher matcher = functionPattern.matcher(content);
+                while (matcher.find()) {
+                    count++;
                 }
             }
         }
 
-        return calls;
+        return count;
     }
 
     private String normalizePath(String path) {
@@ -164,21 +233,26 @@ class ApiContractTest {
                 String content = Files.readString(testFile);
                 String fileName = testFile.getFileName().toString();
 
-                Pattern pathPattern = Pattern.compile("[\"'](/api/[^\"']+)[\"']");
-                Matcher pathMatcher = pathPattern.matcher(content);
+                Pattern methodPattern = Pattern.compile(
+                        "\\.(getForEntity|postForEntity|put|delete|patchForEntity|exchange)\\s*\\([^)]*?[\"']([^\"']+)[\"']");
+                Matcher methodMatcher = methodPattern.matcher(content);
 
-                while (pathMatcher.find()) {
-                    String path = pathMatcher.group(1);
-                    int pos = pathMatcher.start();
-                    String before = content.substring(Math.max(0, pos - 100), pos);
+                while (methodMatcher.find()) {
+                    String methodCall = methodMatcher.group(1);
+                    String path = methodMatcher.group(2);
+                    
+                    if (path.contains("baseUrl()")) {
+                        continue;
+                    }
 
                     String method = "";
-                    if (before.contains("postForEntity")) method = "POST";
-                    else if (before.contains("getForEntity")) method = "GET";
-                    else if (before.contains("putForObject")) method = "PUT";
-                    else if (before.contains("delete")) method = "DELETE";
+                    if (methodCall.equals("getForEntity")) method = "GET";
+                    else if (methodCall.equals("postForEntity")) method = "POST";
+                    else if (methodCall.equals("put")) method = "PUT";
+                    else if (methodCall.equals("delete")) method = "DELETE";
+                    else if (methodCall.equals("patchForEntity")) method = "PATCH";
 
-                    if (!method.isEmpty()) {
+                    if (!method.isEmpty() && path.startsWith("/")) {
                         path = normalizePath(path);
                         calls.put(method + " " + path, fileName);
                     }
@@ -187,6 +261,16 @@ class ApiContractTest {
         }
 
         return calls;
+    }
+    
+    private int countIntegrationTestFiles() throws IOException {
+        if (!Files.exists(BACKEND_TEST_DIR)) {
+            return 0;
+        }
+
+        try (Stream<Path> paths = Files.walk(BACKEND_TEST_DIR)) {
+            return (int) paths.filter(p -> p.toString().endsWith("IntegrationTest.java")).count();
+        }
     }
 
     private boolean matchesAnyMapping(String endpoint, Map<String, RequestMappingInfo> mappings) {
