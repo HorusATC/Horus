@@ -1,5 +1,7 @@
 package jp.ac.tohoku.qse.takahashi.AtcSimulator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -9,8 +11,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Contract test that verifies all API endpoints used by Frontend BFF routes
