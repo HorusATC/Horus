@@ -1,3 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/**
+ * Squawk route handler test
+ * 
+ * This test validates that the route handler correctly processes backend text/plain responses
+ * and returns proper JSON with correct status codes. Full end-to-end testing is done via Docker Compose CI.
+ * 
+ * The route handler logic is tested by verifying the key behaviors:
+ * - Valid squawk: backend text → {message: text} with 200
+ * - Backend error: backend text → {error: text} with error status
+ * - Invalid squawk: immediate 400 without backend call
+ * - Malformed JSON: immediate 400 without backend call
+ */
+
 import { POST } from "./route";
 import { proxyToBackend } from "@/utility/api/backendProxy";
 
@@ -7,7 +21,6 @@ const mockedProxyToBackend = proxyToBackend as jest.MockedFunction<
   typeof proxyToBackend
 >;
 
-// Create a mock Response that behaves like actual text/plain (json() throws for non-JSON text)
 class TextPlainResponse extends Response {
   private textContent: string;
 
@@ -21,10 +34,9 @@ class TextPlainResponse extends Response {
   }
 
   async json(): Promise<any> {
-    // text/plain that's not JSON will throw
     try {
       return JSON.parse(this.textContent);
-    } catch (e) {
+    } catch {
       throw new SyntaxError(
         `Unexpected token '${this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`
       );
@@ -74,7 +86,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
     const request = {
       json: async () => ({ squawk: "7700" }),
-    } as any;
+    } as unknown as Request;
 
     const context = { params: Promise.resolve({ callsign: "UNKNOWN" }) };
     const response = await POST(request, context);
@@ -88,7 +100,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
   it("returns 400 for invalid squawk without calling backend", async () => {
     const request = {
       json: async () => ({ squawk: "8888" }),
-    } as any;
+    } as unknown as Request;
 
     const context = { params: Promise.resolve({ callsign: "TEST" }) };
     const response = await POST(request, context);
