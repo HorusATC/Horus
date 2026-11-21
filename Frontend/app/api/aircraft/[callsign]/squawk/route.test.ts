@@ -14,6 +14,7 @@
 
 import { POST } from "./route";
 import { proxyToBackend } from "@/utility/api/backendProxy";
+import { NextRequest } from "next/server";
 
 jest.mock("@/utility/api/backendProxy");
 
@@ -29,11 +30,11 @@ class TextPlainResponse extends Response {
     this.textContent = text;
   }
 
-  async text(): Promise<string> {
+  override async text(): Promise<string> {
     return this.textContent;
   }
 
-  async json(): Promise<any> {
+  override async json(): Promise<any> {
     try {
       return JSON.parse(this.textContent);
     } catch {
@@ -59,7 +60,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
     const request = {
       json: async () => ({ squawk: "1234" }),
-    } as unknown as Request;
+    } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "ANA404" }) };
     const response = await POST(request, context);
@@ -86,7 +87,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
     const request = {
       json: async () => ({ squawk: "7700" }),
-    } as unknown as Request;
+    } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "UNKNOWN" }) };
     const response = await POST(request, context);
@@ -100,7 +101,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
   it("returns 400 for invalid squawk without calling backend", async () => {
     const request = {
       json: async () => ({ squawk: "8888" }),
-    } as unknown as Request;
+    } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "TEST" }) };
     const response = await POST(request, context);
