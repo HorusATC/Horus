@@ -127,6 +127,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check Tailwind content coverage
+        run: npm run tailwind:check
+
       - name: Check for disabled/focused tests
         run: |
           if grep -r -E '\.(skip|only)\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx'; then
