@@ -6,11 +6,12 @@
 
 ## 技術スタック
 
-- **言語**: Java 21
+- **言語**: Java 21 (**Java 22/24 は互換性の問題があるため使用禁止**)
 - **フレームワーク**: Spring Boot 4.1.3
 - **API仕様**: OpenAPI 3.0.2
 - **ビルドツール**: Gradle 8.14.8
 - **アーキテクチャ**: クリーンアーキテクチャ + Strategy パターン + Composition
+- **コンパイラオプション**: main sources は `-Xlint:all -Werror` (警告ゼロ必須)
 
 ## 新機能: コンフリクトアラートシステム
 
@@ -474,6 +475,50 @@ java -cp build/libs/atc-simulator.jar jp.ac.tohoku.qse.takahashi.AtcSimulator.ex
    - 予測精度の向上
    - 機械学習による危険度評価の改善
    - リアルタイム通知機能
+
+## 開発コマンド
+
+### アプリケーション実行
+
+```bash
+./gradlew bootRun        # 開発サーバー起動 (http://localhost:8080)
+./gradlew bootRun -PwpDebug  # フライトプランデバッグログ有効
+```
+
+### ビルド・テスト
+
+```bash
+./gradlew build          # ビルド (テスト含む)
+./gradlew test           # テスト実行
+./gradlew compileJava    # main sources のコンパイル (警告ゼロ必須)
+./gradlew compileTestJava # test sources のコンパイル (警告許容)
+```
+
+### コードフォーマット
+
+```bash
+./gradlew spotlessApply  # Spotless 自動フォーマット適用
+./gradlew spotlessCheck  # フォーマットチェック (CI用)
+```
+
+### 契約テスト
+
+```bash
+./gradlew test --tests ApiContractTest  # API契約チェック
+```
+
+### PR 作成前のチェック
+
+```bash
+./gradlew spotlessCheck && ./gradlew test
+```
+
+すべて pass することを確認してください。詳細は [AGENTS.md](../AGENTS.md) を参照。
+
+## コンパイラ警告
+
+- **main sources** (`src/main/java`): `-Xlint:all -Werror` により警告ゼロ必須
+- **test sources** (`src/test/java`): `-Xlint:all` で警告は表示されるが fail しない（現在約 100 warnings）
 
 ## ライセンス
 
