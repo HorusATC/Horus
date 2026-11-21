@@ -366,7 +366,7 @@ npm start           # ビルド後の本番実行
 ### 静的チェック
 
 ```bash
-npm run lint         # ESLint (app, components, utility, context)
+npm run lint         # ESLint (app, components, utility, context, types)
 npm run format       # Prettier で自動フォーマット
 npm run format:check # Prettier チェック (CI用)
 npm run typecheck    # TypeScript 型チェック (tsc --noEmit)

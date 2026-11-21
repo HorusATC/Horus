@@ -1,65 +1,117 @@
-/**
- * Squawk route validation test
- *
- * Tests the isValidSquawk validation logic and response handling.
- * Full integration testing is done via Docker Compose CI.
- */
+import { POST } from "./route";
+import { proxyToBackend } from "@/utility/api/backendProxy";
 
-function isValidSquawk(squawk: unknown): squawk is string {
-  return typeof squawk === "string" && /^[0-7]{4}$/.test(squawk);
+jest.mock("@/utility/api/backendProxy");
+
+const mockedProxyToBackend = proxyToBackend as jest.MockedFunction<
+  typeof proxyToBackend
+>;
+
+// Create a mock Response that behaves like actual text/plain (json() throws for non-JSON text)
+class TextPlainResponse extends Response {
+  private textContent: string;
+  
+  constructor(text: string, init: ResponseInit) {
+    super(text, init);
+    this.textContent = text;
+  }
+  
+  async text(): Promise<string> {
+    return this.textContent;
+  }
+  
+  async json(): Promise<any> {
+    // text/plain that's not JSON will throw
+    try {
+      return JSON.parse(this.textContent);
+    } catch (e) {
+      throw new SyntaxError(`Unexpected token '${ this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`);
+    }
+  }
 }
 
-describe("squawk route validation", () => {
-  describe("isValidSquawk", () => {
-    it("accepts valid 4-digit octal squawk codes", () => {
-      expect(isValidSquawk("1234")).toBe(true);
-      expect(isValidSquawk("7700")).toBe(true);
-      expect(isValidSquawk("0000")).toBe(true);
-      expect(isValidSquawk("7777")).toBe(true);
-    });
-
-    it("rejects non-octal digits (8, 9)", () => {
-      expect(isValidSquawk("8888")).toBe(false);
-      expect(isValidSquawk("9999")).toBe(false);
-      expect(isValidSquawk("1289")).toBe(false);
-    });
-
-    it("rejects wrong length", () => {
-      expect(isValidSquawk("123")).toBe(false);
-      expect(isValidSquawk("12345")).toBe(false);
-    });
-
-    it("rejects non-string types", () => {
-      expect(isValidSquawk(null)).toBe(false);
-      expect(isValidSquawk(undefined)).toBe(false);
-      expect(isValidSquawk(1234)).toBe(false);
-      expect(isValidSquawk({})).toBe(false);
-    });
+describe("POST /api/aircraft/[callsign]/squawk", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  describe("response format expectations", () => {
-    it("should return {message: text} on 200 from text/plain backend", () => {
-      const backendText = "Squawk assigned: ANA404";
-      const expected = { message: backendText };
-      expect(expected).toEqual({ message: "Squawk assigned: ANA404" });
-    });
+  it("returns 200 with {message} when backend returns text/plain 200", async () => {
+    mockedProxyToBackend.mockResolvedValue(
+      new TextPlainResponse("Squawk assigned: ANA404", {
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      }) as any
+    );
 
-    it("should return {error: text} on non-OK from text/plain backend", () => {
-      const backendError = "Aircraft not found";
-      const expected = { error: backendError };
-      expect(expected).toEqual({ error: "Aircraft not found" });
-    });
+    const request = {
+      json: async () => ({ squawk: "1234" }),
+    } as any;
 
-    it("should return 400 {error} for invalid squawk", () => {
-      const expected = { error: "squawk must be 4 octal digits (0-7)" };
-      expect(expected).toEqual({
-        error: "squawk must be 4 octal digits (0-7)",
-      });
-    });
+    const context = { params: Promise.resolve({ callsign: "ANA404" }) };
+    const response = await POST(request, context);
 
-    it("should return 400 {error} for malformed JSON", () => {
-      const expected = { error: "Invalid JSON" };
-      expect(expected).toEqual({ error: "Invalid JSON" });
-    });
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    const json = JSON.parse(text);
+    expect(json).toEqual({ message: "Squawk assigned: ANA404" });
+    expect(mockedProxyToBackend).toHaveBeenCalledWith(
+      "/api/aircraft/ANA404/squawk",
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
+  });
+
+  it("returns 404 with {error} when backend returns text/plain 404", async () => {
+    mockedProxyToBackend.mockResolvedValue(
+      new TextPlainResponse("Aircraft not found", {
+        status: 404,
+        headers: { "content-type": "text/plain" },
+      }) as any
+    );
+
+    const request = {
+      json: async () => ({ squawk: "7700" }),
+    } as any;
+
+    const context = { params: Promise.resolve({ callsign: "UNKNOWN" }) };
+    const response = await POST(request, context);
+
+    expect(response.status).toBe(404);
+    const text = await response.text();
+    const json = JSON.parse(text);
+    expect(json).toEqual({ error: "Aircraft not found" });
+  });
+
+  it("returns 400 for invalid squawk without calling backend", async () => {
+    const request = {
+      json: async () => ({ squawk: "8888" }),
+    } as any;
+
+    const context = { params: Promise.resolve({ callsign: "TEST" }) };
+    const response = await POST(request, context);
+
+    expect(response.status).toBe(400);
+    const text = await response.text();
+    const json = JSON.parse(text);
+    expect(json).toEqual({ error: "squawk must be 4 octal digits (0-7)" });
+    expect(mockedProxyToBackend).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for malformed JSON without calling backend", async () => {
+    const request = {
+      json: async () => {
+        throw new Error("Invalid JSON");
+      },
+    } as any;
+
+    const context = { params: Promise.resolve({ callsign: "TEST" }) };
+    const response = await POST(request, context);
+
+    expect(response.status).toBe(400);
+    const text = await response.text();
+    const json = JSON.parse(text);
+    expect(json).toEqual({ error: "Invalid JSON" });
+    expect(mockedProxyToBackend).not.toHaveBeenCalled();
   });
 });
