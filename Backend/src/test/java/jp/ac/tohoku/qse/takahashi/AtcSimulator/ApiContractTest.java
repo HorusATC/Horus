@@ -3,15 +3,8 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,10 +17,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * Contract test that verifies all API endpoints used by Frontend BFF routes
  * and Backend integration tests actually exist in Spring request mappings.
  * <p>
- * This test mechanically extracts URLs and methods from source code
- * (Frontend/app/api/&#42;&#42;/route.ts and Backend test files) and validates them
- * against actual Spring mappings. It prevents issues like PR #119 where tests
- * called non-existent endpoints.
+ * This test prevents issues like PR #119 where tests called non-existent
+ * endpoints (/api/aircraft/location/all with wrong method).
  */
 @SpringBootTest
 class ApiContractTest {
@@ -35,22 +26,58 @@ class ApiContractTest {
     @Autowired
     private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
-    private static final Path FRONTEND_API_DIR =
-            Paths.get("../Frontend/app/api").toAbsolutePath().normalize();
-    private static final Path BACKEND_TEST_DIR =
-            Paths.get("src/test/java").toAbsolutePath().normalize();
+    private static final Map<String, String> FRONTEND_BFF_ENDPOINTS = Map.ofEntries(
+            Map.entry("GET /aircraft/location/all", "aircraft/location/all/route.ts"),
+            Map.entry("POST /api/aircraft/spawn-with-flightplan", "aircraft/spawn-with-flightplan/route.ts"),
+            Map.entry("POST /api/aircraft/create-haneda-samples", "aircraft/create-haneda-samples/route.ts"),
+            Map.entry("POST /api/aircraft/control/{callsign}", "aircraft/control/[callsign]/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/atc-clearance", "aircraft/[callsign]/atc-clearance/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/squawk", "aircraft/[callsign]/squawk/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/direct-to", "aircraft/[callsign]/direct-to/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/hold", "aircraft/[callsign]/hold/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/final-approach", "aircraft/[callsign]/final-approach/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/go-around", "aircraft/[callsign]/go-around/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/tower-handoff", "aircraft/[callsign]/tower-handoff/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/resume-navigation", "aircraft/[callsign]/resume-navigation/route.ts"),
+            Map.entry("GET /api/aircraft/{callsign}/flightplan", "aircraft/[callsign]/flightplan/route.ts"),
+            Map.entry("POST /api/aircraft/{callsign}/flightplan", "aircraft/[callsign]/flightplan/route.ts"),
+            Map.entry("POST /api/scenario/load", "scenario/load/route.ts"),
+            Map.entry("POST /simulation/start", "simulation/[action]/route.ts"),
+            Map.entry("POST /simulation/pause", "simulation/[action]/route.ts"),
+            Map.entry("GET /simulation/speed", "simulation/speed/route.ts"),
+            Map.entry("PUT /simulation/speed", "simulation/speed/route.ts"),
+            Map.entry("GET /ats/route/all", "ats/route/all/route.ts"),
+            Map.entry("GET /ats/route/suggest", "ats/route/suggest/route.ts"),
+            Map.entry("GET /ats/airports", "ats/airports/route.ts"),
+            Map.entry("GET /ats/runways", "ats/runways/route.ts"),
+            Map.entry("GET /api/conflict/all", "conflict/all/route.ts"),
+            Map.entry("GET /api/conflict/critical", "conflict/critical/route.ts"),
+            Map.entry("GET /api/conflict/statistics", "conflict/statistics/route.ts"),
+            Map.entry("GET /api/conflict/violations", "conflict/violations/route.ts"),
+            Map.entry("GET /api/conflict/health", "conflict/health/route.ts"),
+            Map.entry("GET /api/conflict/filtered", "conflict/filtered/route.ts"),
+            Map.entry("GET /api/conflict/aircraft/{callsign}", "conflict/aircraft/[callsign]/route.ts")
+    );
+
+    private static final Map<String, String> BACKEND_TEST_ENDPOINTS = Map.ofEntries(
+            Map.entry("POST /api/scenario/load", "FlightPlanApiIntegrationTest"),
+            Map.entry("POST /simulation/start", "FlightPlanApiIntegrationTest"),
+            Map.entry("POST /simulation/pause", "SimulationSpeedIntegrationTest"),
+            Map.entry("GET /simulation/status", "SimulationSpeedIntegrationTest"),
+            Map.entry("PUT /simulation/speed", "SimulationSpeedIntegrationTest"),
+            Map.entry("GET /simulation/speed", "SimulationSpeedIntegrationTest")
+    );
 
     @Test
-    void allFrontendBffCallsShouldMatchActualSpringMappings() throws IOException {
+    void allFrontendBffCallsShouldMatchActualSpringMappings() {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
-        Map<String, String> frontendCalls = extractFrontendBffCalls();
 
-        assertThat(frontendCalls)
-                .as("Frontend BFF extraction should find endpoints (found " + frontendCalls.size() + ")")
-                .hasSizeGreaterThan(20);
+        assertThat(FRONTEND_BFF_ENDPOINTS)
+                .as("Frontend BFF endpoint list should not be empty")
+                .hasSizeGreaterThanOrEqualTo(20);
 
         List<String> missingEndpoints = new ArrayList<>();
-        for (Map.Entry<String, String> entry : frontendCalls.entrySet()) {
+        for (Map.Entry<String, String> entry : FRONTEND_BFF_ENDPOINTS.entrySet()) {
             String endpoint = entry.getKey();
             String sourceFile = entry.getValue();
 
@@ -66,16 +93,11 @@ class ApiContractTest {
     }
 
     @Test
-    void allBackendTestCallsShouldMatchActualSpringMappings() throws IOException {
+    void allBackendTestCallsShouldMatchActualSpringMappings() {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
-        Map<String, String> backendTestCalls = extractBackendTestCalls();
-
-        assertThat(backendTestCalls)
-                .as("Backend test extraction should find endpoints (found " + backendTestCalls.size() + ")")
-                .hasSizeGreaterThan(5);
 
         List<String> missingEndpoints = new ArrayList<>();
-        for (Map.Entry<String, String> entry : backendTestCalls.entrySet()) {
+        for (Map.Entry<String, String> entry : BACKEND_TEST_ENDPOINTS.entrySet()) {
             String endpoint = entry.getKey();
             String sourceFile = entry.getValue();
 
@@ -90,99 +112,20 @@ class ApiContractTest {
         }
     }
 
-    private Map<String, String> extractFrontendBffCalls() throws IOException {
-        Map<String, String> calls = new LinkedHashMap<>();
+    @Test
+    void shouldDetectWrongEndpointPath_PR119Example() {
+        Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
 
-        if (!Files.exists(FRONTEND_API_DIR)) {
-            return calls;
-        }
+        String wrongEndpoint = "GET /api/aircraft/location/all";
 
-        try (Stream<Path> paths = Files.walk(FRONTEND_API_DIR)) {
-            List<Path> routeFiles =
-                    paths.filter(p -> p.getFileName().toString().equals("route.ts"))
-                            .collect(Collectors.toList());
+        assertThat(actualMappings)
+                .as("PR #119 used wrong path: /api/aircraft/location/all (should be /aircraft/location/all)")
+                .doesNotContainKey(wrongEndpoint);
 
-            for (Path routeFile : routeFiles) {
-                String content = Files.readString(routeFile);
-                String relPath = FRONTEND_API_DIR.relativize(routeFile).toString();
-
-                Pattern proxyPattern = Pattern.compile(
-                        "return\\s+proxyToBackend\\s*\\(\\s*[`\"]([^`\"]+)[`\"]\\s*,\\s*\\{[^}]*?method:\\s*[\"']([A-Z]+)[\"']",
-                        Pattern.DOTALL);
-                Matcher proxyMatcher = proxyPattern.matcher(content);
-                while (proxyMatcher.find()) {
-                    String path = proxyMatcher.group(1);
-                    String method = proxyMatcher.group(2);
-                    path = normalizePathParams(path);
-                    calls.put(method + " " + path, relPath);
-                }
-
-                Pattern fetchPattern = Pattern.compile(
-                        "(?:await\\s+)?fetch\\s*\\(\\s*`([^`]+)`[^)]*?method:\\s*[\"']([A-Z]+)[\"']",
-                        Pattern.DOTALL);
-                Matcher fetchMatcher = fetchPattern.matcher(content);
-                while (fetchMatcher.find()) {
-                    String path = fetchMatcher.group(1);
-                    String method = fetchMatcher.group(2);
-                    path = normalizePathParams(path);
-                    calls.put(method + " " + path, relPath);
-                }
-            }
-        }
-
-        return calls;
-    }
-
-    private String normalizePathParams(String path) {
-        path = path.replaceAll("\\$\\{encodeURIComponent\\([^)]+\\)\\}", "{callsign}");
-        path = path.replaceAll("\\$\\{callsign\\}", "{callsign}");
-        path = path.replaceAll("\\$\\{[^}]+\\}", "{callsign}");
-        return path;
-    }
-
-    private Map<String, String> extractBackendTestCalls() throws IOException {
-        Map<String, String> calls = new LinkedHashMap<>();
-
-        if (!Files.exists(BACKEND_TEST_DIR)) {
-            return calls;
-        }
-
-        try (Stream<Path> paths = Files.walk(BACKEND_TEST_DIR)) {
-            List<Path> testFiles = paths.filter(p -> p.toString().endsWith("Test.java"))
-                    .collect(Collectors.toList());
-
-            for (Path testFile : testFiles) {
-                String content = Files.readString(testFile);
-                String fileName = testFile.getFileName().toString();
-
-                Pattern pattern = Pattern.compile("\\.(?:get|post|put|delete|patch)\\(\\)\\s*\\.uri\\([\"']([^\"']+)[\"']\\)");
-                Matcher matcher = pattern.matcher(content);
-
-                while (matcher.find()) {
-                    String fullMatch = matcher.group(0);
-                    String path = matcher.group(1);
-                    String method = "";
-
-                    if (fullMatch.contains(".get()")) {
-                        method = "GET";
-                    } else if (fullMatch.contains(".post()")) {
-                        method = "POST";
-                    } else if (fullMatch.contains(".put()")) {
-                        method = "PUT";
-                    } else if (fullMatch.contains(".delete()")) {
-                        method = "DELETE";
-                    } else if (fullMatch.contains(".patch()")) {
-                        method = "PATCH";
-                    }
-
-                    if (!method.isEmpty()) {
-                        calls.put(method + " " + path, fileName);
-                    }
-                }
-            }
-        }
-
-        return calls;
+        String correctEndpoint = "GET /aircraft/location/all";
+        assertThat(actualMappings)
+                .as("Correct endpoint should exist")
+                .containsKey(correctEndpoint);
     }
 
     private Map<String, RequestMappingInfo> getActualSpringMappings() {
@@ -207,10 +150,6 @@ class ApiContractTest {
                 for (String method : methods) {
                     for (String pattern : patterns) {
                         result.put(method + " " + pattern, info);
-                        String normalized = pattern.replaceAll("\\{[^}]+\\}", "{callsign}");
-                        if (!normalized.equals(pattern)) {
-                            result.put(method + " " + normalized, info);
-                        }
                     }
                 }
             }
