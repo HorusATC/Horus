@@ -30,9 +30,14 @@ export async function POST(
     );
   }
 
-  return proxyToBackend(`/api/aircraft/${encodeURIComponent(callsign)}/squawk`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ squawk: body.squawk }),
-  });
+  const response = await proxyToBackend(
+    `/api/aircraft/${encodeURIComponent(callsign)}/squawk`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ squawk: body.squawk }),
+    }
+  );
+
+  return NextResponse.json(await response.json(), { status: response.status });
 }
