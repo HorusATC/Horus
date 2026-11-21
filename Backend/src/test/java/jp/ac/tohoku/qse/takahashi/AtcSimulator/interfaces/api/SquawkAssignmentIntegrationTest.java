@@ -86,9 +86,8 @@ public class SquawkAssignmentIntegrationTest {
         );
         assertThat(squawkResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                null,
                 List.class
         );
         assertThat(locationResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -138,9 +137,8 @@ public class SquawkAssignmentIntegrationTest {
                 String.class
         );
 
-        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                null,
                 List.class
         );
 
@@ -186,9 +184,8 @@ public class SquawkAssignmentIntegrationTest {
                 String.class
         );
 
-        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                null,
                 List.class
         );
 
@@ -234,9 +231,8 @@ public class SquawkAssignmentIntegrationTest {
                 String.class
         );
 
-        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                null,
                 List.class
         );
 
