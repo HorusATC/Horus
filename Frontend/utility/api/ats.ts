@@ -10,7 +10,8 @@ export async function suggestRoute(
     headers: { Accept: "application/json" },
   });
   const data = (await response.json()) as
-    { waypoints: string[]; reason?: string } | { error: string };
+    | { waypoints: string[]; reason?: string }
+    | { error: string };
 
   if (!response.ok) {
     return {
