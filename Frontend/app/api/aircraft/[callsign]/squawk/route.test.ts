@@ -116,10 +116,10 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
   it("returns 400 for malformed JSON without calling backend", async () => {
     const request = {
-      json: async () => {
+      json: async (): Promise<never> => {
         throw new Error("Invalid JSON");
       },
-    } as any;
+    } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "TEST" }) };
     const response = await POST(request, context);
