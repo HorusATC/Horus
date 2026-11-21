@@ -39,5 +39,14 @@ export async function POST(
     }
   );
 
-  return NextResponse.json(await response.json(), { status: response.status });
+  if (!response.ok) {
+    const errorText = await response.text();
+    return NextResponse.json(
+      { error: errorText || "Backend error" },
+      { status: response.status }
+    );
+  }
+
+  const result = await response.text();
+  return NextResponse.json({ message: result });
 }

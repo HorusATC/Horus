@@ -157,7 +157,7 @@ class ApiContractTest {
                             "proxyToBackend\\s*\\(\\s*([`\"])([^`\"]+?)\\1");
                     Matcher proxyMatcher = proxyPattern.matcher(functionBody);
 
-                    if (proxyMatcher.find()) {
+                    while (proxyMatcher.find()) {
                         String path = proxyMatcher.group(2);
                         path = normalizePath(path);
                         fileCalls.add(method + " " + path);
@@ -167,7 +167,7 @@ class ApiContractTest {
                             "fetch\\s*\\(\\s*`([^`]+)`");
                     Matcher fetchMatcher = fetchPattern.matcher(functionBody);
 
-                    if (fetchMatcher.find()) {
+                    while (fetchMatcher.find()) {
                         String path = fetchMatcher.group(1);
                         path = normalizePath(path);
                         fileCalls.add(method + " " + path);

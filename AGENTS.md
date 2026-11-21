@@ -175,13 +175,18 @@ Frontend BFF routes (`Frontend/app/api/**/route.ts`) が呼び出すすべての
 
 ### ❌ 避けるべきパターン
 
-1. **間違った API パス**
+1. **BFF で直接 fetch を使用**
    ```typescript
-   // ❌ 間違い
-   fetch('/api/aircraft/location/all')
+   // ❌ 間違い: BACKEND_BASE_URL を使った直接 fetch
+   const url = `${BACKEND_BASE_URL}/api/aircraft/${callsign}/squawk`;
+   fetch(url, { method: "POST", ... })
    
-   // ✅ 正しい
-   fetch('/aircraft/location/all')
+   // ❌ 間違い: 変数に代入したパス
+   const path = `/api/aircraft/${callsign}/squawk`;
+   proxyToBackend(path, ...)
+   
+   // ✅ 正しい: proxyToBackend にパスを直接渡す
+   proxyToBackend(`/api/aircraft/${callsign}/squawk`, { method: "POST", ... })
    ```
 
 2. **テストの無効化**
