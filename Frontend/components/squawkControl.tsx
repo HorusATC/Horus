@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelectedAircraft } from "@/context/selectedAircraftContext";
 import { setSquawk } from "@/utility/api/squawk";
-import {
-  EMERGENCY_SQUAWKS,
-  type EmergencySquawkCode,
-} from "@/utility/aircraft/emergencySquawk";
+import type { EmergencySquawkCode } from "@/utility/aircraft/emergencySquawk";
 
 const EMERGENCY_SQUAWK_UI = [
   {
