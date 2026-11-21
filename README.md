@@ -1,5 +1,12 @@
 # Horus: ATCレーダーシミュレーションシステム
 
+## クイックスタート
+
+```bash
+git clone https://github.com/HorusATC/Horus.git
+cd Horus
+```
+
 ## システム概要
 
 **Horus**は、日本のレーダー管制システムを対象としたオープンソースのシミュレーターです。バックエンドは**ウラノス** (Uranus) という愛称で、Java言語で実装されています。フロントエンドは**オモテノス** (Omotenus) という愛称で、TypeScriptで書かれています。Horusという名前はエジプト神話の天空の神ホルスに由来し、ウラノスはギリシャ神話の天空の神ウラノスに由来しています。
@@ -54,7 +61,7 @@
 
 1. リポジトリをクローン:
 ```bash
-git clone https://github.com/Futty93/Horus.git
+git clone https://github.com/HorusATC/Horus.git
 cd Horus
 ```
 

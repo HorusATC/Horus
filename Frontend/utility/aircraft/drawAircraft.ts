@@ -16,6 +16,11 @@ import {
   selectTrackDisplaySamples,
   TRACK_DISPLAY_DOT_RADIUS_PX,
 } from "./trackHistoryDisplaySamples";
+import {
+  isEmergencySquawk,
+  EMERGENCY_SQUAWKS,
+  type EmergencySquawkCode,
+} from "./emergencySquawk";
 
 /**
  * Class to draw aircraft on the canvas
@@ -67,12 +72,15 @@ class DrawAircraft {
         squawkHighlight != null &&
         aircraft.squawk != null &&
         aircraft.squawk === squawkHighlight;
+      const emergencySquawk: EmergencySquawkCode | null =
+        this.getEmergencySquawk(aircraft.squawk);
       this.drawAircraftMarker(
         ctx,
         aircraft.position,
         riskDisplayFloor,
         nowMs,
-        isSquawkMatched
+        isSquawkMatched,
+        emergencySquawk
       );
       this.drawHeadingLine(
         ctx,
@@ -89,7 +97,8 @@ class DrawAircraft {
         dataBlockDisplaySetting,
         useControllerClearanceAltitudeRow,
         riskDisplayFloor,
-        isSquawkMatched
+        isSquawkMatched,
+        emergencySquawk
       );
     } finally {
       ctx.restore();
@@ -131,7 +140,8 @@ class DrawAircraft {
     position: { x: number; y: number },
     riskDisplayFloor: number,
     nowMs: number,
-    isSquawkMatched: boolean
+    isSquawkMatched: boolean,
+    emergencySquawk: EmergencySquawkCode | null
   ) {
     const radius: number = 5;
     const flashOn = Math.floor(nowMs / 450) % 2 === 0;
@@ -144,6 +154,13 @@ class DrawAircraft {
         ctx.lineWidth = 3;
         ctx.stroke();
       }
+    } else if (emergencySquawk !== null) {
+      ctx.beginPath();
+      ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
+      const color = EMERGENCY_SQUAWKS[emergencySquawk].color;
+      ctx.strokeStyle = `${color}f2`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
     } else if (riskDisplayFloor >= 30) {
       ctx.beginPath();
       ctx.arc(position.x, position.y, radius + 4, 0, 2 * Math.PI);
@@ -190,13 +207,20 @@ class DrawAircraft {
     ctx.stroke();
   }
 
+  private static getEmergencySquawk(
+    squawk: string | null
+  ): EmergencySquawkCode | null {
+    return isEmergencySquawk(squawk) ? squawk : null;
+  }
+
   private static drawAircraftLabel(
     ctx: CanvasRenderingContext2D,
     aircraft: Aircraft,
     setting: DataBlockDisplaySetting,
     useControllerClearanceAltitudeRow: boolean,
     riskDisplayFloor: number,
-    isSquawkMatched: boolean
+    isSquawkMatched: boolean,
+    emergencySquawk: EmergencySquawkCode | null
   ) {
     const airplanePosition = aircraft.position;
     const instructedVector = aircraft.instructedVector;
@@ -322,7 +346,14 @@ class DrawAircraft {
       }
     }
 
-    if (setting.squawk) {
+    if (emergencySquawk !== null) {
+      const config = EMERGENCY_SQUAWKS[emergencySquawk];
+      ctx.fillStyle = config.color;
+      ctx.fillText(config.label, labelX, lineY);
+      lineY += lineHeight;
+    }
+
+    if (setting.squawk && !emergencySquawk) {
       ctx.fillStyle = "white";
       const squawkDisplay = aircraft.squawk ?? "---";
       ctx.fillText(squawkDisplay, labelX, lineY);

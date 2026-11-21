@@ -69,8 +69,8 @@ docker compose up --build
 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/your-username/horus.git
-cd horus/Frontend
+git clone https://github.com/HorusATC/Horus.git
+cd Horus/Frontend
 ```
 
 2. 依存関係のインストール
@@ -180,7 +180,7 @@ Frontend/
 - マウスインタラクション
 - ズーム/パン機能
 
-**データブロック（ラベル）の ETA**: バックエンドの `eta` は ISO 8601（UTC インスタント）。ラベル上では **UTC（Zulu）の `HH:mm`** で表示し、ブラウザのローカルタイムゾーンには依存しない（詳細は [spec/20260318-data-block-display-items/spec.md](../spec/20260318-data-block-display-items/spec.md)）。**UTC / JST の切替**はデータブロック表示設定への項目追加で対応予定（[Issue #91](https://github.com/Futty93/Horus/issues/91)、`good first issue`）。
+**データブロック（ラベル）の ETA**: バックエンドの `eta` は ISO 8601（UTC インスタント）。ラベル上では **UTC（Zulu）の `HH:mm`** で表示し、ブラウザのローカルタイムゾーンには依存しない（詳細は [spec/20260318-data-block-display-items/spec.md](../spec/20260318-data-block-display-items/spec.md)）。**UTC / JST の切替**はデータブロック表示設定への項目追加で対応予定（[Issue #91](https://github.com/HorusATC/Horus/issues/91)、`good first issue`）。
 
 ### 2. 航空機制御パネル (ControlAircraft)
 
@@ -192,6 +192,28 @@ Operator 専用。管制官の音声指示を復唱した内容を**パイロッ
 - 単位表示付きの入力フィールド（Altitude / Speed / Heading）
 - ホバー・フォーカス時のスケーリングとグローエフェクト
 - `button-gradient` による実行ボタン
+
+### 2-1. スコーク制御パネル (SquawkControl)
+
+Operator 専用。選択中の航空機にトランスポンダコード（スコーク）を割り当てる。`POST /api/aircraft/{callsign}/squawk` を呼び出し、Backend の `squawk` フィールドを更新する。
+
+**主な機能**:
+
+- **4桁入力**: 8進数（0-7）のみ受付、手動で任意のスコークを設定
+- **緊急コードクイックボタン**:
+  - `7500 HIJK` — 不法干渉（ハイジャック）、赤ボタン
+  - `7600 RDOF` — 無線通信喪失、橙ボタン
+  - `7700 EMRG` — 一般緊急、赤ボタン
+- **CLEAR (1200)**: 通常のVFRスコーク（1200）に戻す
+
+**レーダー表示**:
+
+- 緊急スコーク設定中の機体は、データブロックに **HIJK** / **RDOF** / **EMRG** を赤または橙で表示
+- シンボルに色付きリング（7500/7700 は赤、7600 は橙）を描画
+- STCA 赤点滅（`riskLevel >= 70`）が発生している場合は、STCA 強調を優先
+- 通常のスコーク値は、設定で squawk 表示を有効にしている場合のみデータブロックに表示
+
+詳細は [spec/20261121-emergency-squawk/spec.md](../spec/20261121-emergency-squawk/spec.md) を参照。
 
 ### 3. 指示メモ (InstructionMemo)
 
