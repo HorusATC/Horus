@@ -141,7 +141,7 @@ HorusプロジェクトのBackend（Uranus）を、Spring Boot 3.3.5から4.1.3�
 - [x] Gradle wrapper が 8.14.8 に更新
 - [x] Java toolchain が 21 に設定
 - [x] springdoc-openapi が 3.2.0 に更新
-- [x] Java 21で `./gradlew clean build` が成功（175/177テスト合格、2件はパフォーマンステスト）
+- [x] Java 21で `./gradlew clean build` が成功（**177/177テスト全件合格**）
 - [x] `./gradlew bootRun` でアプリケーションが起動（Tomcat 11.0.27）
 - [x] `/docs.html` (Swagger UI) が開ける
 - [x] 主要APIエンドポイントが正常に動作（既存テスト全て合格）
@@ -149,6 +149,12 @@ HorusプロジェクトのBackend（Uranus）を、Spring Boot 3.3.5から4.1.3�
 - [x] Frontend単体テストが合格（152/152テスト合格）
 - [x] ルートREADME.mdが更新（Spring Boot 4.1.3、Gradle 8.14.8、Java 21記載）
 - [x] Backend/README.mdが更新（Spring Boot 4.1.3記載）
+- [x] **ブラウザでの実動作確認完了**（スクリーンショット取得）
+  - トップ画面表示
+  - フライトプラン設定画面
+  - Controller レーダー表示
+  - Operator 画面
+  - Swagger UI
 
 ---
 
