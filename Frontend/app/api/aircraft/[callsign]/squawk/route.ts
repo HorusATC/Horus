@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_BASE_URL =
-  process.env.BACKEND_BASE_URL || "http://localhost:8080";
+import { proxyToBackend } from "@/utility/api/backendProxy";
 
 function isValidSquawk(squawk: unknown): squawk is string {
-  return (
-    typeof squawk === "string" &&
-    /^[0-7]{4}$/.test(squawk)
-  );
+  return typeof squawk === "string" && /^[0-7]{4}$/.test(squawk);
 }
 
 export async function POST(
@@ -20,10 +15,7 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   if (
@@ -38,22 +30,23 @@ export async function POST(
     );
   }
 
-  const backendUrl = `${BACKEND_BASE_URL}/api/aircraft/${encodeURIComponent(callsign)}/squawk`;
+  const response = await proxyToBackend(
+    `/api/aircraft/${encodeURIComponent(callsign)}/squawk`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ squawk: body.squawk }),
+    }
+  );
 
-  const backendResponse = await fetch(backendUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ squawk: body.squawk }),
-  });
-
-  if (!backendResponse.ok) {
-    const errorText = await backendResponse.text();
+  if (!response.ok) {
+    const errorText = await response.text();
     return NextResponse.json(
       { error: errorText || "Backend error" },
-      { status: backendResponse.status }
+      { status: response.status }
     );
   }
 
-  const result = await backendResponse.text();
+  const result = await response.text();
   return NextResponse.json({ message: result });
 }

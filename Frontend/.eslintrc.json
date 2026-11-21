@@ -2,5 +2,27 @@
   "extends": ["next/core-web-vitals", "next/typescript"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["app/api/**/*.ts"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "CallExpression[callee.name='proxyToBackend'] > Identifier.arguments:first-child",
+            "message": "proxyToBackend must be called with a string or template literal path at the call site, not a variable"
+          },
+          {
+            "selector": "CallExpression[callee.name='fetch'][arguments.0.type='TemplateLiteral']:has(Identifier[name='BACKEND_BASE_URL'])",
+            "message": "Direct fetch with BACKEND_BASE_URL is forbidden in app/api/**. Use proxyToBackend instead."
+          },
+          {
+            "selector": "CallExpression[callee.name='fetch'][arguments.0.type='BinaryExpression']:has(Identifier[name='BACKEND_BASE_URL'])",
+            "message": "Direct fetch with BACKEND_BASE_URL is forbidden in app/api/**. Use proxyToBackend instead."
+          }
+        ]
+      }
+    }
+  ]
 }

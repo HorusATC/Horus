@@ -15,8 +15,8 @@
       "cd Backend && ./gradlew spotlessCheck --no-daemon"
     ],
     "Frontend/**/*.{ts,tsx,js,jsx,json,md}": [
-      "bash -c 'npm run lint --prefix Frontend -- --fix'",
-      "npx prettier --write"
+      "bash -c 'cd Frontend && npx prettier --write'",
+      "bash -c 'cd Frontend && npx next lint --fix --file'"
     ]
   }
 }

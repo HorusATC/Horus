@@ -22,9 +22,9 @@ paths:
   "/startGame":
     post:
       tags: ["startGame"]
-      summary: "Start a new game."
-      description: "Sent only once when the game starts."
-      deprecated: false
+      summary: "OUTDATED: Start a new game."
+      description: "OUTDATED: This endpoint does not exist in the current implementation. Use /simulation/start instead."
+      deprecated: true
       requestBody:
         description: "Initial value of airspace. The initial value is sent from the front desk. To be able to read scenario files."
         required: true

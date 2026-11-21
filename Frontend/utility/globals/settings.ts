@@ -32,5 +32,5 @@ export const GLOBAL_SETTINGS: GlobalSettings = {
     atsLowerRoute: false,
     rnavRoute: true,
   },
-  callsignExtractionStatus: 'NO_VALUE',
+  callsignExtractionStatus: "NO_VALUE",
 };

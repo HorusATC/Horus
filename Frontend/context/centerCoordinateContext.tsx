@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface Coordinate {
   latitude: number;
@@ -11,9 +11,13 @@ export interface CenterCoordinateContextType {
   setCenterCoordinate: React.Dispatch<React.SetStateAction<Coordinate>>;
 }
 
-export const CenterCoordinateContext = createContext<CenterCoordinateContextType | undefined>(undefined);
+export const CenterCoordinateContext = createContext<
+  CenterCoordinateContextType | undefined
+>(undefined);
 
-export const CenterCoordinateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const CenterCoordinateProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   // state定義はシンプルに定義し、直接プロバイダに渡す
   const [centerCoordinate, setCenterCoordinate] = useState<Coordinate>({
     latitude: 34.482,
@@ -21,16 +25,20 @@ export const CenterCoordinateProvider: React.FC<{ children: ReactNode }> = ({ ch
   });
 
   return (
-    <CenterCoordinateContext.Provider value={{ centerCoordinate, setCenterCoordinate }}>
+    <CenterCoordinateContext.Provider
+      value={{ centerCoordinate, setCenterCoordinate }}
+    >
       {children}
     </CenterCoordinateContext.Provider>
   );
-}
+};
 
 export const useCenterCoordinate = () => {
   const context = useContext(CenterCoordinateContext);
   if (!context) {
-    throw new Error('useCenterCoordinate must be used within a CenterCoordinateProvider');
+    throw new Error(
+      "useCenterCoordinate must be used within a CenterCoordinateProvider"
+    );
   }
   return context;
 };

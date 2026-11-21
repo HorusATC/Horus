@@ -87,6 +87,13 @@ jobs:
       - name: Spotless check (format, unused imports)
         run: ./gradlew spotlessCheck --no-daemon
 
+      - name: Check for disabled tests
+        run: |
+          if grep -rE '^\s*@Disabled\b' src/test --include='*.java' | grep -v '@DisabledIfEnvironmentVariable'; then
+            echo "Error: Found @Disabled tests (only @DisabledIfEnvironmentVariable with reason is allowed)"
+            exit 1
+          fi
+
       - name: Run tests
         run: ./gradlew test --no-daemon
 
@@ -111,8 +118,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prettier check
+        run: npm run format:check
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
+
+      - name: Check Tailwind content coverage
+        run: npm run tailwind:check
+
+      - name: Check for disabled/focused tests
+        run: |
+          if grep -rE '^\s*(describe|it|test)\.(skip|only)\(|^\s*(x(describe|it|test)|f(describe|it|test))\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx' --exclude-dir=node_modules --exclude-dir=.next; then
+            echo "Error: Found .skip(), .only(), xit(), fit(), xdescribe(), fdescribe(), or xtest() in tests"
+            exit 1
+          fi
 
       - name: Run tests
         run: npm test

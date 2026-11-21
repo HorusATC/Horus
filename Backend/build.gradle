@@ -35,6 +35,14 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+tasks.withType(JavaCompile).configureEach {
+	if (it.name == 'compileJava') {
+		options.compilerArgs += ['-Xlint:all', '-Werror']
+	} else if (it.name == 'compileTestJava') {
+		options.compilerArgs += ['-Xlint:all']
+	}
+}
+
 bootRun {
 	if (project.hasProperty('wpDebug')) {
 		jvmArgs = ['-Dflightplan.wp.debug=true']

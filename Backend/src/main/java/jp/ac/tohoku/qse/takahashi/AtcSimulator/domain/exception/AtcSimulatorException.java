@@ -8,6 +8,8 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception;
  */
 public abstract class AtcSimulatorException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * エラーコード（分類用）
      */
