@@ -45,11 +45,6 @@ class ApiContractTest {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
         Map<String, String> frontendCalls = extractFrontendBffCalls();
 
-        System.out.println("Frontend BFF calls extracted: " + frontendCalls.size());
-        for (String key : frontendCalls.keySet()) {
-            System.out.println("  " + key);
-        }
-
         assertThat(frontendCalls)
                 .as("Frontend BFF extraction should find endpoints (found " + frontendCalls.size() + ")")
                 .hasSizeGreaterThan(20);
@@ -76,7 +71,7 @@ class ApiContractTest {
         Map<String, String> backendTestCalls = extractBackendTestCalls();
 
         assertThat(backendTestCalls)
-                .as("Backend test extraction should find endpoints")
+                .as("Backend test extraction should find endpoints (found " + backendTestCalls.size() + ")")
                 .hasSizeGreaterThan(5);
 
         List<String> missingEndpoints = new ArrayList<>();
@@ -111,43 +106,38 @@ class ApiContractTest {
                 String content = Files.readString(routeFile);
                 String relPath = FRONTEND_API_DIR.relativize(routeFile).toString();
 
-                extractFromProxyToBackend(content, relPath, calls);
-                extractFromFetch(content, relPath, calls);
+                Pattern proxyPattern = Pattern.compile(
+                        "return\\s+proxyToBackend\\s*\\(\\s*[`\"]([^`\"]+)[`\"]\\s*,\\s*\\{[^}]*?method:\\s*[\"']([A-Z]+)[\"']",
+                        Pattern.DOTALL);
+                Matcher proxyMatcher = proxyPattern.matcher(content);
+                while (proxyMatcher.find()) {
+                    String path = proxyMatcher.group(1);
+                    String method = proxyMatcher.group(2);
+                    path = normalizePathParams(path);
+                    calls.put(method + " " + path, relPath);
+                }
+
+                Pattern fetchPattern = Pattern.compile(
+                        "(?:await\\s+)?fetch\\s*\\(\\s*`([^`]+)`[^)]*?method:\\s*[\"']([A-Z]+)[\"']",
+                        Pattern.DOTALL);
+                Matcher fetchMatcher = fetchPattern.matcher(content);
+                while (fetchMatcher.find()) {
+                    String path = fetchMatcher.group(1);
+                    String method = fetchMatcher.group(2);
+                    path = normalizePathParams(path);
+                    calls.put(method + " " + path, relPath);
+                }
             }
         }
 
         return calls;
     }
 
-    private void extractFromProxyToBackend(String content, String sourceFile, Map<String, String> calls) {
-        Pattern callPattern = Pattern.compile(
-                "return\\s+proxyToBackend\\s*\\(\\s*[`\"']([^`\"']+)[`\"']\\s*,\\s*\\{[^}]*?method:\\s*[\"']([A-Z]+)[\"']",
-                Pattern.DOTALL);
-        Matcher matcher = callPattern.matcher(content);
-
-        while (matcher.find()) {
-            String path = matcher.group(1);
-            String method = matcher.group(2);
-            path = path.replaceAll("\\$\\{encodeURIComponent\\([^)]+\\)\\}", "{callsign}");
-            path = path.replaceAll("\\$\\{[^}]+\\}", "{callsign}");
-            String endpoint = method + " " + path;
-            calls.put(endpoint, sourceFile);
-        }
-    }
-
-    private void extractFromFetch(String content, String sourceFile, Map<String, String> calls) {
-        Pattern fetchPattern = Pattern.compile(
-                "fetch\\s*\\(\\s*`([^`]+)`[^)]*?method:\\s*[\"']([A-Z]+)[\"']",
-                Pattern.DOTALL);
-        Matcher matcher = fetchPattern.matcher(content);
-
-        while (matcher.find()) {
-            String path = matcher.group(1);
-            String method = matcher.group(2);
-            path = path.replaceAll("\\$\\{[^}]+\\}", "{callsign}");
-            String endpoint = method + " " + path;
-            calls.put(endpoint, sourceFile);
-        }
+    private String normalizePathParams(String path) {
+        path = path.replaceAll("\\$\\{encodeURIComponent\\([^)]+\\)\\}", "{callsign}");
+        path = path.replaceAll("\\$\\{callsign\\}", "{callsign}");
+        path = path.replaceAll("\\$\\{[^}]+\\}", "{callsign}");
+        return path;
     }
 
     private Map<String, String> extractBackendTestCalls() throws IOException {
@@ -165,35 +155,34 @@ class ApiContractTest {
                 String content = Files.readString(testFile);
                 String fileName = testFile.getFileName().toString();
 
-                extractRestClientCalls(content, fileName, calls);
+                Pattern pattern = Pattern.compile("\\.(?:get|post|put|delete|patch)\\(\\)\\s*\\.uri\\([\"']([^\"']+)[\"']\\)");
+                Matcher matcher = pattern.matcher(content);
+
+                while (matcher.find()) {
+                    String fullMatch = matcher.group(0);
+                    String path = matcher.group(1);
+                    String method = "";
+
+                    if (fullMatch.contains(".get()")) {
+                        method = "GET";
+                    } else if (fullMatch.contains(".post()")) {
+                        method = "POST";
+                    } else if (fullMatch.contains(".put()")) {
+                        method = "PUT";
+                    } else if (fullMatch.contains(".delete()")) {
+                        method = "DELETE";
+                    } else if (fullMatch.contains(".patch()")) {
+                        method = "PATCH";
+                    }
+
+                    if (!method.isEmpty()) {
+                        calls.put(method + " " + path, fileName);
+                    }
+                }
             }
         }
 
         return calls;
-    }
-
-    private void extractRestClientCalls(String content, String sourceFile, Map<String, String> calls) {
-        Pattern getPattern = Pattern.compile("\\.get\\(\\)\\s*\\.uri\\([\"']([^\"']+)[\"']\\)");
-        Pattern postPattern = Pattern.compile("\\.post\\(\\)\\s*\\.uri\\([\"']([^\"']+)[\"']\\)");
-        Pattern putPattern = Pattern.compile("\\.put\\(\\)\\s*\\.uri\\([\"']([^\"']+)[\"']\\)");
-
-        Matcher getMatcher = getPattern.matcher(content);
-        while (getMatcher.find()) {
-            String path = getMatcher.group(1);
-            calls.put("GET " + path, sourceFile);
-        }
-
-        Matcher postMatcher = postPattern.matcher(content);
-        while (postMatcher.find()) {
-            String path = postMatcher.group(1);
-            calls.put("POST " + path, sourceFile);
-        }
-
-        Matcher putMatcher = putPattern.matcher(content);
-        while (putMatcher.find()) {
-            String path = putMatcher.group(1);
-            calls.put("PUT " + path, sourceFile);
-        }
     }
 
     private Map<String, RequestMappingInfo> getActualSpringMappings() {
@@ -218,7 +207,7 @@ class ApiContractTest {
                 for (String method : methods) {
                     for (String pattern : patterns) {
                         result.put(method + " " + pattern, info);
-                        String normalized = pattern.replaceAll("\\{[^}]+\\}", "{dynamic}");
+                        String normalized = pattern.replaceAll("\\{[^}]+\\}", "{callsign}");
                         if (!normalized.equals(pattern)) {
                             result.put(method + " " + normalized, info);
                         }
