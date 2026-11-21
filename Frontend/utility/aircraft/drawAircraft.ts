@@ -16,6 +16,11 @@ import {
   selectTrackDisplaySamples,
   TRACK_DISPLAY_DOT_RADIUS_PX,
 } from "./trackHistoryDisplaySamples";
+import {
+  isEmergencySquawk,
+  EMERGENCY_SQUAWKS,
+  type EmergencySquawkCode,
+} from "./emergencySquawk";
 
 /**
  * Class to draw aircraft on the canvas
@@ -148,16 +153,11 @@ class DrawAircraft {
         ctx.lineWidth = 3;
         ctx.stroke();
       }
-    } else if (emergencySquawk === "7500" || emergencySquawk === "7700") {
+    } else if (emergencySquawk) {
       ctx.beginPath();
       ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
-      ctx.strokeStyle = "rgba(207, 34, 34, 0.95)";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    } else if (emergencySquawk === "7600") {
-      ctx.beginPath();
-      ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
-      ctx.strokeStyle = "rgba(234, 88, 12, 0.95)";
+      const color = EMERGENCY_SQUAWKS[emergencySquawk].color;
+      ctx.strokeStyle = `${color}f2`;
       ctx.lineWidth = 3;
       ctx.stroke();
     } else if (riskDisplayFloor >= 30) {
@@ -206,11 +206,10 @@ class DrawAircraft {
     ctx.stroke();
   }
 
-  private static getEmergencySquawk(squawk: string | null): string | null {
-    if (squawk === "7500" || squawk === "7600" || squawk === "7700") {
-      return squawk;
-    }
-    return null;
+  private static getEmergencySquawk(
+    squawk: string | null
+  ): EmergencySquawkCode | null {
+    return isEmergencySquawk(squawk) ? squawk : null;
   }
 
   private static drawAircraftLabel(
@@ -347,20 +346,9 @@ class DrawAircraft {
     }
 
     if (emergencySquawk) {
-      let emergencyLabel = "";
-      let emergencyColor = "white";
-      if (emergencySquawk === "7500") {
-        emergencyLabel = "HIJK";
-        emergencyColor = "red";
-      } else if (emergencySquawk === "7600") {
-        emergencyLabel = "RDOF";
-        emergencyColor = "#ea580c";
-      } else if (emergencySquawk === "7700") {
-        emergencyLabel = "EMRG";
-        emergencyColor = "red";
-      }
-      ctx.fillStyle = emergencyColor;
-      ctx.fillText(emergencyLabel, labelX, lineY);
+      const config = EMERGENCY_SQUAWKS[emergencySquawk];
+      ctx.fillStyle = config.color;
+      ctx.fillText(config.label, labelX, lineY);
       lineY += lineHeight;
     }
 

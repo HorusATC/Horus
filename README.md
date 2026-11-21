@@ -61,7 +61,7 @@ cd Horus
 
 1. リポジトリをクローン:
 ```bash
-git clone https://github.com/Futty93/Horus.git
+git clone https://github.com/HorusATC/Horus.git
 cd Horus
 ```
 

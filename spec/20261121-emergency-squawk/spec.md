@@ -156,8 +156,8 @@
 
 ### Phase 3: テスト実装
 
-- [x] Backend: スコーク設定の統合テスト（@Disabled - Playwright で E2E 検証予定）
-- [x] Frontend: スコーク UI のテスト、描画ロジックのテスト
+- [x] Backend: スコーク設定の統合テスト（4 tests: 7500/7600/7700/1200）
+- [x] Frontend: 緊急スコーク判定とラベルのユニットテスト
 
 ### Phase 4: ドキュメント更新
 

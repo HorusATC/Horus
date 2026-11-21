@@ -3,11 +3,27 @@
 import React, { useState, useEffect } from "react";
 import { useSelectedAircraft } from "@/context/selectedAircraftContext";
 import { setSquawk } from "@/utility/api/squawk";
+import {
+  EMERGENCY_SQUAWKS,
+  type EmergencySquawkCode,
+} from "@/utility/aircraft/emergencySquawk";
 
-const EMERGENCY_SQUAWKS = [
-  { code: "7500", label: "7500 HIJK", color: "bg-red-600 hover:bg-red-700" },
-  { code: "7600", label: "7600 RDOF", color: "bg-orange-600 hover:bg-orange-700" },
-  { code: "7700", label: "7700 EMRG", color: "bg-red-600 hover:bg-red-700" },
+const EMERGENCY_SQUAWK_UI = [
+  {
+    code: "7500" as EmergencySquawkCode,
+    label: "7500 HIJK",
+    color: "bg-red-600 hover:bg-red-700",
+  },
+  {
+    code: "7600" as EmergencySquawkCode,
+    label: "7600 RDOF",
+    color: "bg-orange-600 hover:bg-orange-700",
+  },
+  {
+    code: "7700" as EmergencySquawkCode,
+    label: "7700 EMRG",
+    color: "bg-red-600 hover:bg-red-700",
+  },
 ] as const;
 
 const NORMAL_SQUAWK = "1200";
@@ -141,7 +157,7 @@ const SquawkControl = () => {
             Emergency Codes
           </p>
           <div className="grid grid-cols-1 gap-2">
-            {EMERGENCY_SQUAWKS.map(({ code, label, color }) => (
+            {EMERGENCY_SQUAWK_UI.map(({ code, label, color }) => (
               <button
                 key={code}
                 type="button"

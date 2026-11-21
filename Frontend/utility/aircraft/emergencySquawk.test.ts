@@ -1,59 +1,67 @@
 import { describe, it, expect } from "@jest/globals";
+import {
+  isEmergencySquawk,
+  EMERGENCY_SQUAWKS,
+  type EmergencySquawkCode,
+} from "./emergencySquawk";
 
-function getEmergencySquawk(squawk: string | null): string | null {
-  if (squawk === "7500" || squawk === "7600" || squawk === "7700") {
-    return squawk;
-  }
-  return null;
-}
-
-describe("Emergency Squawk Detection", () => {
-  it("should detect 7500 as emergency", () => {
-    expect(getEmergencySquawk("7500")).toBe("7500");
+describe("isEmergencySquawk", () => {
+  it("should return true for 7500", () => {
+    expect(isEmergencySquawk("7500")).toBe(true);
   });
 
-  it("should detect 7600 as emergency", () => {
-    expect(getEmergencySquawk("7600")).toBe("7600");
+  it("should return true for 7600", () => {
+    expect(isEmergencySquawk("7600")).toBe(true);
   });
 
-  it("should detect 7700 as emergency", () => {
-    expect(getEmergencySquawk("7700")).toBe("7700");
+  it("should return true for 7700", () => {
+    expect(isEmergencySquawk("7700")).toBe(true);
   });
 
-  it("should not detect 1200 as emergency", () => {
-    expect(getEmergencySquawk("1200")).toBeNull();
+  it("should return false for 7501", () => {
+    expect(isEmergencySquawk("7501")).toBe(false);
   });
 
-  it("should not detect 0000 as emergency", () => {
-    expect(getEmergencySquawk("0000")).toBeNull();
+  it("should return false for 1200", () => {
+    expect(isEmergencySquawk("1200")).toBe(false);
   });
 
-  it("should handle null squawk", () => {
-    expect(getEmergencySquawk(null)).toBeNull();
+  it("should return false for null", () => {
+    expect(isEmergencySquawk(null)).toBe(false);
   });
 
-  it("should not detect 7501 as emergency", () => {
-    expect(getEmergencySquawk("7501")).toBeNull();
+  it("should return false for empty string", () => {
+    expect(isEmergencySquawk("")).toBe(false);
   });
 });
 
-describe("Emergency Squawk Label", () => {
-  function getEmergencyLabel(squawk: string): string {
-    if (squawk === "7500") return "HIJK";
-    if (squawk === "7600") return "RDOF";
-    if (squawk === "7700") return "EMRG";
-    return "";
-  }
-
-  it("should return HIJK for 7500", () => {
-    expect(getEmergencyLabel("7500")).toBe("HIJK");
+describe("EMERGENCY_SQUAWKS", () => {
+  it("should have label and color for 7500", () => {
+    expect(EMERGENCY_SQUAWKS["7500"].label).toBe("HIJK");
+    expect(EMERGENCY_SQUAWKS["7500"].color).toBeTruthy();
   });
 
-  it("should return RDOF for 7600", () => {
-    expect(getEmergencyLabel("7600")).toBe("RDOF");
+  it("should have label and color for 7600", () => {
+    expect(EMERGENCY_SQUAWKS["7600"].label).toBe("RDOF");
+    expect(EMERGENCY_SQUAWKS["7600"].color).toBeTruthy();
   });
 
-  it("should return EMRG for 7700", () => {
-    expect(getEmergencyLabel("7700")).toBe("EMRG");
+  it("should have label and color for 7700", () => {
+    expect(EMERGENCY_SQUAWKS["7700"].label).toBe("EMRG");
+    expect(EMERGENCY_SQUAWKS["7700"].color).toBeTruthy();
+  });
+
+  it("should have exactly 3 emergency codes", () => {
+    const codes = Object.keys(EMERGENCY_SQUAWKS);
+    expect(codes).toHaveLength(3);
+  });
+
+  it("should satisfy type exhaustiveness", () => {
+    const codes: EmergencySquawkCode[] = ["7500", "7600", "7700"];
+    codes.forEach((code) => {
+      const config = EMERGENCY_SQUAWKS[code];
+      expect(config.label).toBeTruthy();
+      expect(config.color).toBeTruthy();
+    });
   });
 });
