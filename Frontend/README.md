@@ -117,8 +117,10 @@ http://localhost:3333
 6. テストの実行
 
 ```bash
-npm test
+npm test  # Jest によるテストを実行 (31 suites, 168 tests: jsdom + node environments)
 ```
+
+テストは Jest で実行されます。通常のコンポーネントテストは jsdom 環境で、App Router の route handler tests (`route.test.ts`) は node 環境で実行されます。
 
 ## プロジェクト構造
 
@@ -376,7 +378,7 @@ npm run tailwind:check # Tailwind content カバレッジチェック
 ### テスト
 
 ```bash
-npm test            # Jest テスト実行
+npm test            # Jest テスト実行 (31 suites, 168 tests)
 npm run test:watch  # Jest watch モード
 ```
 

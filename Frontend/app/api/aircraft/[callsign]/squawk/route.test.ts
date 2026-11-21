@@ -1,4 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/**
+ * @jest-environment node
+ */
+
 /**
  * Squawk route handler test
  *
@@ -14,13 +17,11 @@
 
 import { POST } from "./route";
 import { proxyToBackend } from "@/utility/api/backendProxy";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 jest.mock("@/utility/api/backendProxy");
 
-const mockedProxyToBackend = proxyToBackend as jest.MockedFunction<
-  typeof proxyToBackend
->;
+const mockedProxyToBackend = jest.mocked(proxyToBackend);
 
 class TextPlainResponse extends Response {
   private textContent: string;
