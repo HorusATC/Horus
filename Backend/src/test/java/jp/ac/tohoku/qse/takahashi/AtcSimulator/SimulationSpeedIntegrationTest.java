@@ -11,8 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
@@ -22,18 +23,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.SimulationTickScheduler;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.SimulationTiming;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.globals.GlobalVariables;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
+
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Integration tests for simulation speed API using the same single-aircraft payload as
  * {@code docs/test-data/scenario-load-minimal.json} (mirrored under test classpath).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 class SimulationSpeedIntegrationTest {
 
     @LocalServerPort
@@ -52,7 +54,7 @@ class SimulationSpeedIntegrationTest {
     private SimulationTickScheduler simulationTickScheduler;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonMapper objectMapper;
 
     private String baseUrl() {
         return "http://localhost:" + port;
