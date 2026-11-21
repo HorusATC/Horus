@@ -3,7 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { loadScenarioAndStart, parseScenarioJson } from "@/utility/api/scenario";
+import {
+  loadScenarioAndStart,
+  parseScenarioJson,
+} from "@/utility/api/scenario";
 import quickstartSample from "@/data/quickstart-arrival-sample.json";
 import type { ScenarioJson } from "@/types/scenario";
 
@@ -16,13 +19,17 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      const result = await loadScenarioAndStart(quickstartSample as ScenarioJson);
+      const result = await loadScenarioAndStart(
+        quickstartSample as ScenarioJson
+      );
       if (!result.ok) {
         setError(result.message);
         setLoading(false);
         return;
       }
-      const startResponse = await fetch("/api/simulation/start", { method: "POST" });
+      const startResponse = await fetch("/api/simulation/start", {
+        method: "POST",
+      });
       if (!startResponse.ok) {
         setError("Failed to start simulation");
         setLoading(false);
@@ -35,7 +42,9 @@ export default function Home() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -50,7 +59,9 @@ export default function Home() {
         setLoading(false);
         return;
       }
-      const startResponse = await fetch("/api/simulation/start", { method: "POST" });
+      const startResponse = await fetch("/api/simulation/start", {
+        method: "POST",
+      });
       if (!startResponse.ok) {
         setError("Failed to start simulation");
         setLoading(false);

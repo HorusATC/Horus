@@ -1,4 +1,4 @@
-import { RoutePoint } from './RoutePoint';
+import { RoutePoint } from "./RoutePoint";
 
 export interface Route {
   name: string;

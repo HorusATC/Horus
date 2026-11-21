@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface DisplaySettings {
   waypointName: boolean;
@@ -12,12 +12,18 @@ export interface DisplaySettings {
 
 export interface RouteInfoDisplaySettingContextType {
   isDisplaying: DisplaySettings;
-  setRouteInfoDisplaySetting: React.Dispatch<React.SetStateAction<DisplaySettings>>;
+  setRouteInfoDisplaySetting: React.Dispatch<
+    React.SetStateAction<DisplaySettings>
+  >;
 }
 
-const RouteInfoDisplaySettingContext = createContext<RouteInfoDisplaySettingContextType | undefined>(undefined);
+const RouteInfoDisplaySettingContext = createContext<
+  RouteInfoDisplaySettingContextType | undefined
+>(undefined);
 
-export const RouteInfoDisplaySettingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const RouteInfoDisplaySettingProvider: React.FC<{
+  children: ReactNode;
+}> = ({ children }) => {
   const [isDisplaying, setRouteInfoDisplaySetting] = useState<DisplaySettings>({
     waypointName: false,
     waypointPoint: true,
@@ -28,16 +34,20 @@ export const RouteInfoDisplaySettingProvider: React.FC<{ children: ReactNode }> 
   });
 
   return (
-    <RouteInfoDisplaySettingContext.Provider value={{ isDisplaying, setRouteInfoDisplaySetting }}>
+    <RouteInfoDisplaySettingContext.Provider
+      value={{ isDisplaying, setRouteInfoDisplaySetting }}
+    >
       {children}
     </RouteInfoDisplaySettingContext.Provider>
   );
-}
+};
 
 export const useRouteInfoDisplaySetting = () => {
   const context = useContext(RouteInfoDisplaySettingContext);
   if (!context) {
-    throw new Error('useRouteInfoDisplaySetting must be used within a RouteInfoDisplaySettingProvider');
+    throw new Error(
+      "useRouteInfoDisplaySetting must be used within a RouteInfoDisplaySettingProvider"
+    );
   }
   return context;
 };
