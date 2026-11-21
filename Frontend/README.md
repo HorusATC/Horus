@@ -179,6 +179,28 @@ Operator 専用。管制官の音声指示を復唱した内容を**パイロッ
 - ホバー・フォーカス時のスケーリングとグローエフェクト
 - `button-gradient` による実行ボタン
 
+### 2-1. スコーク制御パネル (SquawkControl)
+
+Operator 専用。選択中の航空機にトランスポンダコード（スコーク）を割り当てる。`POST /api/aircraft/{callsign}/squawk` を呼び出し、Backend の `squawk` フィールドを更新する。
+
+**主な機能**:
+
+- **4桁入力**: 8進数（0-7）のみ受付、手動で任意のスコークを設定
+- **緊急コードクイックボタン**:
+  - `7500 HIJK` — 不法干渉（ハイジャック）、赤ボタン
+  - `7600 RDOF` — 無線通信喪失、橙ボタン
+  - `7700 EMRG` — 一般緊急、赤ボタン
+- **CLEAR (1200)**: 通常のVFRスコーク（1200）に戻す
+
+**レーダー表示**:
+
+- 緊急スコーク設定中の機体は、データブロックに **HIJK** / **RDOF** / **EMRG** を赤または橙で表示
+- シンボルに色付きリング（7500/7700 は赤、7600 は橙）を描画
+- STCA 赤点滅（`riskLevel >= 70`）が発生している場合は、STCA 強調を優先
+- 通常のスコーク値は、設定で squawk 表示を有効にしている場合のみデータブロックに表示
+
+詳細は [spec/20261121-emergency-squawk/spec.md](../spec/20261121-emergency-squawk/spec.md) を参照。
+
 ### 3. 指示メモ (InstructionMemo)
 
 Controller 専用。レーダーで航空機を選択すると、入力欄に当該機の**実測**（`position.altitude` / `vector` の地速・針路、`GET /api/aircraft/location/all`）を自動で入れる（あとから「Refresh inputs from current」で取り直し可）。管制官が発出した**クリアランス**を数値で編集し、**RECORD** で `POST /api/aircraft/{callsign}/atc-clearance`（BFF 経由）へ送信する。バックエンドが `atcClearance` として保持し、`GET /api/aircraft/location/all` で全クライアントに配信。**レーダー上の「管制メモ行」**（`atcClearance` vs 実測の差、略号・スラッシュ表記）は **Controller 画面（`/controller`）のレーダーのみ**に描画する。Controller では **管制クリアランスに高度が記録されているとき**、データブロックの **2 行目（↑/↓ 付き高度行）** はパイロット目標ではなく **クリアランス高度 vs 実測** を表示する（パイロット目標の未更新で矢印が狂うのを防ぐ）。その場合、水色の管制メモ行から **高度ペアは省略**し、針路・地速の差分のみを出す。Operator 画面（`/operator`）ではパイロット目標行（`instructedVector` vs 実測）のみとし、管制メモ行は表示しない（役割分担と主ブロックとの見かけ上の重複を避ける）。管制メモ行の ON/OFF は Controller のデータブロック設定のみ。`POST .../control` は呼ばず、機体のパイロット目標（`instructedVector`）は変更しない。

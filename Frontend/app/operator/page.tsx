@@ -10,6 +10,7 @@ import RadarViewSetting from "@/components/radarViewSetting";
 import { DataBlockDisplaySettingProvider } from "@/context/dataBlockDisplaySettingContext";
 import DataBlockDisplaySetting from "@/components/dataBlockDisplaySetting";
 import ControlAircraft from "@/components/controlAircraft";
+import SquawkControl from "@/components/squawkControl";
 import { SelectFixModeProvider } from "@/context/selectFixModeContext";
 import { SelectedAircraftProvider } from "@/context/selectedAircraftContext";
 import SelectFixMode from "@/components/selectFixMode";
@@ -54,6 +55,7 @@ export default function OperatorPage() {
                           {/* Scrollable Content */}
                           <div className="flex-1 space-y-4 min-h-0">
                             <ControlAircraft />
+                            <SquawkControl />
                             <SelectFixMode />
                             <FlightPlanControl />
 

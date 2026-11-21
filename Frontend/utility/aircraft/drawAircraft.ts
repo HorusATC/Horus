@@ -67,12 +67,14 @@ class DrawAircraft {
         squawkHighlight != null &&
         aircraft.squawk != null &&
         aircraft.squawk === squawkHighlight;
+      const emergencySquawk = this.getEmergencySquawk(aircraft.squawk);
       this.drawAircraftMarker(
         ctx,
         aircraft.position,
         riskDisplayFloor,
         nowMs,
-        isSquawkMatched
+        isSquawkMatched,
+        emergencySquawk
       );
       this.drawHeadingLine(
         ctx,
@@ -89,7 +91,8 @@ class DrawAircraft {
         dataBlockDisplaySetting,
         useControllerClearanceAltitudeRow,
         riskDisplayFloor,
-        isSquawkMatched
+        isSquawkMatched,
+        emergencySquawk
       );
     } finally {
       ctx.restore();
@@ -131,7 +134,8 @@ class DrawAircraft {
     position: { x: number; y: number },
     riskDisplayFloor: number,
     nowMs: number,
-    isSquawkMatched: boolean
+    isSquawkMatched: boolean,
+    emergencySquawk: string | null
   ) {
     const radius: number = 5;
     const flashOn = Math.floor(nowMs / 450) % 2 === 0;
@@ -144,6 +148,18 @@ class DrawAircraft {
         ctx.lineWidth = 3;
         ctx.stroke();
       }
+    } else if (emergencySquawk === "7500" || emergencySquawk === "7700") {
+      ctx.beginPath();
+      ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
+      ctx.strokeStyle = "rgba(207, 34, 34, 0.95)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    } else if (emergencySquawk === "7600") {
+      ctx.beginPath();
+      ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
+      ctx.strokeStyle = "rgba(234, 88, 12, 0.95)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
     } else if (riskDisplayFloor >= 30) {
       ctx.beginPath();
       ctx.arc(position.x, position.y, radius + 4, 0, 2 * Math.PI);
@@ -190,13 +206,21 @@ class DrawAircraft {
     ctx.stroke();
   }
 
+  private static getEmergencySquawk(squawk: string | null): string | null {
+    if (squawk === "7500" || squawk === "7600" || squawk === "7700") {
+      return squawk;
+    }
+    return null;
+  }
+
   private static drawAircraftLabel(
     ctx: CanvasRenderingContext2D,
     aircraft: Aircraft,
     setting: DataBlockDisplaySetting,
     useControllerClearanceAltitudeRow: boolean,
     riskDisplayFloor: number,
-    isSquawkMatched: boolean
+    isSquawkMatched: boolean,
+    emergencySquawk: string | null
   ) {
     const airplanePosition = aircraft.position;
     const instructedVector = aircraft.instructedVector;
@@ -322,7 +346,25 @@ class DrawAircraft {
       }
     }
 
-    if (setting.squawk) {
+    if (emergencySquawk) {
+      let emergencyLabel = "";
+      let emergencyColor = "white";
+      if (emergencySquawk === "7500") {
+        emergencyLabel = "HIJK";
+        emergencyColor = "red";
+      } else if (emergencySquawk === "7600") {
+        emergencyLabel = "RDOF";
+        emergencyColor = "#ea580c";
+      } else if (emergencySquawk === "7700") {
+        emergencyLabel = "EMRG";
+        emergencyColor = "red";
+      }
+      ctx.fillStyle = emergencyColor;
+      ctx.fillText(emergencyLabel, labelX, lineY);
+      lineY += lineHeight;
+    }
+
+    if (setting.squawk && !emergencySquawk) {
       ctx.fillStyle = "white";
       const squawkDisplay = aircraft.squawk ?? "---";
       ctx.fillText(squawkDisplay, labelX, lineY);
