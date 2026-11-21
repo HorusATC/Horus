@@ -17,10 +17,11 @@
 ## 技術スタック
 
 - **フレームワーク**: Next.js 14.2.15
-- **言語**: TypeScript
+- **言語**: TypeScript (strict mode + 追加フラグ有効化)
 - **スタイリング**: Tailwind CSS with ATC Theme（Industrial / Utilitarian）
 - **状態管理**: React Context API
 - **ビルドツール**: esbuild
+- **TypeScript Flags**: noImplicitReturns, noUnusedLocals, noUnusedParameters, forceConsistentCasingInFileNames, etc.
 
 ## 🎨 デザインシステム
 
@@ -322,6 +323,61 @@ npm start
 2. 新しいコンポーネントは既存のテーマに従う
 3. アニメーションは控えめで意味のあるものにする
 4. テストとドキュメントの更新
+
+## 開発コマンド
+
+### 開発サーバー
+
+```bash
+npm run dev          # 開発サーバー起動 (http://localhost:3333)
+npm run dev:clean    # キャッシュクリアして起動 (.next/ 削除)
+```
+
+### ビルド
+
+```bash
+npm run build        # プロダクションビルド
+npm start           # ビルド後の本番実行
+```
+
+### 静的チェック
+
+```bash
+npm run lint         # ESLint (app, components, utility, context)
+npm run format       # Prettier で自動フォーマット
+npm run format:check # Prettier チェック (CI用)
+npm run typecheck    # TypeScript 型チェック (tsc --noEmit)
+npm run tailwind:check # Tailwind content カバレッジチェック
+```
+
+### テスト
+
+```bash
+npm test            # Jest テスト実行
+npm run test:watch  # Jest watch モード
+```
+
+### PR 作成前のチェック
+
+すべてのチェックが pass することを確認してください：
+
+```bash
+npm run typecheck && npm run lint && npm run format:check && npm run tailwind:check && npm test && npm run build
+```
+
+詳細は [AGENTS.md](../AGENTS.md) の PR チェックリストを参照してください。
+
+## Tailwind Content カバレッジ
+
+`tailwind.config.ts` の `content` 配列は以下のディレクトリをカバーしています：
+
+- `app/`
+- `components/`
+- `context/`
+- `utility/`
+- `pages/`
+
+これらのディレクトリ外に Tailwind クラスを使用するファイルを追加する場合は、`content` 配列を更新してください。`npm run tailwind:check` でカバレッジを確認できます。
 
 ## ライセンス
 
