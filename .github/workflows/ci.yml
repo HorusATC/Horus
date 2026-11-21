@@ -87,6 +87,13 @@ jobs:
       - name: Spotless check (format, unused imports)
         run: ./gradlew spotlessCheck --no-daemon
 
+      - name: Check for disabled tests
+        run: |
+          if grep -r '@Disabled' src/test --include='*.java' | grep -v '@DisabledIfEnvironmentVariable'; then
+            echo "Error: Found @Disabled tests (only @DisabledIfEnvironmentVariable with reason is allowed)"
+            exit 1
+          fi
+
       - name: Run tests
         run: ./gradlew test --no-daemon
 
@@ -119,6 +126,17 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Check for disabled/focused tests
+        run: |
+          if grep -r -E '\.(skip|only)\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx'; then
+            echo "Error: Found .skip() or .only() in tests"
+            exit 1
+          fi
+          if grep -r -E 'describe\.skip\(|describe\.only\(|it\.skip\(|it\.only\(|test\.skip\(|test\.only\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx'; then
+            echo "Error: Found describe.skip/only or it.skip/only in tests"
+            exit 1
+          fi
 
       - name: Run tests
         run: npm test
