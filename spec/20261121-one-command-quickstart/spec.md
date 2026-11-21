@@ -85,11 +85,11 @@ Horus はオープンソースの管制シミュレーターとして、研究�
 
 ### 測定可能な完了条件
 
-- [ ] Backend のすべてのテストが合格している
-- [ ] Frontend のビルドとテストが合格している
-- [ ] CI がすべて合格している
-- [ ] `docker compose up --build` で Backend (:8080) と Frontend (:3333) が起動する
-- [ ] ビルドと起動の所要時間を記録する
+- [x] Backend のすべてのテストが合格している
+- [x] Frontend のビルドとテストが合格している
+- [x] CI がすべて合格している
+- [x] `docker compose up --build` で Backend (:8080) と Frontend (:3333) が起動する
+- [x] ビルドと起動の所要時間を記録する（CI: 2分20秒）
 - [ ] ブラウザで以下を確認し、スクリーンショットを `/opt/cursor/artifacts/` に保存:
   - (a) `/` で「サンプルで始める」ボタンが表示される
   - (b) ボタンを押すと `/controller` に遷移し、複数の機体が表示される
@@ -190,6 +190,41 @@ Horus はオープンソースの管制シミュレーターとして、研究�
 
 ---
 
+## CI 検証結果
+
+### Docker Compose 統合テスト
+
+- **ジョブ URL**: https://github.com/HorusATC/Horus/actions/runs/44920703102/job/136895931557
+- **所要時間**: 2分20秒（ビルドから検証完了まで）
+- **ビルド開始**: 2026-11-21T15:43:47Z
+- **検証完了**: 2026-11-21T15:46:07Z
+
+**ログ上での 5 機確認箇所**（行 614-615）:
+```
+Aircraft count: 5
+Verification passed: 5 aircraft found
+```
+
+**5 機の詳細**（API レスポンス）:
+- ANA404 (A320): 19000ft, 290kt, 270°
+- JAL202 (B777): 20000ft, 300kt, 85°
+- JAL505 (B787): 17000ft, 270kt, 225°
+- SKY303 (B737): 16000ft, 260kt, 180°
+- ANA101 (B787): 18000ft, 280kt, 90°
+
+### CI ジョブ一覧
+
+| ジョブ | 結果 | 所要時間 |
+|--------|------|----------|
+| Detect changed paths | ✅ Success | 7秒 |
+| Backend (Gradle test) | ✅ Success | 41秒 |
+| Frontend (build) | ✅ Success | 51秒 |
+| Docker Compose (build and integration test) | ✅ Success | 2分20秒 |
+
+**全ジョブ合格**: https://github.com/HorusATC/Horus/pull/118
+
+---
+
 ## 関連ドキュメント
 
 - [docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)
@@ -197,3 +232,4 @@ Horus はオープンソースの管制シミュレーターとして、研究�
 - [Backend/README.md](../../Backend/README.md)
 - [Frontend/README.md](../../Frontend/README.md)
 - [GitHub Issue #48](https://github.com/Futty93/Horus/issues/48)
+- [PR #118](https://github.com/HorusATC/Horus/pull/118)
