@@ -164,22 +164,22 @@ class ApiContractTest {
                 String content = Files.readString(testFile);
                 String fileName = testFile.getFileName().toString();
 
-                Pattern pattern = Pattern.compile(
-                        "\\.(?:get|post|put|delete|patch)\\(\\)\\s*\\.uri\\s*\\(\\s*[\"']([^\"']+)[\"']\\s*\\)");
-                Matcher matcher = pattern.matcher(content);
+                Pattern pathPattern = Pattern.compile("[\"'](/api/[^\"']+)[\"']");
+                Matcher pathMatcher = pathPattern.matcher(content);
 
-                while (matcher.find()) {
-                    String fullMatch = matcher.group(0);
-                    String path = matcher.group(1);
+                while (pathMatcher.find()) {
+                    String path = pathMatcher.group(1);
+                    int pos = pathMatcher.start();
+                    String before = content.substring(Math.max(0, pos - 100), pos);
+
                     String method = "";
-
-                    if (fullMatch.contains(".get()")) method = "GET";
-                    else if (fullMatch.contains(".post()")) method = "POST";
-                    else if (fullMatch.contains(".put()")) method = "PUT";
-                    else if (fullMatch.contains(".delete()")) method = "DELETE";
-                    else if (fullMatch.contains(".patch()")) method = "PATCH";
+                    if (before.contains("postForEntity")) method = "POST";
+                    else if (before.contains("getForEntity")) method = "GET";
+                    else if (before.contains("putForObject")) method = "PUT";
+                    else if (before.contains("delete")) method = "DELETE";
 
                     if (!method.isEmpty()) {
+                        path = normalizePath(path);
                         calls.put(method + " " + path, fileName);
                     }
                 }
