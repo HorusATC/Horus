@@ -1,0 +1,101 @@
+{
+  "scenarioName": "Quickstart Arrival Sample",
+  "description": "Sample scenario with arrival aircraft for quickstart demo",
+  "aircraft": [
+    {
+      "flightPlan": {
+        "callsign": "ANA101",
+        "aircraftType": "B787",
+        "departureAirport": "RJGG",
+        "arrivalAirport": "RJTT",
+        "cruiseAltitude": 18000,
+        "cruiseSpeed": 280,
+        "route": []
+      },
+      "initialPosition": {
+        "latitude": 35.2,
+        "longitude": 138.8,
+        "altitude": 18000,
+        "heading": 90,
+        "groundSpeed": 280,
+        "verticalSpeed": -800
+      }
+    },
+    {
+      "flightPlan": {
+        "callsign": "JAL202",
+        "aircraftType": "B777",
+        "departureAirport": "RJOO",
+        "arrivalAirport": "RJTT",
+        "cruiseAltitude": 20000,
+        "cruiseSpeed": 300,
+        "route": []
+      },
+      "initialPosition": {
+        "latitude": 35.0,
+        "longitude": 138.5,
+        "altitude": 20000,
+        "heading": 85,
+        "groundSpeed": 300,
+        "verticalSpeed": -1000
+      }
+    },
+    {
+      "flightPlan": {
+        "callsign": "SKY303",
+        "aircraftType": "B737",
+        "departureAirport": "RJBB",
+        "arrivalAirport": "RJTT",
+        "cruiseAltitude": 16000,
+        "cruiseSpeed": 260,
+        "route": []
+      },
+      "initialPosition": {
+        "latitude": 35.4,
+        "longitude": 139.0,
+        "altitude": 16000,
+        "heading": 180,
+        "groundSpeed": 260,
+        "verticalSpeed": -600
+      }
+    },
+    {
+      "flightPlan": {
+        "callsign": "ANA404",
+        "aircraftType": "A320",
+        "departureAirport": "RJFK",
+        "arrivalAirport": "RJTT",
+        "cruiseAltitude": 19000,
+        "cruiseSpeed": 290,
+        "route": []
+      },
+      "initialPosition": {
+        "latitude": 35.1,
+        "longitude": 139.3,
+        "altitude": 19000,
+        "heading": 270,
+        "groundSpeed": 290,
+        "verticalSpeed": -700
+      }
+    },
+    {
+      "flightPlan": {
+        "callsign": "JAL505",
+        "aircraftType": "B787",
+        "departureAirport": "RJSM",
+        "arrivalAirport": "RJTT",
+        "cruiseAltitude": 17000,
+        "cruiseSpeed": 270,
+        "route": []
+      },
+      "initialPosition": {
+        "latitude": 35.5,
+        "longitude": 139.5,
+        "altitude": 17000,
+        "heading": 225,
+        "groundSpeed": 270,
+        "verticalSpeed": -500
+      }
+    }
+  ]
+}
