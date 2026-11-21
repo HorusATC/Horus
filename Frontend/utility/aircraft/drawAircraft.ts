@@ -153,7 +153,7 @@ class DrawAircraft {
         ctx.lineWidth = 3;
         ctx.stroke();
       }
-    } else if (emergencySquawk) {
+    } else if (emergencySquawk !== null) {
       ctx.beginPath();
       ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
       const color = EMERGENCY_SQUAWKS[emergencySquawk].color;
@@ -345,7 +345,7 @@ class DrawAircraft {
       }
     }
 
-    if (emergencySquawk) {
+    if (emergencySquawk !== null) {
       const config = EMERGENCY_SQUAWKS[emergencySquawk];
       ctx.fillStyle = config.color;
       ctx.fillText(config.label, labelX, lineY);
