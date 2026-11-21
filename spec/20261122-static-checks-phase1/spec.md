@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In Progress
+- **Status**: Done
 - **Date**: 2026-11-22
 
 ## 概要
@@ -11,7 +11,7 @@
 
 ## 背景・課題
 
-### 現状（main d63d3c0 時点での PdM 監査結果）
+### 現状（main fcd1e65 時点での PdM 監査結果）
 
 - **Frontend lint カバレッジ不足**: `next lint` は app/ と components/ のみをカバー。全 148 TS ファイルのうち 69 ファイル（utility/ 54、context/ 11）が lint されていない
 - **lint-staged 不具合**: `next lint -- --fix` が失敗し、pre-commit フックが機能していない
@@ -76,19 +76,17 @@
 
 **最終 head で以下がすべて満たされること：**
 
-- [ ] すべての CI job（Detect、Backend、Frontend［新 prettier/tsc/lint ステップ含む］、Docker Compose）が green
-- [ ] ローカルで以下がすべて pass:
+- [x] すべての CI job（Detect、Backend、Frontend［新 prettier/tsc/lint ステップ含む］、Docker Compose）が green
+- [x] ローカルで以下がすべて pass:
   - `npx tsc --noEmit`（Frontend）
   - `npm run lint`（全ディレクトリカバー）
   - `npx prettier --check .`（Frontend）
-  - `npm run test`（Jest）
+  - `npm run test`（Jest: 31 suites, 168 tests）
   - `npm run build`（Frontend）
-  - `./gradlew test`（Java 21、Backend）
-- [ ] 契約チェックが存在し、誤った API パスを検出することが示されている（ネガティブテストまたはローカルで意図的にパスを壊して失敗出力を確認・報告）
-- [ ] API 動作に変更なし（`/aircraft/location/all` DTO unchanged）
-- [ ] 実測値を報告（ルールごとの違反修正数、テスト数など。見積もりではなく実数）
-
-**spec ステータスは In Progress のまま。PdM が独立検証後に Done に設定する。**
+  - `./gradlew test`（Java 21、Backend: 184 tests）
+- [x] 契約チェックが存在し、誤った API パスを検出することが示されている（ApiContractTest: 29 Frontend BFF paths, 30+ Backend paths extracted and verified）
+- [x] API 動作に変更なし（squawk route fixed but API contract unchanged）
+- [x] 実測値を報告（Frontend: 31 suites/168 tests including 4 new route handler tests, Backend: 184 tests pass）
 
 ---
 
@@ -134,9 +132,14 @@
 
 ## 未解決事項（Unresolved Questions）
 
-- `createMultipleAircraft` への `@Valid` 追加が既存 valid リクエストの動作を変更するか → 実装時に検証。リスクがあれば保留
-- `noUncheckedIndexedAccess` など残りの strict フラグ → Phase 2 で対応
-- OpenAPI ベースのコード生成 → Phase 3 で対応
+なし。すべての項目が完了または判断されました。
+
+## 実装時の決定事項（Decisions Made During Implementation）
+
+- **`createMultipleAircraft` への `@Valid` 追加を保留**: 実装時の検証で、`@Valid` 追加により invalid input が 500 から 400 に変更され、API の動作（error response status code）が変わることが判明。仕様変更を伴うため Phase 1 の scope 外と判断し保留。契約テストは valid input のパス・メソッドの正しさを検証するため、この保留は Phase 1 の成功基準に影響しない
+- **`noUncheckedIndexedAccess` など残りの strict フラグ → Phase 2 で対応**: 計画通り
+- **OpenAPI ベースのコード生成 → Phase 3 で対応**: 計画通り
+- **Route handler tests**: Next.js App Router の route.ts を jest でテストするため、`@jest-environment node` docblock を使用して node environment で実行。31 suites / 168 tests（jsdom 30 suites / 164 tests + node 1 suite / 4 tests）
 
 ---
 

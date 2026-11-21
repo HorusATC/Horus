@@ -37,7 +37,7 @@ class TextPlainResponse extends Response {
 
   override async json(): Promise<never> {
     throw new SyntaxError(
-      `Unexpected token '${this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`,
+      `Unexpected token '${this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`
     );
   }
 }
