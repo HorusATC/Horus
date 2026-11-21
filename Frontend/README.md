@@ -68,8 +68,8 @@ docker compose up --build
 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/your-username/horus.git
-cd horus/Frontend
+git clone https://github.com/HorusATC/Horus.git
+cd Horus/Frontend
 ```
 
 2. 依存関係のインストール
@@ -179,7 +179,7 @@ Frontend/
 - マウスインタラクション
 - ズーム/パン機能
 
-**データブロック（ラベル）の ETA**: バックエンドの `eta` は ISO 8601（UTC インスタント）。ラベル上では **UTC（Zulu）の `HH:mm`** で表示し、ブラウザのローカルタイムゾーンには依存しない（詳細は [spec/20260318-data-block-display-items/spec.md](../spec/20260318-data-block-display-items/spec.md)）。**UTC / JST の切替**はデータブロック表示設定への項目追加で対応予定（[Issue #91](https://github.com/Futty93/Horus/issues/91)、`good first issue`）。
+**データブロック（ラベル）の ETA**: バックエンドの `eta` は ISO 8601（UTC インスタント）。ラベル上では **UTC（Zulu）の `HH:mm`** で表示し、ブラウザのローカルタイムゾーンには依存しない（詳細は [spec/20260318-data-block-display-items/spec.md](../spec/20260318-data-block-display-items/spec.md)）。**UTC / JST の切替**はデータブロック表示設定への項目追加で対応予定（[Issue #91](https://github.com/HorusATC/Horus/issues/91)、`good first issue`）。
 
 ### 2. 航空機制御パネル (ControlAircraft)
 

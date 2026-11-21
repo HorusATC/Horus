@@ -3,25 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { useSelectedAircraft } from "@/context/selectedAircraftContext";
 import { setSquawk } from "@/utility/api/squawk";
-import type { EmergencySquawkCode } from "@/utility/aircraft/emergencySquawk";
-
-const EMERGENCY_SQUAWK_UI = [
-  {
-    code: "7500" as EmergencySquawkCode,
-    label: "7500 HIJK",
-    color: "bg-red-600 hover:bg-red-700",
-  },
-  {
-    code: "7600" as EmergencySquawkCode,
-    label: "7600 RDOF",
-    color: "bg-orange-600 hover:bg-orange-700",
-  },
-  {
-    code: "7700" as EmergencySquawkCode,
-    label: "7700 EMRG",
-    color: "bg-red-600 hover:bg-red-700",
-  },
-] as const;
+import {
+  EMERGENCY_SQUAWKS,
+  type EmergencySquawkCode,
+} from "@/utility/aircraft/emergencySquawk";
 
 const NORMAL_SQUAWK = "1200";
 
@@ -154,22 +139,27 @@ const SquawkControl = () => {
             Emergency Codes
           </p>
           <div className="grid grid-cols-1 gap-2">
-            {EMERGENCY_SQUAWK_UI.map(({ code, label, color }) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => handleEmergencySquawk(code)}
-                disabled={isSubmitting}
-                className={`w-full px-4 py-2 text-white font-bold text-sm
+            {(Object.keys(EMERGENCY_SQUAWKS) as EmergencySquawkCode[]).map(
+              (code) => {
+                const config = EMERGENCY_SQUAWKS[code];
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => handleEmergencySquawk(code)}
+                    disabled={isSubmitting}
+                    className={`w-full px-4 py-2 text-white font-bold text-sm
                            rounded-lg border border-transparent
                            transition-colors duration-200
                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-atc-bg
                            disabled:opacity-50 disabled:pointer-events-none
-                           ${color}`}
-              >
-                {label}
-              </button>
-            ))}
+                           ${config.buttonClass}`}
+                  >
+                    {code} {config.label}
+                  </button>
+                );
+              }
+            )}
           </div>
         </div>
 

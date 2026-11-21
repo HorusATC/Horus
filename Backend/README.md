@@ -129,8 +129,8 @@ docker compose up --build
 
 1. リポジトリのクローン
 ```bash
-git clone https://github.com/your-username/horus.git
-cd horus/Backend
+git clone https://github.com/HorusATC/Horus.git
+cd Horus/Backend
 ```
 
 2. アプリケーションのビルド
