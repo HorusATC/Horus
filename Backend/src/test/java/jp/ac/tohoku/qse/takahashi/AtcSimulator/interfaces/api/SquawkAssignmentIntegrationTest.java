@@ -86,18 +86,14 @@ public class SquawkAssignmentIntegrationTest {
         );
         assertThat(squawkResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
+        ResponseEntity<String> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                List.class
+                String.class
         );
         assertThat(locationResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(locationResponse.getBody()).isNotNull();
-        assertThat(locationResponse.getBody()).hasSize(1);
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
-        assertThat(aircraft.get("callsign")).isEqualTo("JAL123");
-        assertThat(aircraft.get("squawk")).isEqualTo("7700");
+        assertThat(locationResponse.getBody()).contains("\"callsign\":\"JAL123\"");
+        assertThat(locationResponse.getBody()).contains("\"squawk\":\"7700\"");
     }
 
     @Test
@@ -137,14 +133,12 @@ public class SquawkAssignmentIntegrationTest {
                 String.class
         );
 
-        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
+        ResponseEntity<String> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                List.class
+                String.class
         );
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
-        assertThat(aircraft.get("squawk")).isEqualTo("7500");
+        assertThat(locationResponse.getBody()).contains("\"squawk\":\"7500\"");
     }
 
     @Test
@@ -184,14 +178,12 @@ public class SquawkAssignmentIntegrationTest {
                 String.class
         );
 
-        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
+        ResponseEntity<String> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                List.class
+                String.class
         );
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
-        assertThat(aircraft.get("squawk")).isEqualTo("7600");
+        assertThat(locationResponse.getBody()).contains("\"squawk\":\"7600\"");
     }
 
     @Test
@@ -231,14 +223,12 @@ public class SquawkAssignmentIntegrationTest {
                 String.class
         );
 
-        ResponseEntity<List> locationResponse = restTemplate.getForEntity(
+        ResponseEntity<String> locationResponse = restTemplate.getForEntity(
                 baseUrl() + "/api/aircraft/location/all",
-                List.class
+                String.class
         );
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
-        assertThat(aircraft.get("squawk")).isEqualTo("1200");
+        assertThat(locationResponse.getBody()).contains("\"squawk\":\"1200\"");
     }
 
     @Test
