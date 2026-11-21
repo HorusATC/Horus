@@ -1,273 +1,272 @@
 package jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.globals.GlobalVariables;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 
-import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.aggregate.airspace.AirspaceManagement;
-import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Aircraft;
-
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 public class SquawkAssignmentIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
 
     @Autowired
-    private AirspaceManagement airspaceManagement;
+    private AircraftRepository aircraftRepository;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private TestRestTemplate restTemplate;
+
+    private String baseUrl() {
+        return "http://localhost:" + port;
+    }
 
     @BeforeEach
     void setUp() {
-        airspaceManagement.removeAllAircrafts();
+        GlobalVariables.isSimulationRunning = false;
+    }
+
+    @AfterEach
+    void tearDown() {
+        GlobalVariables.isSimulationRunning = false;
+        aircraftRepository.clear();
     }
 
     @Test
-    void testAssignEmergencySquawk7700() throws Exception {
-        String scenarioJson = """
-            {
-              "aircraft": [
-                {
-                  "callsign": "JAL123",
-                  "aircraftType": "B773",
-                  "model": "B777-300",
-                  "position": { "latitude": 35.5, "longitude": 139.5, "altitude": 10000 },
-                  "vector": { "heading": 90, "groundSpeed": 300, "verticalSpeed": 0 },
-                  "originIata": "HND", "originIcao": "RJTT",
-                  "destinationIata": "ITM", "destinationIcao": "RJOO",
-                  "flightPlan": {
-                    "waypoints": [],
-                    "cruiseAltitude": 10000,
-                    "cruiseSpeed": 300
-                  }
-                }
-              ]
-            }
-            """;
+    void testAssignEmergencySquawk7700() {
+        Map<String, Object> scenarioBody = Map.of(
+                "aircraft", List.of(Map.of(
+                        "callsign", "JAL123",
+                        "aircraftType", "B773",
+                        "model", "B777-300",
+                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
+                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
+                        "originIata", "HND",
+                        "originIcao", "RJTT",
+                        "destinationIata", "ITM",
+                        "destinationIcao", "RJOO",
+                        "flightPlan", Map.of(
+                                "waypoints", List.of(),
+                                "cruiseAltitude", 10000,
+                                "cruiseSpeed", 300
+                        )
+                ))
+        );
 
-        mockMvc.perform(post("/api/scenario/load")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(scenarioJson))
-                .andExpect(status().isOk());
+        ResponseEntity<Map> scenarioResponse = restTemplate.postForEntity(
+                baseUrl() + "/api/scenario/load",
+                scenarioBody,
+                Map.class
+        );
+        assertThat(scenarioResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        String squawkJson = """
-            { "squawk": "7700" }
-            """;
+        Map<String, String> squawkBody = Map.of("squawk", "7700");
+        ResponseEntity<String> squawkResponse = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/JAL123/squawk",
+                squawkBody,
+                String.class
+        );
+        assertThat(squawkResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        mockMvc.perform(post("/api/aircraft/JAL123/squawk")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(squawkJson))
-                .andExpect(status().isOk());
+        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/location/all",
+                null,
+                List.class
+        );
+        assertThat(locationResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(locationResponse.getBody()).isNotNull();
+        assertThat(locationResponse.getBody()).hasSize(1);
 
-        String result = mockMvc.perform(post("/api/aircraft/location/all"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        JsonNode aircraftArray = objectMapper.readTree(result);
-        assertEquals(1, aircraftArray.size());
-
-        JsonNode aircraft = aircraftArray.get(0);
-        assertEquals("JAL123", aircraft.get("callsign").asText());
-        assertNotNull(aircraft.get("squawk"));
-        assertEquals("7700", aircraft.get("squawk").asText());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
+        assertThat(aircraft.get("callsign")).isEqualTo("JAL123");
+        assertThat(aircraft.get("squawk")).isEqualTo("7700");
     }
 
     @Test
-    void testAssignSquawk7500Hijack() throws Exception {
-        String scenarioJson = """
-            {
-              "aircraft": [
-                {
-                  "callsign": "ANA456",
-                  "aircraftType": "B773",
-                  "model": "B777-300",
-                  "position": { "latitude": 35.5, "longitude": 139.5, "altitude": 10000 },
-                  "vector": { "heading": 90, "groundSpeed": 300, "verticalSpeed": 0 },
-                  "originIata": "HND", "originIcao": "RJTT",
-                  "destinationIata": "ITM", "destinationIcao": "RJOO",
-                  "flightPlan": {
-                    "waypoints": [],
-                    "cruiseAltitude": 10000,
-                    "cruiseSpeed": 300
-                  }
-                }
-              ]
-            }
-            """;
+    void testAssignSquawk7500Hijack() {
+        Map<String, Object> scenarioBody = Map.of(
+                "aircraft", List.of(Map.of(
+                        "callsign", "ANA456",
+                        "aircraftType", "B773",
+                        "model", "B777-300",
+                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
+                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
+                        "originIata", "HND",
+                        "originIcao", "RJTT",
+                        "destinationIata", "ITM",
+                        "destinationIcao", "RJOO",
+                        "flightPlan", Map.of(
+                                "waypoints", List.of(),
+                                "cruiseAltitude", 10000,
+                                "cruiseSpeed", 300
+                        )
+                ))
+        );
 
-        mockMvc.perform(post("/api/scenario/load")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(scenarioJson))
-                .andExpect(status().isOk());
+        restTemplate.postForEntity(
+                baseUrl() + "/api/scenario/load",
+                scenarioBody,
+                Map.class
+        );
 
-        String squawkJson = """
-            { "squawk": "7500" }
-            """;
+        Map<String, String> squawkBody = Map.of("squawk", "7500");
+        restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/ANA456/squawk",
+                squawkBody,
+                String.class
+        );
 
-        mockMvc.perform(post("/api/aircraft/ANA456/squawk")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(squawkJson))
-                .andExpect(status().isOk());
+        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/location/all",
+                null,
+                List.class
+        );
 
-        String result = mockMvc.perform(post("/api/aircraft/location/all"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        JsonNode aircraftArray = objectMapper.readTree(result);
-        JsonNode aircraft = aircraftArray.get(0);
-        assertEquals("7500", aircraft.get("squawk").asText());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
+        assertThat(aircraft.get("squawk")).isEqualTo("7500");
     }
 
     @Test
-    void testAssignSquawk7600RadioFailure() throws Exception {
-        String scenarioJson = """
-            {
-              "aircraft": [
-                {
-                  "callsign": "SKY789",
-                  "aircraftType": "B773",
-                  "model": "B777-300",
-                  "position": { "latitude": 35.5, "longitude": 139.5, "altitude": 10000 },
-                  "vector": { "heading": 90, "groundSpeed": 300, "verticalSpeed": 0 },
-                  "originIata": "HND", "originIcao": "RJTT",
-                  "destinationIata": "ITM", "destinationIcao": "RJOO",
-                  "flightPlan": {
-                    "waypoints": [],
-                    "cruiseAltitude": 10000,
-                    "cruiseSpeed": 300
-                  }
-                }
-              ]
-            }
-            """;
+    void testAssignSquawk7600RadioFailure() {
+        Map<String, Object> scenarioBody = Map.of(
+                "aircraft", List.of(Map.of(
+                        "callsign", "SKY789",
+                        "aircraftType", "B773",
+                        "model", "B777-300",
+                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
+                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
+                        "originIata", "HND",
+                        "originIcao", "RJTT",
+                        "destinationIata", "ITM",
+                        "destinationIcao", "RJOO",
+                        "flightPlan", Map.of(
+                                "waypoints", List.of(),
+                                "cruiseAltitude", 10000,
+                                "cruiseSpeed", 300
+                        )
+                ))
+        );
 
-        mockMvc.perform(post("/api/scenario/load")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(scenarioJson))
-                .andExpect(status().isOk());
+        restTemplate.postForEntity(
+                baseUrl() + "/api/scenario/load",
+                scenarioBody,
+                Map.class
+        );
 
-        String squawkJson = """
-            { "squawk": "7600" }
-            """;
+        Map<String, String> squawkBody = Map.of("squawk", "7600");
+        restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/SKY789/squawk",
+                squawkBody,
+                String.class
+        );
 
-        mockMvc.perform(post("/api/aircraft/SKY789/squawk")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(squawkJson))
-                .andExpect(status().isOk());
+        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/location/all",
+                null,
+                List.class
+        );
 
-        String result = mockMvc.perform(post("/api/aircraft/location/all"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        JsonNode aircraftArray = objectMapper.readTree(result);
-        JsonNode aircraft = aircraftArray.get(0);
-        assertEquals("7600", aircraft.get("squawk").asText());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
+        assertThat(aircraft.get("squawk")).isEqualTo("7600");
     }
 
     @Test
-    void testAssignNormalSquawk() throws Exception {
-        String scenarioJson = """
-            {
-              "aircraft": [
-                {
-                  "callsign": "JJP100",
-                  "aircraftType": "B773",
-                  "model": "B777-300",
-                  "position": { "latitude": 35.5, "longitude": 139.5, "altitude": 10000 },
-                  "vector": { "heading": 90, "groundSpeed": 300, "verticalSpeed": 0 },
-                  "originIata": "HND", "originIcao": "RJTT",
-                  "destinationIata": "ITM", "destinationIcao": "RJOO",
-                  "flightPlan": {
-                    "waypoints": [],
-                    "cruiseAltitude": 10000,
-                    "cruiseSpeed": 300
-                  }
-                }
-              ]
-            }
-            """;
+    void testAssignNormalSquawk() {
+        Map<String, Object> scenarioBody = Map.of(
+                "aircraft", List.of(Map.of(
+                        "callsign", "JJP100",
+                        "aircraftType", "B773",
+                        "model", "B777-300",
+                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
+                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
+                        "originIata", "HND",
+                        "originIcao", "RJTT",
+                        "destinationIata", "ITM",
+                        "destinationIcao", "RJOO",
+                        "flightPlan", Map.of(
+                                "waypoints", List.of(),
+                                "cruiseAltitude", 10000,
+                                "cruiseSpeed", 300
+                        )
+                ))
+        );
 
-        mockMvc.perform(post("/api/scenario/load")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(scenarioJson))
-                .andExpect(status().isOk());
+        restTemplate.postForEntity(
+                baseUrl() + "/api/scenario/load",
+                scenarioBody,
+                Map.class
+        );
 
-        String squawkJson = """
-            { "squawk": "1200" }
-            """;
+        Map<String, String> squawkBody = Map.of("squawk", "1200");
+        restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/JJP100/squawk",
+                squawkBody,
+                String.class
+        );
 
-        mockMvc.perform(post("/api/aircraft/JJP100/squawk")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(squawkJson))
-                .andExpect(status().isOk());
+        ResponseEntity<List> locationResponse = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/location/all",
+                null,
+                List.class
+        );
 
-        String result = mockMvc.perform(post("/api/aircraft/location/all"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        JsonNode aircraftArray = objectMapper.readTree(result);
-        JsonNode aircraft = aircraftArray.get(0);
-        assertEquals("1200", aircraft.get("squawk").asText());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> aircraft = (Map<String, Object>) locationResponse.getBody().get(0);
+        assertThat(aircraft.get("squawk")).isEqualTo("1200");
     }
 
     @Test
-    void testInvalidSquawkRejected() throws Exception {
-        String scenarioJson = """
-            {
-              "aircraft": [
-                {
-                  "callsign": "TEST001",
-                  "aircraftType": "B773",
-                  "model": "B777-300",
-                  "position": { "latitude": 35.5, "longitude": 139.5, "altitude": 10000 },
-                  "vector": { "heading": 90, "groundSpeed": 300, "verticalSpeed": 0 },
-                  "originIata": "HND", "originIcao": "RJTT",
-                  "destinationIata": "ITM", "destinationIcao": "RJOO",
-                  "flightPlan": {
-                    "waypoints": [],
-                    "cruiseAltitude": 10000,
-                    "cruiseSpeed": 300
-                  }
-                }
-              ]
-            }
-            """;
+    void testInvalidSquawkRejected() {
+        Map<String, Object> scenarioBody = Map.of(
+                "aircraft", List.of(Map.of(
+                        "callsign", "TEST001",
+                        "aircraftType", "B773",
+                        "model", "B777-300",
+                        "position", Map.of("latitude", 35.5, "longitude", 139.5, "altitude", 10000),
+                        "vector", Map.of("heading", 90, "groundSpeed", 300, "verticalSpeed", 0),
+                        "originIata", "HND",
+                        "originIcao", "RJTT",
+                        "destinationIata", "ITM",
+                        "destinationIcao", "RJOO",
+                        "flightPlan", Map.of(
+                                "waypoints", List.of(),
+                                "cruiseAltitude", 10000,
+                                "cruiseSpeed", 300
+                        )
+                ))
+        );
 
-        mockMvc.perform(post("/api/scenario/load")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(scenarioJson))
-                .andExpect(status().isOk());
+        restTemplate.postForEntity(
+                baseUrl() + "/api/scenario/load",
+                scenarioBody,
+                Map.class
+        );
 
-        String invalidSquawkJson = """
-            { "squawk": "9999" }
-            """;
+        Map<String, String> invalidSquawkBody = Map.of("squawk", "9999");
+        ResponseEntity<String> squawkResponse = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/TEST001/squawk",
+                invalidSquawkBody,
+                String.class
+        );
 
-        mockMvc.perform(post("/api/aircraft/TEST001/squawk")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidSquawkJson))
-                .andExpect(status().isBadRequest());
+        assertThat(squawkResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 }
