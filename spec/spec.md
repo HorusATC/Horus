@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-21 | Spring Boot 3.3.5 → 4.1.3 アップグレードの spec を追加（[20261121-spring-boot-4-1-upgrade](20261121-spring-boot-4-1-upgrade/spec.md)）。 |
 | 2026-10-17 | タワー移管の子 spec を追加（[20261017-tower-handoff](20261017-tower-handoff/spec.md)）。進入復行の次段。 |
 | 2026-10-17 | ターミナルレーダーの不足台帳を追加（[20261017-terminal-radar-gaps](20261017-terminal-radar-gaps/spec.md)）。実装は子 spec に分割する。 |
 | 2026-10-17 | フライトプラン作成を、空港選択と提案経路で 1 機置ける計画ストリップに変える（[20261017-flight-plan-setup-ux](20261017-flight-plan-setup-ux/spec.md)）。 |

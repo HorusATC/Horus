@@ -7,9 +7,9 @@
 ## 技術スタック
 
 - **言語**: Java 21
-- **フレームワーク**: Spring Boot 3.3.5
+- **フレームワーク**: Spring Boot 4.1.3
 - **API仕様**: OpenAPI 3.0.2
-- **ビルドツール**: Gradle 8.8
+- **ビルドツール**: Gradle 8.14.8
 - **アーキテクチャ**: クリーンアーキテクチャ + Strategy パターン + Composition
 
 ## 新機能: コンフリクトアラートシステム
@@ -107,10 +107,10 @@ curl http://localhost:8080/api/conflict/statistics
 ### 前提条件
 
 > [!CAUTION]
-> Java 24では互換性の問題が発生するため、必ずJava 21または22を使用してください。
+> Java 22/24では互換性の問題が発生するため、必ずJava 21を使用してください。
 
-- Java Development Kit (JDK) 21または22
-- Gradle 8.8以上（8.8推奨）
+- Java Development Kit (JDK) 21
+- Gradle 8.14.8以上（8.14.8推奨）
 
 ### インストール手順
 
@@ -126,7 +126,7 @@ cd horus/Backend
 ```
 
 > [!NOTE]
-> Java 24がシステムのデフォルトになっている場合は、以下のように環境変数を設定してください：
+> Java 22/24がシステムのデフォルトになっている場合は、以下のように環境変数を設定してください：
 > ```bash
 > JAVA_HOME=/path/to/java21 ./gradlew build
 > ```
