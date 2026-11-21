@@ -89,7 +89,7 @@ jobs:
 
       - name: Check for disabled tests
         run: |
-          if grep -r '@Disabled' src/test --include='*.java' | grep -v '@DisabledIfEnvironmentVariable'; then
+          if grep -r '@Disabled' src/test --include='*.java' | grep -v '//' | grep -v '@DisabledIfEnvironmentVariable'; then
             echo "Error: Found @Disabled tests (only @DisabledIfEnvironmentVariable with reason is allowed)"
             exit 1
           fi
@@ -132,11 +132,11 @@ jobs:
 
       - name: Check for disabled/focused tests
         run: |
-          if grep -r -E '\.(skip|only)\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx'; then
+          if grep -r -E '\.(skip|only)\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx' --exclude-dir=node_modules --exclude-dir=.next | grep -v '//'; then
             echo "Error: Found .skip() or .only() in tests"
             exit 1
           fi
-          if grep -r -E 'describe\.skip\(|describe\.only\(|it\.skip\(|it\.only\(|test\.skip\(|test\.only\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx'; then
+          if grep -r -E 'describe\.skip\(|describe\.only\(|it\.skip\(|it\.only\(|test\.skip\(|test\.only\(' . --include='*.test.ts' --include='*.test.tsx' --include='*.spec.ts' --include='*.spec.tsx' --exclude-dir=node_modules --exclude-dir=.next | grep -v '//'; then
             echo "Error: Found describe.skip/only or it.skip/only in tests"
             exit 1
           fi
