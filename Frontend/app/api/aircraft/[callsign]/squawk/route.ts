@@ -4,10 +4,7 @@ const BACKEND_BASE_URL =
   process.env.BACKEND_BASE_URL || "http://localhost:8080";
 
 function isValidSquawk(squawk: unknown): squawk is string {
-  return (
-    typeof squawk === "string" &&
-    /^[0-7]{4}$/.test(squawk)
-  );
+  return typeof squawk === "string" && /^[0-7]{4}$/.test(squawk);
 }
 
 export async function POST(
@@ -20,10 +17,7 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   if (
