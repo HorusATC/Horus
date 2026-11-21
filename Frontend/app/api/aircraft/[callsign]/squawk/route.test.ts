@@ -10,22 +10,24 @@ const mockedProxyToBackend = proxyToBackend as jest.MockedFunction<
 // Create a mock Response that behaves like actual text/plain (json() throws for non-JSON text)
 class TextPlainResponse extends Response {
   private textContent: string;
-  
+
   constructor(text: string, init: ResponseInit) {
     super(text, init);
     this.textContent = text;
   }
-  
+
   async text(): Promise<string> {
     return this.textContent;
   }
-  
+
   async json(): Promise<any> {
     // text/plain that's not JSON will throw
     try {
       return JSON.parse(this.textContent);
     } catch (e) {
-      throw new SyntaxError(`Unexpected token '${ this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`);
+      throw new SyntaxError(
+        `Unexpected token '${this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`
+      );
     }
   }
 }
@@ -40,12 +42,12 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
       new TextPlainResponse("Squawk assigned: ANA404", {
         status: 200,
         headers: { "content-type": "text/plain" },
-      }) as any
+      }) as Response
     );
 
     const request = {
       json: async () => ({ squawk: "1234" }),
-    } as any;
+    } as unknown as Request;
 
     const context = { params: Promise.resolve({ callsign: "ANA404" }) };
     const response = await POST(request, context);
@@ -67,7 +69,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
       new TextPlainResponse("Aircraft not found", {
         status: 404,
         headers: { "content-type": "text/plain" },
-      }) as any
+      }) as Response
     );
 
     const request = {

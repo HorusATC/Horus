@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "tailwind:check": "bash scripts/check-tailwind-content.sh",
     "test": "jest",
+    "test:routes": "jest --testEnvironment=node --testPathIgnorePatterns= route.test.ts",
     "test:watch": "jest --watch"
   },
   "dependencies": {
