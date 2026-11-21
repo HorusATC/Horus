@@ -1,6 +1,6 @@
 /**
  * Squawk route validation test
- * 
+ *
  * Tests the isValidSquawk validation logic and response handling.
  * Full integration testing is done via Docker Compose CI.
  */
@@ -52,7 +52,9 @@ describe("squawk route validation", () => {
 
     it("should return 400 {error} for invalid squawk", () => {
       const expected = { error: "squawk must be 4 octal digits (0-7)" };
-      expect(expected).toEqual({ error: "squawk must be 4 octal digits (0-7)" });
+      expect(expected).toEqual({
+        error: "squawk must be 4 octal digits (0-7)",
+      });
     });
 
     it("should return 400 {error} for malformed JSON", () => {
