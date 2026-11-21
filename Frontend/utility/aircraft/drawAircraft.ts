@@ -72,7 +72,8 @@ class DrawAircraft {
         squawkHighlight != null &&
         aircraft.squawk != null &&
         aircraft.squawk === squawkHighlight;
-      const emergencySquawk = this.getEmergencySquawk(aircraft.squawk);
+      const emergencySquawk: EmergencySquawkCode | null =
+        this.getEmergencySquawk(aircraft.squawk);
       this.drawAircraftMarker(
         ctx,
         aircraft.position,
@@ -140,7 +141,7 @@ class DrawAircraft {
     riskDisplayFloor: number,
     nowMs: number,
     isSquawkMatched: boolean,
-    emergencySquawk: string | null
+    emergencySquawk: EmergencySquawkCode | null
   ) {
     const radius: number = 5;
     const flashOn = Math.floor(nowMs / 450) % 2 === 0;
@@ -219,7 +220,7 @@ class DrawAircraft {
     useControllerClearanceAltitudeRow: boolean,
     riskDisplayFloor: number,
     isSquawkMatched: boolean,
-    emergencySquawk: string | null
+    emergencySquawk: EmergencySquawkCode | null
   ) {
     const airplanePosition = aircraft.position;
     const instructedVector = aircraft.instructedVector;
