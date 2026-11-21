@@ -5,7 +5,8 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception;
  */
 public class InvalidParameterException extends AtcSimulatorException {
 
-    private static final String ERROR_CODE = "INVALID_PARAMETER";
+  private static final long serialVersionUID = 1L;
+  private static final String ERROR_CODE = "INVALID_PARAMETER";
 
     /**
      * コンストラクタ

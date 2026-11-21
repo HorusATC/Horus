@@ -5,7 +5,8 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception;
  */
 public class FixNotFoundException extends AtcSimulatorException {
 
-    private static final String ERROR_CODE = "FIX_NOT_FOUND";
+  private static final long serialVersionUID = 1L;
+  private static final String ERROR_CODE = "FIX_NOT_FOUND";
 
     public FixNotFoundException(String fixName) {
         super(
