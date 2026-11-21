@@ -104,7 +104,20 @@ curl http://localhost:8080/api/conflict/statistics
 
 ## 環境構築
 
-### 前提条件
+### クイックスタート（Docker）
+
+最も簡単な方法は、リポジトリのルートディレクトリで Docker Compose を使用することです:
+
+```bash
+cd ..  # リポジトリのルートへ
+docker compose up --build
+```
+
+詳細は [ルートの README.md](../README.md) を参照してください。
+
+### 開発環境（ローカル実行）
+
+#### 前提条件
 
 > [!CAUTION]
 > Java 24では互換性の問題が発生するため、必ずJava 21または22を使用してください。
@@ -112,7 +125,7 @@ curl http://localhost:8080/api/conflict/statistics
 - Java Development Kit (JDK) 21または22
 - Gradle 8.8以上（8.8推奨）
 
-### インストール手順
+#### インストール手順
 
 1. リポジトリのクローン
 ```bash

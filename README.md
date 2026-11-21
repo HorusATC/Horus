@@ -42,6 +42,41 @@
 - **拡張性**: モジュール化された設計により、新機能の追加が容易
 - **双方向インターフェース**: 管制官役（Controller）とパイロット役（Operator）の役割分担。音声による指示出しと復唱のシミュレーションを想定
 
+## クイックスタート（Docker）
+
+最も簡単な方法で Horus を試すには、Docker Compose を使用します。
+
+### 前提条件
+
+- [Docker](https://docs.docker.com/get-docker/) と [Docker Compose](https://docs.docker.com/compose/install/) がインストールされていること
+
+### 起動手順
+
+1. リポジトリをクローン:
+```bash
+git clone https://github.com/Futty93/Horus.git
+cd Horus
+```
+
+2. Docker Compose でビルドと起動:
+```bash
+docker compose up --build
+```
+
+初回は Backend と Frontend のイメージビルドに時間がかかります（約 5〜10 分）。
+
+3. ブラウザで [http://localhost:3333](http://localhost:3333) を開く
+
+4. トップページの「**START WITH SAMPLE (サンプルで始める)**」ボタンをクリック
+
+到着機が複数含まれるサンプルシナリオが自動で読み込まれ、シミュレーションが開始されます。
+
+### 停止方法
+
+```bash
+docker compose down
+```
+
 ## 開発環境のセットアップ
 
 各コンポーネントの詳細なセットアップ手順は、それぞれのディレクトリのREADMEを参照してください。

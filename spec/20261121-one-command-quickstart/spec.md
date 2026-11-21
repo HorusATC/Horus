@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: Done
+- **Status**: In Progress
 - **Date**: 2026-11-21
 
 ## 概要
