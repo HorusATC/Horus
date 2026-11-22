@@ -15,7 +15,9 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Ho
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldingPatternGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAltitudeTargetResolver;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atmosphere.WindTriangle;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.GroundSpeed;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Heading;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
@@ -91,6 +93,7 @@ public abstract class AircraftBase implements Aircraft {
     /** True after the approach seat has transferred the aircraft to the tower. */
     protected boolean towerHandoffActive;
     protected FixPosition towerThreshold;
+    private UniformWind ambientWind = UniformWind.missing();
 
     public static final double MAX_TOWER_HANDOFF_DISTANCE_NM = 10.0;
     public static final double TOWER_HANDOFF_REMOVAL_NM = 0.5;
@@ -165,6 +168,8 @@ public abstract class AircraftBase implements Aircraft {
 
         double turnRate = resolveActiveTurnRateDegPerSec();
         double headingBefore = this.aircraftVector.heading.toDouble();
+        double targetHeadingDeg = resolveHeadingTargetWithWindCorrection(
+                this.instructedVector.instructedHeading.toDouble());
         Heading nextHeading;
         // Parallel re-intercept: continuous turn past 180° until the inbound axis is reached,
         // then a normal forced turn captures the inbound heading.
@@ -178,22 +183,22 @@ public abstract class AircraftBase implements Aircraft {
             // Axis reached after >180°: shortest turn to roll out on inbound (avoid long-way force).
             nextHeading = flightBehavior.calculateNextHeading(
                     headingBefore,
-                    this.instructedVector.instructedHeading.toDouble(),
+                    targetHeadingDeg,
                     turnRate);
         } else if (shouldForceHoldTurn(HoldTurnDirection.RIGHT)) {
             nextHeading = calculateNextHeadingRightTurn(
                     headingBefore,
-                    this.instructedVector.instructedHeading.toDouble(),
+                    targetHeadingDeg,
                     turnRate);
         } else if (shouldForceHoldTurn(HoldTurnDirection.LEFT)) {
             nextHeading = calculateNextHeadingLeftTurn(
                     headingBefore,
-                    this.instructedVector.instructedHeading.toDouble(),
+                    targetHeadingDeg,
                     turnRate);
         } else {
             nextHeading = flightBehavior.calculateNextHeading(
                     headingBefore,
-                    this.instructedVector.instructedHeading.toDouble(),
+                    targetHeadingDeg,
                     turnRate);
         }
         if (navigationMode == NavigationMode.HOLDING && holdEntryForcedTurnDirection != null) {
@@ -201,10 +206,10 @@ public abstract class AircraftBase implements Aircraft {
                     HoldingPatternGeometry.signedHeadingDeltaDeg(headingBefore, nextHeading.toDouble()));
         }
 
-        double targetGroundSpeedKnots = resolveEffectiveTargetGroundSpeedKnots();
-        var nextGroundSpeed = flightBehavior.calculateNextGroundSpeed(
-            this.aircraftVector.groundSpeed.toDouble(),
-            targetGroundSpeedKnots,
+        double targetTrueAirspeedKnots = resolveEffectiveTargetTrueAirspeedKnots(nextHeading.toDouble());
+        var nextTrueAirspeed = flightBehavior.calculateNextGroundSpeed(
+            this.aircraftVector.trueAirspeedKnots,
+            targetTrueAirspeedKnots,
             this.characteristics.getMaxAcceleration()
         );
 
@@ -215,7 +220,15 @@ public abstract class AircraftBase implements Aircraft {
             simDeltaSeconds
         );
 
-        this.aircraftVector = new AircraftVector(nextHeading, nextGroundSpeed, nextVerticalSpeed);
+        double nextTasKt = nextTrueAirspeed.toDouble();
+        WindTriangle.GroundVelocity groundVelocity = WindTriangle.groundVelocity(
+                nextHeading.toDouble(), nextTasKt, ambientWind);
+        this.aircraftVector = new AircraftVector(
+                nextHeading,
+                new GroundSpeed(groundVelocity.groundSpeedKt()),
+                nextVerticalSpeed,
+                groundVelocity.trackDeg(),
+                nextTasKt);
 
         double currentAltitude = this.aircraftPosition.altitude.toDouble();
         double targetAltitude = this.instructedVector.instructedAltitude.toDouble();
@@ -227,7 +240,12 @@ public abstract class AircraftBase implements Aircraft {
                 this.aircraftPosition.longitude,
                 this.instructedVector.instructedAltitude
             );
-            this.aircraftVector = new AircraftVector(nextHeading, nextGroundSpeed, new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.VerticalSpeed(0.0));
+            this.aircraftVector = new AircraftVector(
+                    nextHeading,
+                    new GroundSpeed(groundVelocity.groundSpeedKt()),
+                    new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.VerticalSpeed(0.0),
+                    groundVelocity.trackDeg(),
+                    nextTasKt);
         }
     }
 
@@ -496,13 +514,71 @@ public abstract class AircraftBase implements Aircraft {
                 .orElse(instructedVector.instructedAltitude);
     }
 
-    protected double resolveEffectiveTargetGroundSpeedKnots() {
-        if (instructedIndicatedAirspeedKnots == null || navigationMode != NavigationMode.HEADING) {
-            return instructedVector.instructedGroundSpeed.toDouble();
+    protected double resolveEffectiveTargetTrueAirspeedKnots(double headingDeg) {
+        if (instructedIndicatedAirspeedKnots != null && navigationMode == NavigationMode.HEADING) {
+            return IndicatedAirspeedConverter.indicatedToTrueAirspeedKnots(
+                    instructedIndicatedAirspeedKnots,
+                    aircraftPosition.altitude.toDouble());
         }
-        return IndicatedAirspeedConverter.indicatedToTrueAirspeedKnots(
-                instructedIndicatedAirspeedKnots,
-                aircraftPosition.altitude.toDouble());
+        double instructedGroundSpeedKnots = instructedVector.instructedGroundSpeed.toDouble();
+        if (!ambientWind.affectsMotion()) {
+            return instructedGroundSpeedKnots;
+        }
+        return WindTriangle.trueAirspeedForGroundSpeed(headingDeg, instructedGroundSpeedKnots, ambientWind);
+    }
+
+    protected double resolveEffectiveTargetGroundSpeedKnots() {
+        return resolveEffectiveTargetTrueAirspeedKnots(aircraftVector.heading.toDouble());
+    }
+
+    private double resolveHeadingTargetWithWindCorrection(double courseDeg) {
+        if (!shouldApplyWindCorrectionAngle()) {
+            return courseDeg;
+        }
+        return WindTriangle.headingToMaintainCourseDeg(
+                courseDeg, aircraftVector.trueAirspeedKnots, ambientWind);
+    }
+
+    private boolean shouldApplyWindCorrectionAngle() {
+        if (!ambientWind.affectsMotion()) {
+            return false;
+        }
+        if (navigationMode == NavigationMode.HEADING
+                && finalApproachCourseHeading != null
+                && !finalApproachCoursePending) {
+            return true;
+        }
+        if (navigationMode != NavigationMode.HOLDING || !holdingEntryCompleted) {
+            return false;
+        }
+        return switch (holdPhase) {
+            case ENTRY_TEARDROP_TURN, ENTRY_TEARDROP_LEG,
+                 ENTRY_TEARDROP_INBOUND_TURN, ENTRY_PARALLEL_INBOUND_TURN, INBOUND_TURN,
+                 ENTRY_PARALLEL_OUTBOUND_TURN, ENTRY_PARALLEL_LEG, OUTBOUND_TURN -> true;
+            case OUTBOUND_LEG -> holdingOutboundTarget == null;
+            default -> false;
+        };
+    }
+
+    public UniformWind getAmbientWind() {
+        return ambientWind;
+    }
+
+    public void setAmbientWind(UniformWind wind) {
+        UniformWind next = wind != null ? wind : UniformWind.missing();
+        if (ambientWind.equals(next)) {
+            return;
+        }
+        ambientWind = next;
+        double tas = aircraftVector.trueAirspeedKnots;
+        WindTriangle.GroundVelocity gv = WindTriangle.groundVelocity(
+                aircraftVector.heading.toDouble(), tas, ambientWind);
+        aircraftVector = new AircraftVector(
+                aircraftVector.heading,
+                new GroundSpeed(gv.groundSpeedKt()),
+                aircraftVector.verticalSpeed,
+                gv.trackDeg(),
+                tas);
     }
 
     private GroundSpeed resolveTargetSpeed() {
