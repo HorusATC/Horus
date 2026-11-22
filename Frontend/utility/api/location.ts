@@ -64,6 +64,11 @@ export interface AircraftLocationDto {
    * must arrive on the location stream from the same vertices that drive flight.
    */
   holding?: HoldingPatternDto | null;
+  /**
+   * Procedure altitude constraints that cannot be met at max climb/descent rate.
+   * Omitted when empty; additive (older backends omit the field).
+   */
+  unreachableAltitudeConstraints?: string[] | null;
   /** Remaining flight-plan fixes for radar polylines; omitted when none. */
   flightPlanRoute?: FlightPlanRoutePoint[] | null;
 }
@@ -100,6 +105,7 @@ export const AIRCRAFT_LOCATION_DTO_FIELD_PARTITION = {
   riskLevel: "polledMapped",
   msawAlert: "polledMapped",
   holding: "polledMapped",
+  unreachableAltitudeConstraints: "polledMapped",
   flightPlanRoute: "polledMapped",
 } as const satisfies Record<
   keyof AircraftLocationDto,
@@ -164,6 +170,7 @@ export const POLLED_AIRCRAFT_DTO_SOURCE = {
   towerHandoff: "towerHandoff",
   msawAlert: "msawAlert",
   holding: "holding",
+  unreachableAltitudeConstraints: "unreachableAltitudeConstraints",
   flightPlanRoute: "flightPlanRoute",
 } as const satisfies Record<
   keyof PolledAircraftServerFields,
@@ -285,8 +292,18 @@ function mapDtoToAircraft(
     dto.towerHandoff === true,
     parseMsawAlert(dto.msawAlert),
     parseHoldingPattern(dto.holding),
-    parseFlightPlanRoute(dto.flightPlanRoute)
+    parseFlightPlanRoute(dto.flightPlanRoute),
+    parseUnreachableAltitudeConstraints(dto.unreachableAltitudeConstraints)
   );
+}
+
+function parseUnreachableAltitudeConstraints(
+  fixes: string[] | null | undefined
+): string[] | null {
+  if (fixes == null || !Array.isArray(fixes) || fixes.length === 0) {
+    return null;
+  }
+  return fixes;
 }
 
 function parseFlightPlanRoute(
@@ -370,6 +387,7 @@ function updateControllingAircrafts(
       newAircraft.msawAlert,
       newAircraft.holding,
       newAircraft.flightPlanRoute,
+      newAircraft.unreachableAltitudeConstraints,
       false
     );
     controllingAircrafts.push(newAirplane);

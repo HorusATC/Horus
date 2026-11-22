@@ -10,6 +10,8 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.fix.FixPositi
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.AltitudeConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlan;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlanWaypoint;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.VerticalConstraint;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.VerticalConstraints;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAction;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.InstrumentProcedure;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureAltitude;
@@ -105,7 +107,12 @@ public class ProcedureFlightPlanMapper {
             throw new IllegalArgumentException("Procedure has no flyable fix legs: " + primary.id());
         }
 
-        int cruiseAlt = cruiseAltitudeFt != null ? cruiseAltitudeFt : DEFAULT_CRUISE_ALTITUDE_FT;
+        // When assign omits cruise on a SID, raise clearance to the highest climb constraint
+        // on the path so Climb-Via does not descend back toward the 10000 ft default between
+        // published at-or-above floors. Explicit cruise (including quickstart samples) wins.
+        int cruiseAlt = cruiseAltitudeFt != null
+                ? cruiseAltitudeFt
+                : defaultCruiseAltitudeFt(primary.type(), waypoints);
         int cruiseSpd = cruiseSpeedKt != null ? cruiseSpeedKt : DEFAULT_CRUISE_SPEED_KT;
         String departure = primary.type() == ProcedureType.SID ? primary.airportIcao() : "";
         String arrival = primary.type() == ProcedureType.STAR ? primary.airportIcao() : "";
@@ -138,6 +145,28 @@ public class ProcedureFlightPlanMapper {
         SKIP,
         VA,
         FIX
+    }
+
+    static int defaultCruiseAltitudeFt(ProcedureType type, List<FlightPlanWaypoint> waypoints) {
+        if (type != ProcedureType.SID) {
+            return DEFAULT_CRUISE_ALTITUDE_FT;
+        }
+        int highest = DEFAULT_CRUISE_ALTITUDE_FT;
+        for (FlightPlanWaypoint wp : waypoints) {
+            VerticalConstraint constraint = VerticalConstraints.fromFlightPlanWaypoint(wp);
+            highest = Math.max(highest, climbFloorFt(constraint));
+        }
+        return highest;
+    }
+
+    private static int climbFloorFt(VerticalConstraint constraint) {
+        return switch (constraint) {
+            case VerticalConstraint.None n -> 0;
+            case VerticalConstraint.At(double altitudeFt) -> (int) Math.round(altitudeFt);
+            case VerticalConstraint.AtOrAbove(double altitudeFt) -> (int) Math.round(altitudeFt);
+            case VerticalConstraint.AtOrBelow(double altitudeFt) -> 0;
+            case VerticalConstraint.Window(double minFt, double maxFt) -> (int) Math.round(minFt);
+        };
     }
 
     private void appendFixLeg(List<FlightPlanWaypoint> waypoints, ProcedureLeg leg) {
