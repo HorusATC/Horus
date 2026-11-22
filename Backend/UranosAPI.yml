@@ -535,6 +535,18 @@ components:
           type: string
         riskLevel:
           type: number
+        msawAlert:
+          type: object
+          nullable: true
+          properties:
+            type:
+              type: string
+              enum: [MSA, LOW]
+            msaFt:
+              type: number
+            trigger:
+              type: string
+              enum: [CURRENT, PREDICTED]
     Flight:
       type: "object"
       example:

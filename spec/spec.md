@@ -121,7 +121,7 @@
 | 4-1 | STCA 視覚強調 | 🔄 | 🟢 | ★☆☆ | [#60](https://github.com/Futty93/Horus/issues/60) | `riskLevel` によるラベル色・`R` 表示に加え、**シンボルリング強調・赤レベル時の点滅**（[20260509-phase4-conflict-bff-ui](20260509-phase4-conflict-bff-ui/spec.md)）。**残り**: 閾値の設定 UI、ペア連動強調。**現時点では優先度を下げ、当面は後回し**。 |
 | 4-2 | ペア間隔の数値表示 | ⬜ | 🟡 | ★★☆ | [#61](https://github.com/Futty93/Horus/issues/61) | 着手用子 spec [20260509-phase4-conflict-pair-ui-alerts](20260509-phase4-conflict-pair-ui-alerts/spec.md)。BFF 済み。**新規**: ラベル横またはサイドで `fetchAircraftConflicts` 等を表示。 |
 | 4-3 | 間隔違反の明示通知 | 🔄 | 🟡 | ★★☆ | [#62](https://github.com/Futty93/Horus/issues/62) | ストリップは [20260509-phase4-conflict-bff-ui](20260509-phase4-conflict-bff-ui/spec.md)。**残り（強通知）**は [20260509-phase4-conflict-pair-ui-alerts](20260509-phase4-conflict-pair-ui-alerts/spec.md)。 |
-| 4-4 | MSAW 簡易版 | ⬜ | 🟢 | ★★☆ | [#63](https://github.com/Futty93/Horus/issues/63) | 最低高度しきい値と `AircraftLocationDto` 拡張または別エンドポイント。 |
+| 4-4 | MSAW 簡易版 | 🔄 | 🟢 | ★★☆ | [#63](https://github.com/HorusATC/Horus/issues/63) | 実装中: [20261122-msaw](20261122-msaw/spec.md)。訓練用 MSA カタログ + `MsawDetector` + `AircraftLocationDto.msawAlert`（MSA/LOW）。公式 MVA ではない。 |
 
 ---
 

@@ -2,6 +2,7 @@ import { Coordinate } from "@/context/centerCoordinateContext";
 import { Aircraft } from "../aircraft/aircraftClass";
 import { CoordinateManager } from "../coordinateManager/CoordinateManager";
 import { DisplayRange } from "@/context/displayRangeContext";
+import { parseMsawAlert, type MsawAlertDto } from "../aircraft/msawAlert";
 
 export interface AircraftLocationDto {
   callsign: string;
@@ -33,6 +34,8 @@ export interface AircraftLocationDto {
   goAround?: boolean;
   towerHandoff?: boolean;
   riskLevel: number;
+  /** Absent or null means no MSAW alert (tolerant of older backends). */
+  msawAlert?: MsawAlertDto | null;
 }
 
 export const fetchAircraftLocation = async (
@@ -126,7 +129,8 @@ function mapDtoToAircraft(
     dto.navigationMode ?? "HEADING",
     dto.instructedVector.indicatedAirspeed ?? null,
     dto.goAround === true,
-    dto.towerHandoff === true
+    dto.towerHandoff === true,
+    parseMsawAlert(dto.msawAlert)
   );
 }
 
@@ -178,7 +182,8 @@ function updateControllingAircrafts(
       newAircraft.navigationMode,
       newAircraft.indicatedAirspeedKnots,
       newAircraft.goAround,
-      newAircraft.towerHandoff
+      newAircraft.towerHandoff,
+      newAircraft.msawAlert
     );
     controllingAircrafts.push(newAirplane);
   });

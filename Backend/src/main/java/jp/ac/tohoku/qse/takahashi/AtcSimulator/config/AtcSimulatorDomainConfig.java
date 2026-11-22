@@ -12,7 +12,9 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.aggregate.airspace.A
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.aggregate.airspace.AirspaceManagementImpl;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.fix.FixPositionRepository;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.msaw.MsawDetector;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.AtsRouteFixPositionRepository;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.MsaCatalog;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
 
 /**
@@ -25,8 +27,9 @@ public class AtcSimulatorDomainConfig {
     @Bean
     public GetAllAircraftLocationsWithRiskUseCase getAllAircraftLocationsWithRiskUseCase(
             AircraftRepository aircraftRepository,
-            ConflictAlertService conflictAlertService) {
-        return new GetAllAircraftLocationsWithRiskUseCase(aircraftRepository, conflictAlertService);
+            ConflictAlertService conflictAlertService,
+            MsawDetector msawDetector) {
+        return new GetAllAircraftLocationsWithRiskUseCase(aircraftRepository, conflictAlertService, msawDetector);
     }
 
     @Bean
@@ -37,6 +40,16 @@ public class AtcSimulatorDomainConfig {
     @Bean
     public RunwayCatalog runwayCatalog() {
         return new RunwayCatalog();
+    }
+
+    @Bean
+    public MsaCatalog msaCatalog() {
+        return new MsaCatalog();
+    }
+
+    @Bean
+    public MsawDetector msawDetector(MsaCatalog msaCatalog, RunwayCatalog runwayCatalog) {
+        return new MsawDetector(msaCatalog, runwayCatalog);
     }
 
     @Bean

@@ -9,8 +9,10 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Airc
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.types.commercial.CommercialAircraft;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.conflict.ConflictDetector;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.msaw.MsawDetector;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Conflict.RiskAssessment;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Msaw.MsawAlert;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.AircraftLocationDto;
 
 /**
@@ -20,11 +22,14 @@ public class GetAllAircraftLocationsWithRiskUseCase {
 
     private final AircraftRepository aircraftRepository;
     private final ConflictAlertService conflictAlertService;
+    private final MsawDetector msawDetector;
 
     public GetAllAircraftLocationsWithRiskUseCase(AircraftRepository aircraftRepository,
-                                                  ConflictAlertService conflictAlertService) {
+                                                  ConflictAlertService conflictAlertService,
+                                                  MsawDetector msawDetector) {
         this.aircraftRepository = aircraftRepository;
         this.conflictAlertService = conflictAlertService;
+        this.msawDetector = msawDetector;
     }
 
     public List<AircraftLocationDto> execute() {
@@ -49,11 +54,13 @@ public class GetAllAircraftLocationsWithRiskUseCase {
     private AircraftLocationDto toDto(Aircraft aircraft, Map<ConflictDetector.ConflictPair, RiskAssessment> allConflicts,
                                       List<Aircraft> allAircraft) {
         if (!(aircraft instanceof AircraftBase base)) {
-            return fallbackDto(aircraft, 0.0);
+            return fallbackDto(aircraft, 0.0, null);
         }
 
         double riskLevel = calculateMaxRiskForAircraft(
                 base.getCallsign().toString(), allConflicts, allAircraft);
+
+        MsawAlert msawAlert = msawDetector.detectAlert(aircraft);
 
         String originIata = "";
         String originIcao = "";
@@ -99,11 +106,12 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 base.getNavigationMode().name(),
                 base.isGoAroundActive(),
                 base.isTowerHandoffActive(),
-                riskLevel
+                riskLevel,
+                toMsawAlertDto(msawAlert)
         );
     }
 
-    private AircraftLocationDto fallbackDto(Aircraft aircraft, double riskLevel) {
+    private AircraftLocationDto fallbackDto(Aircraft aircraft, double riskLevel, MsawAlert msawAlert) {
         return new AircraftLocationDto(
                 aircraft.getCallsign().toString(),
                 new AircraftLocationDto.PositionDto(0, 0, 0),
@@ -115,7 +123,8 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 "", "", "", "", "", null, "UNKNOWN",
                 false,
                 false,
-                riskLevel
+                riskLevel,
+                toMsawAlertDto(msawAlert)
         );
     }
 
@@ -145,6 +154,17 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 c.instructedGroundSpeed.toDouble(),
                 c.instructedAltitude.toDouble(),
                 null
+        );
+    }
+
+    private static AircraftLocationDto.MsawAlertDto toMsawAlertDto(MsawAlert alert) {
+        if (alert == null) {
+            return null;
+        }
+        return new AircraftLocationDto.MsawAlertDto(
+                alert.type().name(),
+                alert.msaFt(),
+                alert.trigger().name()
         );
     }
 }
