@@ -7,6 +7,14 @@ export type AtcClearanceVector = {
   altitude: number;
 };
 
+/** Motion vector from location poll; `track` may be absent on older backends. */
+export type AircraftMotionVector = {
+  heading: number;
+  groundSpeed: number;
+  verticalSpeed: number;
+  track?: number;
+};
+
 /** Past geographic samples for track dots; canvas coords are derived at draw time. */
 export type PositionHistoryPoint = {
   latitude: number;
@@ -120,7 +128,7 @@ export class Aircraft {
   position: { x: number; y: number; altitude: number };
   /** WGS-84 from last API sample; kept in sync with `position` for history / replay. */
   geoPosition: { latitude: number; longitude: number };
-  vector: { heading: number; groundSpeed: number; verticalSpeed: number };
+  vector: AircraftMotionVector;
   /**
    * Pilot-applied target from Operator (POST /control). Not the controller’s clearance memo;
    * see spec/20260326-instruction-memo-radar-label/spec.md.
@@ -164,7 +172,7 @@ export class Aircraft {
     callsign: string,
     position: { x: number; y: number; altitude: number },
     geoPosition: { latitude: number; longitude: number },
-    vector: { heading: number; groundSpeed: number; verticalSpeed: number },
+    vector: AircraftMotionVector,
     instructedVector: {
       heading: number;
       groundSpeed: number;

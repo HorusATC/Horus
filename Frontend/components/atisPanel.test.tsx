@@ -15,6 +15,7 @@ const sample: atisApi.AtisState = {
   informationIdent: "A",
   text: "Tokyo International Airport (RJTT) INFORMATION ALPHA.\nLANDING AND DEPARTURE RUNWAY 16R.\nWIND AND WEATHER NOT AVAILABLE.\nADVISE YOU HAVE INFORMATION ALPHA.",
   availableRunways: ["16R", "34L", "16L", "34R", "04", "22", "05", "23"],
+  windAvailable: false,
 };
 
 describe("AtisPanel", () => {
@@ -54,6 +55,70 @@ describe("AtisPanel", () => {
     });
   });
 
+  it("applies wind with runway unchanged", async () => {
+    (atisApi.updateAtis as jest.Mock).mockResolvedValue({
+      ok: true,
+      state: {
+        ...sample,
+        informationIdent: "B",
+        windAvailable: true,
+        windDirectionDeg: 160,
+        windSpeedKt: 12,
+        text: sample.text.replaceAll("ALPHA", "BRAVO"),
+      },
+    });
+    const user = userEvent.setup();
+    render(<AtisPanel editable />);
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Wind speed knots/i)).toBeInTheDocument();
+    });
+    await user.type(screen.getByLabelText(/Wind direction degrees/i), "160");
+    await user.type(screen.getByLabelText(/Wind speed knots/i), "12");
+    await user.click(screen.getByRole("button", { name: /Apply wind/i }));
+    await waitFor(() => {
+      expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
+        runwayInUse: "16R",
+        wind: { directionDeg: 160, speedKt: 12 },
+      });
+    });
+  });
+
+  it("sets CALM and clears wind", async () => {
+    (atisApi.updateAtis as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        state: {
+          ...sample,
+          windAvailable: true,
+          windSpeedKt: 0,
+          text: sample.text,
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        state: { ...sample, windAvailable: false },
+      });
+    const user = userEvent.setup();
+    render(<AtisPanel editable />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "CALM" })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: "CALM" }));
+    await waitFor(() => {
+      expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
+        runwayInUse: "16R",
+        wind: { speedKt: 0 },
+      });
+    });
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    await waitFor(() => {
+      expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
+        runwayInUse: "16R",
+        wind: null,
+      });
+    });
+  });
+
   it("is read-only for operator", async () => {
     render(<AtisPanel editable={false} />);
     await waitFor(() => {
@@ -61,5 +126,8 @@ describe("AtisPanel", () => {
     });
     expect(screen.getByText("16R")).toBeInTheDocument();
     expect(screen.queryByLabelText(/Runway in use/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/Wind direction degrees/i)
+    ).not.toBeInTheDocument();
   });
 });
