@@ -94,8 +94,54 @@ public final class ProcedureCatalog {
                     byId.put(procedure.id(), procedure);
                 }
             }
-            return new Loaded(notice, byId);
+            return new Loaded(notice, attachSidTransitions(byId));
         }
+    }
+
+    /**
+     * Extract SIDs list empty {@code enrouteTransitions}; attach same-family
+     * {@link ProcedureType#SID_TRANSITION} rows whose {@code connectsAt} equals the SID end fix.
+     * Uses existing transition IDs only — invents nothing.
+     */
+    private static Map<String, InstrumentProcedure> attachSidTransitions(
+            Map<String, InstrumentProcedure> byId) {
+        List<InstrumentProcedure> transitions = byId.values().stream()
+                .filter(p -> p.type() == ProcedureType.SID_TRANSITION)
+                .toList();
+        Map<String, InstrumentProcedure> updated = new LinkedHashMap<>(byId);
+        for (InstrumentProcedure procedure : byId.values()) {
+            if (procedure.type() != ProcedureType.SID) {
+                continue;
+            }
+            String endFix = procedure.endFixIdentifier();
+            if (endFix == null || endFix.isBlank()) {
+                continue;
+            }
+            List<String> attached = new ArrayList<>(procedure.enrouteTransitions());
+            for (InstrumentProcedure transition : transitions) {
+                if (!familyMatches(procedure.family(), transition.family())) {
+                    continue;
+                }
+                if (transition.connectsAt() == null
+                        || !endFix.equalsIgnoreCase(transition.connectsAt())) {
+                    continue;
+                }
+                if (!attached.contains(transition.id())) {
+                    attached.add(transition.id());
+                }
+            }
+            if (!attached.equals(procedure.enrouteTransitions())) {
+                updated.put(procedure.id(), procedure.withEnrouteTransitions(List.copyOf(attached)));
+            }
+        }
+        return updated;
+    }
+
+    private static boolean familyMatches(String a, String b) {
+        if (a == null || b == null || a.isBlank() || b.isBlank()) {
+            return false;
+        }
+        return a.equalsIgnoreCase(b);
     }
 
     private static InstrumentProcedure parseProcedure(JsonNode node) {
@@ -115,8 +161,23 @@ public final class ProcedureCatalog {
             }
         }
         List<String> transitions = readStringList(node.get("enrouteTransitions"));
+        String connectsAt = null;
+        JsonNode connects = node.get("connectsAt");
+        if (connects != null && !connects.isNull() && !connects.asText().isBlank()) {
+            connectsAt = connects.asText().trim();
+        }
         return new InstrumentProcedure(
-                id, type, name, family, variant, airportIcao, rnav, runways, List.copyOf(legs), transitions);
+                id,
+                type,
+                name,
+                family,
+                variant,
+                airportIcao,
+                rnav,
+                runways,
+                List.copyOf(legs),
+                transitions,
+                connectsAt);
     }
 
     private static ProcedureLeg parseLeg(JsonNode node) {

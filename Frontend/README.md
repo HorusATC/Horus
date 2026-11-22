@@ -12,7 +12,7 @@
 | **Operator**          | パイロット役 | 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。航空機の実際の操作（高度・速度・針路、Direct To、Hold、最終進入、進入復行、出発初期上昇（`DEPART`）、タワー移管、Resume、RJTT SID/STAR 割当）を行う。 |
 | **Flight Plan Setup** | シナリオ準備 | 機体選択で経路編集（Suggest / ATS）、任意で O/D バルク同一化、JSON 入出力、シナリオ投入。                                                                                                                       |
 
-**SID / STAR 割当**: Operator の `procedureAssignControl` から RJTT RNAV STAR / VAMOS FOUR を選択して割当。割当経路は飛行計画パネルとレーダー折れ線に出る。VAMOS の VA/DF は簡易対応。VISIP・公示ホールド自動・KIAS 自動適用は未実装。出典は README / データファイルのみ（UI 警告バナーなし）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
+**SID / STAR 割当**: Operator の `procedureAssignControl` から RJTT RNAV STAR / VAMOS FOUR を選択して割当。VAMOS 各滑走路 SID には **TATEYAMA / DRAKY** エンルート・トランジションが選べる（接続点 VAMOS）。割当経路は飛行計画パネル（割当直後に更新）とレーダー折れ線に出る。VAMOS の VA は公示高度到達まで真方位を保持してから DF/TF。VISIP・公示ホールド自動・KIAS 自動適用は未実装。出典は README / データファイルのみ（UI 警告バナーなし）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
 
 最初のシナリオはトップの「**START WITH SAMPLE (サンプルで始める)**」で開始できる。独自シナリオは **Flight Plan Setup**（`/flight-plan-setup`）またはトップの JSON アップロードで投入する。
 

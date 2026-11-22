@@ -16,6 +16,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.Pro
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureLeg;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedurePathDescriptor;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureType;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureVaConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.GroundSpeed;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
@@ -40,8 +41,7 @@ public class ProcedureFlightPlanMapper {
 
     public record MappedProcedureRoute(
             FlightPlan flightPlan,
-            Double vaCourseTrueDeg,
-            Integer vaAtOrAboveFt,
+            ProcedureVaConstraint vaConstraint,
             List<String> waypointNames
     ) {
     }
@@ -67,8 +67,7 @@ public class ProcedureFlightPlanMapper {
         }
 
         List<FlightPlanWaypoint> waypoints = new ArrayList<>();
-        Double vaCourse = null;
-        Integer vaAlt = null;
+        ProcedureVaConstraint vaConstraint = null;
 
         for (ProcedureLeg leg : primary.legs()) {
             if (leg.pathDescriptor() == ProcedurePathDescriptor.HOLD
@@ -76,13 +75,7 @@ public class ProcedureFlightPlanMapper {
                 continue;
             }
             if (leg.pathDescriptor() == ProcedurePathDescriptor.VA) {
-                if (leg.courseTrueDeg() == null) {
-                    throw new IllegalArgumentException("VA leg missing courseTrueDeg on " + primary.id());
-                }
-                vaCourse = leg.courseTrueDeg();
-                if (leg.altitude() != null) {
-                    vaAlt = leg.altitude().resolveFeetForFlightPlan();
-                }
+                vaConstraint = ProcedureVaConstraint.fromVaLeg(leg);
                 continue;
             }
             appendFixLeg(waypoints, leg);
@@ -125,7 +118,7 @@ public class ProcedureFlightPlanMapper {
                 new GroundSpeed(cruiseSpd));
 
         List<String> names = waypoints.stream().map(FlightPlanWaypoint::getFixName).toList();
-        return new MappedProcedureRoute(plan, vaCourse, vaAlt, names);
+        return new MappedProcedureRoute(plan, vaConstraint, names);
     }
 
     private void appendFixLeg(List<FlightPlanWaypoint> waypoints, ProcedureLeg leg) {

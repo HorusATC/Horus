@@ -147,23 +147,28 @@ class ProcedureAssignApiIntegrationTest {
         assertThat(aircraft.getInstructedVector().instructedHeading.toDouble())
                 .isCloseTo(330.0, within(0.01));
 
-        // Climb past VA altitude while keeping VA active until the tick releases it.
         GlobalVariables.isSimulationRunning = true;
-        for (int i = 0; i < 400 && aircraft.isProcedureVaActive(); i++) {
+        Double lastVaActiveAltitudeFt = null;
+        Double firstReleasedAltitudeFt = null;
+        for (int i = 0; i < 2000 && firstReleasedAltitudeFt == null; i++) {
+            double alt = aircraft.getAircraftPosition().altitude.toDouble();
+            if (aircraft.isProcedureVaActive()) {
+                lastVaActiveAltitudeFt = alt;
+            } else if (lastVaActiveAltitudeFt != null) {
+                firstReleasedAltitudeFt = alt;
+                break;
+            }
             aircraft.calculateNextAircraftVector(1.0);
             aircraft.calculateNextAircraftPosition(1.0);
         }
-        assertThat(aircraft.getAircraftPosition().altitude.toDouble()).isGreaterThanOrEqualTo(600.0);
-        if (aircraft.getAircraftPosition().altitude.toDouble() >= 600.0) {
-            // Force altitude above VA threshold and tick once more.
-            aircraft.getAircraftPosition();
-        }
-        // Drive altitude above 700 by repeated vectors with high climb target already set.
-        while (aircraft.getAircraftPosition().altitude.toDouble() < 700.0) {
-            aircraft.calculateNextAircraftVector(1.0);
-            aircraft.calculateNextAircraftPosition(1.0);
-        }
-        aircraft.calculateNextAircraftVector(1.0);
+        assertThat(lastVaActiveAltitudeFt)
+                .as("last VA-active sample must already be at/above published 700 ft")
+                .isNotNull()
+                .isGreaterThanOrEqualTo(700.0);
+        assertThat(firstReleasedAltitudeFt)
+                .as("first released sample must be at/above published 700 ft")
+                .isNotNull()
+                .isGreaterThanOrEqualTo(700.0);
         assertThat(aircraft.isProcedureVaActive()).isFalse();
         assertThat(aircraft.getNavigationMode()).isEqualTo(NavigationMode.FLIGHT_PLAN);
         assertThat(aircraft.getFlightPlan().getWaypoints().get(0).getFixName()).isEqualTo("TT502");
@@ -173,6 +178,40 @@ class ProcedureAssignApiIntegrationTest {
         assertThat(aircraft.getFlightPlan().getWaypoints().get(2).getFixName()).isEqualTo("VAMOS");
         assertThat(aircraft.getFlightPlan().getWaypoints().get(2).getTargetAltitude().toDouble())
                 .isEqualTo(9000.0);
+    }
+
+    @Test
+    void assignVamos34WithTateyamaTransitionAppendsUtibo() {
+        spawn("SIDTY", 35.52, 139.78, 2000);
+        ResponseEntity<Map> assign = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/SIDTY/assign-procedure",
+                Map.of(
+                        "procedureId", "VAMOS4.RWY34L_34R",
+                        "transitionId", "VAMOS4.TATEYAMA",
+                        "cruiseAltitude", 9000,
+                        "cruiseSpeed", 250),
+                Map.class);
+        assertThat(assign.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        List<String> waypoints = (List<String>) assign.getBody().get("waypoints");
+        assertThat(waypoints).containsExactly("TT502", "LOCUP", "VAMOS", "UTIBO");
+    }
+
+    @Test
+    void assignVamos34WithDrakyTransitionAppendsDrakyXac() {
+        spawn("SIDDK", 35.52, 139.78, 2000);
+        ResponseEntity<Map> assign = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/SIDDK/assign-procedure",
+                Map.of(
+                        "procedureId", "VAMOS4.RWY34L_34R",
+                        "transitionId", "VAMOS4.DRAKY",
+                        "cruiseAltitude", 9000,
+                        "cruiseSpeed", 250),
+                Map.class);
+        assertThat(assign.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        List<String> waypoints = (List<String>) assign.getBody().get("waypoints");
+        assertThat(waypoints).containsExactly("TT502", "LOCUP", "VAMOS", "DRAKY", "XAC");
     }
 
     @Test

@@ -156,7 +156,7 @@ public class FlightPlanController {
 
         Aircraft aircraft = aircraftRepository.findByCallsign(new Callsign(callsign));
         AircraftBase base = (AircraftBase) aircraft;
-        base.assignProcedureRoute(mapped.flightPlan(), mapped.vaCourseTrueDeg(), mapped.vaAtOrAboveFt());
+        base.assignProcedureRoute(mapped.flightPlan(), mapped.vaConstraint());
 
         logger.info(
                 "Procedure {} (transition={}) assigned to {} waypoints={}",

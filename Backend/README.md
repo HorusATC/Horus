@@ -232,7 +232,7 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/go-around` | 進入復行。滑走路方位のまま上昇（上昇高度は現在高度より 500 ft 以上、末端から 120NM 以内） |
 | GET | `/api/procedures?airport=RJTT` | RJTT SID/STAR カタログ一覧（RNAV STAR 15・VAMOS 滑走路系・トランジション・VISIP は一覧に含むが割当不可）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made. |
 | GET | `/api/procedures/{id}` | 手続き詳細（レグ・公示真方位・高度。Hold 行はカタログのみ） |
-| POST | `/api/aircraft/{callsign}/assign-procedure` | SID/STAR を飛行計画へ割当（ボディ: `procedureId`、任意 `transitionId`）。成功時に既存 FlightPlanWaypoint 列へ載せる。VAMOS VA は真方位を指示し at-or-above 後に DF/TF。KIAS・VISIP 飛行・公示ホールド自動は未実装 |
+| POST | `/api/aircraft/{callsign}/assign-procedure` | SID/STAR を飛行計画へ割当（ボディ: `procedureId`、任意 `transitionId`）。成功時に既存 FlightPlanWaypoint 列へ載せる。VAMOS 滑走路 SID には TATEYAMA / DRAKY トランジションを指定可（カタログ読込時に同一 family・`connectsAt`＝終端 Fix で付与）。VAMOS VA は公示 AT_OR_ABOVE 到達まで真方位を保持してから DF/TF。KIAS・VISIP 飛行・公示ホールド自動は未実装 |
 | POST | `/api/aircraft/{callsign}/depart` | 出発・初期上昇。カタログ物理進入端（TORA 始端）へ置き、標高+35 ft・滑走路真方位（FLY RUNWAY HEADING）で指定高度へ上昇。任意 `initialHeadingDeg` は DER 標高+400 ft まで滑走路方位を維持してから旋回。地上滑走・SID・V 速度なし。上昇は開始高度より 500 ft 以上（1,000–45,000）。RJTT 05 可。位置 API に `initialClimb`。出典: FAA JO 7110.65 5-8-2 / 5-8-3 NOTE 1。針路は真方位（磁偏差なし）。200 ft/NM 勾配は既存上昇率任せ |
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
 | POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |

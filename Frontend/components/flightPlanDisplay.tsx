@@ -6,6 +6,10 @@ import {
   fetchFlightPlan,
   type FlightPlanStatus,
 } from "@/utility/api/flightPlan";
+import {
+  FLIGHT_PLAN_CHANGED_EVENT,
+  type FlightPlanChangedDetail,
+} from "@/utility/api/flightPlanChanged";
 
 const FlightPlanDisplay: React.FC = () => {
   const { callsign } = useSelectedAircraft();
@@ -41,6 +45,18 @@ const FlightPlanDisplay: React.FC = () => {
     if (!callsign) return;
     const interval = setInterval(refresh, 5000);
     return () => clearInterval(interval);
+  }, [callsign, refresh]);
+
+  useEffect(() => {
+    if (!callsign) return;
+    const onChanged = (event: Event) => {
+      const detail = (event as CustomEvent<FlightPlanChangedDetail>).detail;
+      if (detail?.callsign !== callsign) return;
+      refresh();
+    };
+    window.addEventListener(FLIGHT_PLAN_CHANGED_EVENT, onChanged);
+    return () =>
+      window.removeEventListener(FLIGHT_PLAN_CHANGED_EVENT, onChanged);
   }, [callsign, refresh]);
 
   if (!callsign) {

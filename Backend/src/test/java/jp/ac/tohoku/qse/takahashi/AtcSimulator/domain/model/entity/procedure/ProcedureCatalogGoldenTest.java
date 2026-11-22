@@ -61,7 +61,7 @@ class ProcedureCatalogGoldenTest {
         assertThat(mapped.waypointNames())
                 .containsExactly(
                         "XAC", "ANZAC", "TT450", "TT451", "TT452", "TT453", "WANDA", "WEDGE", "ARLON");
-        assertThat(mapped.vaCourseTrueDeg()).isNull();
+        assertThat(mapped.vaConstraint()).isNull();
 
         List<FlightPlanWaypoint> wps = mapped.flightPlan().getWaypoints();
         FlightPlanWaypoint anzac = wps.get(1);
@@ -110,9 +110,12 @@ class ProcedureCatalogGoldenTest {
                 9000,
                 250);
 
-        assertThat(mapped.vaCourseTrueDeg()).isEqualTo(330.0);
-        assertThat(mapped.vaAtOrAboveFt()).isEqualTo(700);
+        assertThat(mapped.vaConstraint()).isNotNull();
+        assertThat(mapped.vaConstraint().courseTrueDeg()).isEqualTo(330.0);
+        assertThat(mapped.vaConstraint().atOrAboveAltitudeFt()).isEqualTo(700);
         assertThat(mapped.waypointNames()).containsExactly("TT502", "LOCUP", "VAMOS");
+        assertThat(vamos.enrouteTransitions())
+                .containsExactly("VAMOS4.TATEYAMA", "VAMOS4.DRAKY");
 
         FlightPlanWaypoint locup = mapped.flightPlan().getWaypoints().get(1);
         assertThat(locup.getAltitudeConstraint()).isEqualTo(AltitudeConstraint.AT_OR_ABOVE);
@@ -124,6 +127,32 @@ class ProcedureCatalogGoldenTest {
 
         Optional<FixPosition> tt502 = new AtsRouteFixPositionRepository().findFixPositionByName("TT502");
         assertThat(tt502).isPresent();
+    }
+
+    @Test
+    void vamos34WithTateyamaMapsThroughUtibo() {
+        InstrumentProcedure vamos = catalog.findById("VAMOS4.RWY34L_34R").orElseThrow();
+        InstrumentProcedure tateyama = catalog.findById("VAMOS4.TATEYAMA").orElseThrow();
+        ProcedureFlightPlanMapper.MappedProcedureRoute mapped = mapper.map(
+                new Callsign("JAL901"),
+                vamos,
+                Optional.of(tateyama),
+                9000,
+                250);
+        assertThat(mapped.waypointNames()).containsExactly("TT502", "LOCUP", "VAMOS", "UTIBO");
+    }
+
+    @Test
+    void vamos34WithDrakyMapsThroughDrakyXac() {
+        InstrumentProcedure vamos = catalog.findById("VAMOS4.RWY34L_34R").orElseThrow();
+        InstrumentProcedure draky = catalog.findById("VAMOS4.DRAKY").orElseThrow();
+        ProcedureFlightPlanMapper.MappedProcedureRoute mapped = mapper.map(
+                new Callsign("JAL902"),
+                vamos,
+                Optional.of(draky),
+                9000,
+                250);
+        assertThat(mapped.waypointNames()).containsExactly("TT502", "LOCUP", "VAMOS", "DRAKY", "XAC");
     }
 
     @Test

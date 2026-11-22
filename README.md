@@ -48,6 +48,7 @@ docker compose up --build
 システムは以下の2つの主要コンポーネントで構成されています：
 
 1. **ウラノス (Uranus)** - バックエンド
+
    - Java 21 + Spring Boot 4.1.3で実装
    - クリーンアーキテクチャに基づく設計
    - 主要コンポーネント：
@@ -62,7 +63,7 @@ docker compose up --build
    - Tailwind CSSによるモダンなUI
    - 2つの主要画面（役割分担を想定した訓練シミュレーション）：
      - **Controller（管制官役）**: レーダーを見ながら音声で指示を出す。自分の発出指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。
-     - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume、JOIN FINAL／復行／DEPART 初期上昇／タワー移管、RJTT SID/STAR 割当）を行う。
+     - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume、JOIN FINAL／復行／DEPART 初期上昇／タワー移管、RJTT SID/STAR 割当（VAMOS は TATEYAMA / DRAKY トランジション可））を行う。
    - 最初のシナリオはトップの「START WITH SAMPLE (サンプルで始める)」で開始できる。独自シナリオは Flight Plan Setup（`/flight-plan-setup`）または JSON アップロードで投入する。
    - 詳細は `Frontend/README.md` を参照
 
@@ -98,12 +99,12 @@ docker compose up --build
 
 フロントエンドの開発サーバー（`npm run dev` または `./scripts/dev-up.sh`）起動後、ブラウザで [http://localhost:3333](http://localhost:3333) を開く。
 
-| 画面 | URL | 役割 |
-|------|-----|------|
-| トップ（オモテノス） | `/` | システム概要、サンプル開始、各画面へのリンク |
-| フライトプラン設定 | `/flight-plan-setup` | シナリオ作成・編集・「これで始める」 |
-| Operator | `/operator` | 管制官指示の入力・航空機操作 |
-| Controller | `/controller` | レーダー表示・管制官役（指示メモ） |
+| 画面                 | URL                  | 役割                                         |
+| -------------------- | -------------------- | -------------------------------------------- |
+| トップ（オモテノス） | `/`                  | システム概要、サンプル開始、各画面へのリンク |
+| フライトプラン設定   | `/flight-plan-setup` | シナリオ作成・編集・「これで始める」         |
+| Operator             | `/operator`          | 管制官指示の入力・航空機操作                 |
+| Controller           | `/controller`        | レーダー表示・管制官役（指示メモ）           |
 
 レーダー（Controller / Operator 共通）では、進入廊内の到着機に進入端までの沿コース距離・概算時間をデータブロックへ出し、測距線（RBL）ツールで 2 点間の距離と真方位を測れる（詳細は [Frontend/README.md](Frontend/README.md)、[spec/20261122-runway-distance-rbl/spec.md](spec/20261122-runway-distance-rbl/spec.md)）。データブロックは新規表示時に 8 方位のリーダーオフセットを自動割当し、手動ドラッグで固定できる（API 変更なし。[spec/20261122-leader-line-auto-placement/spec.md](spec/20261122-leader-line-auto-placement/spec.md)）。使用滑走路と ATIS（情報識別つき本文。既定は風・QNH 欠測。Controller が真方位の風と空港ごとの QNH hPa を設定可能。高度モデルは変えない）はレーダー右上パネルで共有する（[spec/20261122-atis-runway-in-use/spec.md](spec/20261122-atis-runway-in-use/spec.md)、一様風 [spec/20261122-uniform-wind/spec.md](spec/20261122-uniform-wind/spec.md)、QNH [spec/20261122-atis-qnh/spec.md](spec/20261122-atis-qnh/spec.md)）。滑走路カタログは羽田 A/B/C/D・成田 A/B の 12 末端（真方位・変位進入端。値は非公式 AD 2.12 写し／AirBinder AIRAC 2611 由来で公式 AIP in force 未照合。RJTT 05 は着陸不可）（[spec/20261122-runway-catalog/spec.md](spec/20261122-runway-catalog/spec.md)）。
 
@@ -116,16 +117,17 @@ docker compose up --build
 
 1. **Javaのインストール**
 
-    - [Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21)（推奨）または [Oracle JDK 21](https://www.oracle.com/jp/java/technologies/downloads/#java21) をインストールします。
-    - インストール後、`JAVA_HOME` を Java 21 に合わせるか、`~/jdk21` に展開すると `./scripts/dev-up.sh` が自動検出します。
+   - [Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21)（推奨）または [Oracle JDK 21](https://www.oracle.com/jp/java/technologies/downloads/#java21) をインストールします。
+   - インストール後、`JAVA_HOME` を Java 21 に合わせるか、`~/jdk21` に展開すると `./scripts/dev-up.sh` が自動検出します。
 
 2. **Javaの環境設定**
 
-    - `java --version` で major が 21 であることを確認します（22 / 24 は不可）。
-    - 複数バージョンがある場合は `JAVA_HOME` を Java 21 に設定してください。
+   - `java --version` で major が 21 であることを確認します（22 / 24 は不可）。
+   - 複数バージョンがある場合は `JAVA_HOME` を Java 21 に設定してください。
 
 3. **依存関係のダウンロード**
-    - Gradle 8.14.8 を使用しています。実行時に自動的にダウンロードされます。
+
+   - Gradle 8.14.8 を使用しています。実行時に自動的にダウンロードされます。
 
 4. **コマンドラインで実行**
 
@@ -174,7 +176,7 @@ cd Backend
 # Frontend
 cd Frontend && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build
 
-# Backend  
+# Backend
 cd Backend && ./gradlew spotlessCheck && ./gradlew test
 ```
 

@@ -7,6 +7,7 @@ import {
   fetchProcedures,
   type ProcedureSummary,
 } from "@/utility/api/procedures";
+import { notifyFlightPlanChanged } from "@/utility/api/flightPlanChanged";
 
 const ProcedureAssignControl: React.FC = () => {
   const { callsign } = useSelectedAircraft();
@@ -67,6 +68,7 @@ const ProcedureAssignControl: React.FC = () => {
           ? `Assigned ${response.procedureId} (VA ${response.procedureVaCourseTrueDeg}°T). ${fixes}`
           : `Assigned ${response.procedureId}. ${fixes}`
       );
+      notifyFlightPlanChanged(callsign);
       setTimeout(() => setResult("idle"), 3000);
     } else {
       setResult("error");

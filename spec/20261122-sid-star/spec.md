@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In Progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-22
 - **関連**: [spec/spec.md](../spec.md)、[spec/20261017-terminal-radar-gaps/spec.md](../20261017-terminal-radar-gaps/spec.md)、Issue [#114](https://github.com/HorusATC/Horus/issues/114)、出発初期上昇 [#137](https://github.com/HorusATC/Horus/pull/137)（[#115](https://github.com/HorusATC/Horus/issues/115)）、ウェイポイント高度制約 `spec/20261017-waypoint-constraints/spec.md`

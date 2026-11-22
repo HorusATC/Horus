@@ -15,6 +15,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Ho
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldingPatternGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAltitudeTargetResolver;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureVaConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atmosphere.WindTriangle;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.departure.InitialClimbGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude;
@@ -113,9 +114,6 @@ public abstract class AircraftBase implements Aircraft {
     protected boolean towerHandoffActive;
     protected FixPosition towerThreshold;
     private UniformWind ambientWind = UniformWind.missing();
-
-    /** Tolerance when deciding VA altitude has been reached (matches AT_OR_ABOVE pass check). */
-    private static final double PROCEDURE_VA_ALTITUDE_TOLERANCE_FT = 100.0;
 
     public static final double MAX_TOWER_HANDOFF_DISTANCE_NM = 10.0;
     public static final double TOWER_HANDOFF_REMOVAL_NM = 0.5;
@@ -1196,26 +1194,26 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     /**
-     * Assigns a procedure-derived flight plan. When {@code vaCourseTrueDeg} and
-     * {@code vaAtOrAboveFt} are set, holds that true course until the altitude is reached
-     * (or already met), then continues on the flight-plan fixes.
+     * Assigns a procedure-derived flight plan. When {@code va} is set, holds that true course
+     * until the published AT_OR_ABOVE altitude is reached (or already met), then continues
+     * on the flight-plan fixes.
      */
-    public void assignProcedureRoute(FlightPlan flightPlan, Double vaCourseTrueDeg, Integer vaAtOrAboveFt) {
+    public void assignProcedureRoute(FlightPlan flightPlan, ProcedureVaConstraint va) {
         requireApproachControl();
         if (flightPlan == null) {
             throw new IllegalArgumentException("flightPlan is required");
         }
         setFlightPlan(flightPlan);
-        if (vaCourseTrueDeg == null || vaAtOrAboveFt == null) {
+        if (va == null) {
             return;
         }
         double currentAlt = aircraftPosition.altitude.toDouble();
-        if (currentAlt + PROCEDURE_VA_ALTITUDE_TOLERANCE_FT >= vaAtOrAboveFt) {
+        if (va.isSatisfiedByAltitudeFt(currentAlt)) {
             return;
         }
         this.procedureVaActive = true;
-        this.procedureVaCourseTrueDeg = InitialClimbGeometry.normalizeHeading(vaCourseTrueDeg);
-        this.procedureVaAltitudeFt = vaAtOrAboveFt;
+        this.procedureVaCourseTrueDeg = InitialClimbGeometry.normalizeHeading(va.courseTrueDeg());
+        this.procedureVaAltitudeFt = va.atOrAboveAltitudeFt();
         this.navigationMode = NavigationMode.HEADING;
         refreshProcedureVaInstructedVector();
     }
@@ -1424,11 +1422,12 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private void maybeCompleteProcedureVa() {
-        if (!procedureVaActive || procedureVaAltitudeFt == null) {
+        if (!procedureVaActive || procedureVaAltitudeFt == null || procedureVaCourseTrueDeg == null) {
             return;
         }
-        if (aircraftPosition.altitude.toDouble() + PROCEDURE_VA_ALTITUDE_TOLERANCE_FT
-                >= procedureVaAltitudeFt) {
+        ProcedureVaConstraint va =
+                new ProcedureVaConstraint(procedureVaCourseTrueDeg, procedureVaAltitudeFt);
+        if (va.isSatisfiedByAltitudeFt(aircraftPosition.altitude.toDouble())) {
             clearProcedureVa();
             if (flightPlan != null) {
                 this.navigationMode = NavigationMode.FLIGHT_PLAN;
