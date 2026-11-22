@@ -154,7 +154,7 @@ cd Frontend
 
 npm run dev          # 開発サーバー起動 (http://localhost:3333)
 npm run build        # プロダクションビルド
-npm run lint         # ESLint (app, components, utility, context)
+npm run lint         # ESLint type-aware (app, components, utility, context, types)
 npm run format       # Prettier で自動フォーマット
 npm run format:check # Prettier チェック (CI用)
 npm run typecheck    # TypeScript 型チェック (tsc --noEmit)
