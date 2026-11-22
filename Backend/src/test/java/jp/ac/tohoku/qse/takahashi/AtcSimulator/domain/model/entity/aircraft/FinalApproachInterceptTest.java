@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Field;
-
 import org.junit.jupiter.api.Test;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.behavior.FixedWingFlightBehavior;
@@ -32,10 +30,10 @@ class FinalApproachInterceptTest {
                 new FixPosition(new Latitude(35.1), new Longitude(139.1)),
                 "RJTT/16R-FA",
                 149.88);
-        assertTrue(pendingFlag(aircraft));
+        assertTrue(aircraft.isFinalApproachCoursePending());
 
         aircraft.setDirectTo(new FixPosition(new Latitude(35.2), new Longitude(139.2)), "OTHER", false);
-        assertFalse(pendingFlag(aircraft));
+        assertFalse(aircraft.isFinalApproachCoursePending());
         assertEquals(NavigationMode.DIRECT_TO, aircraft.getNavigationMode());
     }
 
@@ -50,7 +48,7 @@ class FinalApproachInterceptTest {
         invokeOnDirectToTargetReached(aircraft);
 
         assertEquals(NavigationMode.HEADING, aircraft.getNavigationMode());
-        assertFalse(pendingFlag(aircraft));
+        assertFalse(aircraft.isFinalApproachCoursePending());
         assertEquals(149.88, aircraft.getInstructedVector().instructedHeading.toDouble(), 0.01);
     }
 
@@ -58,12 +56,6 @@ class FinalApproachInterceptTest {
         var method = AircraftBase.class.getDeclaredMethod("onDirectToTargetReached");
         method.setAccessible(true);
         method.invoke(aircraft);
-    }
-
-    private static boolean pendingFlag(AircraftBase aircraft) throws Exception {
-        Field field = AircraftBase.class.getDeclaredField("finalApproachCoursePending");
-        field.setAccessible(true);
-        return field.getBoolean(aircraft);
     }
 
     private static AircraftBase createTestAircraft() {

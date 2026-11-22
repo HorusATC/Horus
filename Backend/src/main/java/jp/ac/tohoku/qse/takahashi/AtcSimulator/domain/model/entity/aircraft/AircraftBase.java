@@ -8,6 +8,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.char
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.guidance.Guidance;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.guidance.KinematicStep;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.guidance.TurnConstraint;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.navigation.LateralNavigation;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlan;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlanWaypoint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldEntryProcedure;
@@ -61,7 +62,8 @@ public abstract class AircraftBase implements Aircraft {
 
     protected FlightPlan flightPlan;
     protected int currentWaypointIndex;
-    protected NavigationMode navigationMode;
+    /** Single source of truth for lateral navigation (mode + VA + climb + go-around + final + handoff). */
+    protected LateralNavigation lateral;
     protected double previousDistanceToWaypoint;
     protected FixPosition directToTarget;
     protected String directToFixName;
@@ -93,28 +95,6 @@ public abstract class AircraftBase implements Aircraft {
     protected double holdEntryTurnAccumDeg;
     protected int resumeFlightPlanIndexAfterHold;
     protected Integer instructedIndicatedAirspeedKnots;
-    protected boolean finalApproachCoursePending;
-    protected Double finalApproachCourseHeading;
-    /** True after a go-around until the next navigation instruction. */
-    protected boolean goAroundActive;
-    /** True while an initial-climb DEPART is active until the next navigation instruction. */
-    protected boolean initialClimbActive;
-    protected Double initialClimbStartLatitude;
-    protected Double initialClimbStartLongitude;
-    protected Double initialClimbRunwayHeadingDeg;
-    /** When set, turn to this heading only after DER elevation + 400 ft. */
-    protected Double deferredInitialHeadingDeg;
-    protected double derElevationFt;
-    /**
-     * Simplified SID VA: hold published true course until at-or-above altitude, then fly the
-     * assigned flight-plan fixes (DF/TF). Not a full ARINC 424 path-terminator engine.
-     */
-    protected boolean procedureVaActive;
-    protected Double procedureVaCourseTrueDeg;
-    protected Integer procedureVaAltitudeFt;
-    /** True after the approach seat has transferred the aircraft to the tower. */
-    protected boolean towerHandoffActive;
-    protected FixPosition towerThreshold;
     private UniformWind ambientWind = UniformWind.missing();
 
     public static final double MAX_TOWER_HANDOFF_DISTANCE_NM = 10.0;
@@ -150,7 +130,7 @@ public abstract class AircraftBase implements Aircraft {
         this.squawk = null;
         this.flightPlan = null;
         this.currentWaypointIndex = 0;
-        this.navigationMode = NavigationMode.HEADING;
+        this.lateral = new LateralNavigation.PlainHeading();
         this.previousDistanceToWaypoint = Double.MAX_VALUE;
         this.directToTarget = null;
         this.directToFixName = null;
@@ -199,7 +179,7 @@ public abstract class AircraftBase implements Aircraft {
         TurnConstraint turnConstraint = resolveTurnConstraint();
         double headingBefore = this.aircraftVector.heading.toDouble();
 
-        Integer iasForStep = (navigationMode == NavigationMode.HEADING && !procedureVaActive)
+        Integer iasForStep = lateral.usesInstructedIndicatedAirspeed()
                 ? instructedIndicatedAirspeedKnots
                 : null;
         KinematicStep.State before = KinematicStep.State.from(aircraftPosition, aircraftVector);
@@ -218,7 +198,7 @@ public abstract class AircraftBase implements Aircraft {
                 turnConstraint,
                 simDeltaSeconds);
 
-        if (navigationMode == NavigationMode.HOLDING && holdEntryForcedTurnDirection != null) {
+        if (lateral instanceof LateralNavigation.HoldingNav && holdEntryForcedTurnDirection != null) {
             holdEntryTurnAccumDeg += Math.abs(
                     HoldingPatternGeometry.signedHeadingDeltaDeg(headingBefore, after.headingDeg()));
         }
@@ -240,14 +220,14 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private double resolveActiveTurnRateDegPerSec() {
-        if (navigationMode == NavigationMode.HOLDING && holdingEntryCompleted) {
+        if (lateral instanceof LateralNavigation.HoldingNav && holdingEntryCompleted) {
             return holdFrozenTurnRateDegPerSec;
         }
         return this.characteristics.getMaxTurnRate();
     }
 
     private TurnConstraint resolveTurnConstraint() {
-        if (navigationMode != NavigationMode.HOLDING || !holdingEntryCompleted) {
+        if (!(lateral instanceof LateralNavigation.HoldingNav) || !holdingEntryCompleted) {
             return TurnConstraint.SHORTEST;
         }
         boolean parallelInbound = holdPhase == HoldPhase.ENTRY_PARALLEL_INBOUND_TURN
@@ -281,32 +261,46 @@ public abstract class AircraftBase implements Aircraft {
      * Exactly one guidance kind for this tick. WCA applies only for {@link Guidance.TrackCourse}.
      */
     private Guidance resolveCurrentGuidance() {
-        if (procedureVaActive && procedureVaCourseTrueDeg != null) {
-            return new Guidance.FlyHeading(procedureVaCourseTrueDeg);
-        }
-        if (navigationMode == NavigationMode.HEADING) {
-            if (finalApproachCourseHeading != null && !finalApproachCoursePending) {
+        return switch (lateral) {
+            case LateralNavigation.ProcedureVa va -> new Guidance.FlyHeading(va.courseTrueDeg());
+            case LateralNavigation.FinalApproach fa -> {
                 // Anchor at the aircraft so xtk≈0: maintain course with WCA (JOIN FINAL).
                 FixPosition anchor = new FixPosition(aircraftPosition.latitude, aircraftPosition.longitude);
-                return new Guidance.TrackCourse(finalApproachCourseHeading, anchor);
+                yield new Guidance.TrackCourse(fa.courseHeadingDeg(), anchor);
             }
-            return new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
-        }
-        if (navigationMode == NavigationMode.DIRECT_TO && directToTarget != null) {
-            return new Guidance.SteerTo(directToTarget);
-        }
-        if (navigationMode == NavigationMode.FLIGHT_PLAN && flightPlan != null) {
-            return flightPlan.getNextWaypoint(currentWaypointIndex)
-                    .map(wp -> (Guidance) new Guidance.SteerTo(wp.getPosition()))
-                    .orElseGet(() -> new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble()));
-        }
-        if (navigationMode == NavigationMode.HOLDING && holdingFix != null) {
-            if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY) {
-                return new Guidance.SteerTo(holdingFix);
+            case LateralNavigation.TowerHandoff handoff -> {
+                if (handoff.approachCourseHeadingDeg() != null) {
+                    FixPosition anchor = new FixPosition(aircraftPosition.latitude, aircraftPosition.longitude);
+                    yield new Guidance.TrackCourse(handoff.approachCourseHeadingDeg(), anchor);
+                }
+                yield new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
             }
-            return resolveHoldingGuidance();
-        }
-        return new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+            case LateralNavigation.DirectToNav d when directToTarget != null ->
+                    new Guidance.SteerTo(directToTarget);
+            case LateralNavigation.FlightPlanNav f when flightPlan != null ->
+                    flightPlan.getNextWaypoint(currentWaypointIndex)
+                            .map(wp -> (Guidance) new Guidance.SteerTo(wp.getPosition()))
+                            .orElseGet(() ->
+                                    new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble()));
+            case LateralNavigation.HoldingNav h when holdingFix != null -> {
+                if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY) {
+                    yield new Guidance.SteerTo(holdingFix);
+                }
+                yield resolveHoldingGuidance();
+            }
+            case LateralNavigation.PlainHeading h ->
+                    new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+            case LateralNavigation.InitialClimb i ->
+                    new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+            case LateralNavigation.GoAround g ->
+                    new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+            case LateralNavigation.DirectToNav d ->
+                    new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+            case LateralNavigation.FlightPlanNav f ->
+                    new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+            case LateralNavigation.HoldingNav h ->
+                    new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+        };
     }
 
     private Guidance resolveHoldingGuidance() {
@@ -330,19 +324,34 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private void updateInstructedVectorFromNavigation() {
-        if (procedureVaActive) {
-            refreshProcedureVaInstructedVector();
-            return;
-        }
-        if (navigationMode == NavigationMode.HEADING) {
-            return;
-        }
-        if (navigationMode == NavigationMode.HOLDING && holdingFix != null && holdingEntryCompleted) {
-            updateInstructedVectorForHolding();
-            return;
-        }
-        if (navigationMode == NavigationMode.HOLDING && holdingFix != null && !holdingEntryCompleted) {
-            refreshPredictedEntryProcedure();
+        switch (lateral) {
+            case LateralNavigation.ProcedureVa va -> {
+                refreshProcedureVaInstructedVector();
+                return;
+            }
+            case LateralNavigation.PlainHeading h -> {
+                return;
+            }
+            case LateralNavigation.FinalApproach f -> {
+                return;
+            }
+            case LateralNavigation.InitialClimb i -> {
+                return;
+            }
+            case LateralNavigation.GoAround g -> {
+                return;
+            }
+            case LateralNavigation.TowerHandoff t -> {
+                return;
+            }
+            case LateralNavigation.HoldingNav h when holdingFix != null && holdingEntryCompleted -> {
+                updateInstructedVectorForHolding();
+                return;
+            }
+            case LateralNavigation.HoldingNav h when holdingFix != null && !holdingEntryCompleted ->
+                    refreshPredictedEntryProcedure();
+            default -> {
+            }
         }
         FixPosition target = resolveNavigationTarget();
         if (target == null) {
@@ -368,28 +377,27 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private FixPosition resolveNavigationTarget() {
-        if (navigationMode == NavigationMode.DIRECT_TO && directToTarget != null) {
-            return directToTarget;
-        }
-        if (navigationMode == NavigationMode.FLIGHT_PLAN && flightPlan != null) {
-            return flightPlan.getNextWaypoint(currentWaypointIndex)
-                    .map(FlightPlanWaypoint::getPosition)
-                    .orElse(null);
-        }
-        if (navigationMode == NavigationMode.HOLDING && holdingFix != null) {
-            if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY || holdPhase == HoldPhase.INBOUND_LEG) {
-                return holdingFix;
+        return switch (lateral) {
+            case LateralNavigation.DirectToNav d when directToTarget != null -> directToTarget;
+            case LateralNavigation.FlightPlanNav f when flightPlan != null ->
+                    flightPlan.getNextWaypoint(currentWaypointIndex)
+                            .map(FlightPlanWaypoint::getPosition)
+                            .orElse(null);
+            case LateralNavigation.HoldingNav h when holdingFix != null -> {
+                if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY || holdPhase == HoldPhase.INBOUND_LEG) {
+                    yield holdingFix;
+                }
+                if (holdPhase == HoldPhase.OUTBOUND_LEG) {
+                    yield holdingOutboundTarget;
+                }
+                yield null;
             }
-            if (holdPhase == HoldPhase.OUTBOUND_LEG) {
-                return holdingOutboundTarget;
-            }
-            return null;
-        }
-        return null;
+            default -> null;
+        };
     }
 
     private void advanceHoldingPhase(double simDeltaSeconds) {
-        if (navigationMode != NavigationMode.HOLDING || !holdingEntryCompleted || holdingFix == null) {
+        if (!(lateral instanceof LateralNavigation.HoldingNav) || !holdingEntryCompleted || holdingFix == null) {
             return;
         }
         double heading = aircraftVector.heading.toDouble();
@@ -560,8 +568,9 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private Altitude resolveTargetAltitude() {
-        if (navigationMode == NavigationMode.DIRECT_TO
-                || navigationMode == NavigationMode.HOLDING
+        NavigationMode mode = lateral.projectedNavigationMode();
+        if (mode == NavigationMode.DIRECT_TO
+                || mode == NavigationMode.HOLDING
                 || flightPlan == null) {
             return instructedVector.instructedAltitude;
         }
@@ -578,7 +587,8 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     protected double resolveEffectiveTargetTrueAirspeedKnots(double headingDeg) {
-        if (instructedIndicatedAirspeedKnots != null && navigationMode == NavigationMode.HEADING) {
+        if (instructedIndicatedAirspeedKnots != null
+                && lateral.projectedNavigationMode() == NavigationMode.HEADING) {
             return IndicatedAirspeedConverter.indicatedToTrueAirspeedKnots(
                     instructedIndicatedAirspeedKnots,
                     aircraftPosition.altitude.toDouble());
@@ -616,8 +626,9 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private GroundSpeed resolveTargetSpeed() {
-        if (navigationMode == NavigationMode.DIRECT_TO
-                || navigationMode == NavigationMode.HOLDING
+        NavigationMode mode = lateral.projectedNavigationMode();
+        if (mode == NavigationMode.DIRECT_TO
+                || mode == NavigationMode.HOLDING
                 || flightPlan == null) {
             return instructedVector.instructedGroundSpeed;
         }
@@ -634,7 +645,7 @@ public abstract class AircraftBase implements Aircraft {
         if (target == null) {
             return;
         }
-        if (navigationMode == NavigationMode.HOLDING) {
+        if (lateral instanceof LateralNavigation.HoldingNav) {
             if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY) {
                 double currentDistance = GeodeticUtils.distanceToFix(aircraftPosition, target);
                 boolean withinThreshold = currentDistance < HOLD_ENTRY_PASS_THRESHOLD_NM;
@@ -673,8 +684,11 @@ public abstract class AircraftBase implements Aircraft {
         previousDistanceToWaypoint = currentDistance;
 
         if (WP_DEBUG && currentDistance < threshold * 2
-                && (navigationMode == NavigationMode.FLIGHT_PLAN || navigationMode == NavigationMode.DIRECT_TO)) {
-            String targetName = navigationMode == NavigationMode.DIRECT_TO ? directToFixName : flightPlan.getNextWaypoint(currentWaypointIndex).map(w -> w.getFixName()).orElse("?");
+                && (lateral instanceof LateralNavigation.FlightPlanNav
+                        || lateral instanceof LateralNavigation.DirectToNav)) {
+            String targetName = lateral instanceof LateralNavigation.DirectToNav
+                    ? directToFixName
+                    : flightPlan.getNextWaypoint(currentWaypointIndex).map(w -> w.getFixName()).orElse("?");
             System.out.printf("[WP_DEBUG] %s %s dist=%.4f NM thresh=%.4f NM within=%s movingAway=%s passed=%s%n",
                     callsign, targetName, currentDistance, threshold, withinThreshold, movingAway, passed);
         }
@@ -687,41 +701,44 @@ public abstract class AircraftBase implements Aircraft {
             System.out.printf("[WP_DEBUG] %s *** WAYPOINT PASSED ***%n", callsign);
         }
 
-        if (navigationMode == NavigationMode.DIRECT_TO) {
+        if (lateral instanceof LateralNavigation.DirectToNav) {
             onDirectToTargetReached();
             return;
         }
 
-        if (navigationMode == NavigationMode.FLIGHT_PLAN && flightPlan != null) {
+        if (lateral instanceof LateralNavigation.FlightPlanNav && flightPlan != null) {
             flightPlan.getNextWaypoint(currentWaypointIndex).ifPresent(this::onWaypointPassed);
         }
     }
 
     private void onDirectToTargetReached() {
-        directToTarget = null;
         previousDistanceToWaypoint = Double.MAX_VALUE;
-        if (finalApproachCoursePending && finalApproachCourseHeading != null) {
-            finalApproachCoursePending = false;
-            navigationMode = NavigationMode.HEADING;
+        if (lateral instanceof LateralNavigation.DirectToNav d
+                && d.approachCoursePending()
+                && d.approachCourseHeadingDeg() != null) {
+            double course = d.approachCourseHeadingDeg();
+            this.lateral = new LateralNavigation.FinalApproach(course, false);
             this.instructedVector = new InstructedVector(
-                    new Heading(finalApproachCourseHeading),
+                    new Heading(course),
                     instructedVector.instructedAltitude,
                     instructedVector.instructedGroundSpeed);
+            directToTarget = null;
             directToFixName = null;
             resumeFlightPlanAfterDirectTo = false;
             return;
         }
+        directToTarget = null;
         if (resumeFlightPlanAfterDirectTo && flightPlan != null && directToFixName != null) {
             int idx = flightPlan.findWaypointIndex(directToFixName);
             if (idx >= 0) {
                 currentWaypointIndex = idx;
-                navigationMode = NavigationMode.FLIGHT_PLAN;
+                this.lateral = new LateralNavigation.FlightPlanNav();
             } else {
-                navigationMode = NavigationMode.HEADING;
+                this.lateral = new LateralNavigation.PlainHeading();
             }
             resumeFlightPlanAfterDirectTo = false;
         } else {
-            navigationMode = NavigationMode.HEADING;
+            this.lateral = new LateralNavigation.PlainHeading();
         }
         directToFixName = null;
     }
@@ -738,7 +755,7 @@ public abstract class AircraftBase implements Aircraft {
         currentWaypointIndex++;
         previousDistanceToWaypoint = Double.MAX_VALUE;
         if (currentWaypointIndex >= flightPlan.getWaypoints().size()) {
-            navigationMode = NavigationMode.HEADING;
+            this.lateral = new LateralNavigation.PlainHeading();
         }
     }
 
@@ -896,9 +913,15 @@ public abstract class AircraftBase implements Aircraft {
 
     public void setInstructedVector(final InstructedVector newInstructedVector, Integer indicatedAirspeedKnots) {
         requireApproachControl();
-        clearFinalApproachInterceptState();
+        LateralNavigation nextLateral = switch (lateral) {
+            case LateralNavigation.FinalApproach f -> new LateralNavigation.PlainHeading();
+            case LateralNavigation.DirectToNav d when d.approachCourseHeadingDeg() != null ->
+                    LateralNavigation.DirectToNav.plain();
+            default -> lateral;
+        };
         this.instructedVector = newInstructedVector;
         this.instructedIndicatedAirspeedKnots = indicatedAirspeedKnots;
+        this.lateral = nextLateral;
     }
 
     public Integer getInstructedIndicatedAirspeedKnots() {
@@ -906,27 +929,38 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     public boolean isGoAroundActive() {
-        return goAroundActive;
+        return lateral.projectedGoAround();
     }
 
     public boolean isInitialClimbActive() {
-        return initialClimbActive;
+        return lateral.projectedInitialClimb();
     }
 
     public Double getInitialClimbStartLatitude() {
-        return initialClimbStartLatitude;
+        return lateral instanceof LateralNavigation.InitialClimb climb ? climb.startLatitude() : null;
     }
 
     public Double getInitialClimbStartLongitude() {
-        return initialClimbStartLongitude;
+        return lateral instanceof LateralNavigation.InitialClimb climb ? climb.startLongitude() : null;
     }
 
     public Double getInitialClimbRunwayHeadingDeg() {
-        return initialClimbRunwayHeadingDeg;
+        return lateral instanceof LateralNavigation.InitialClimb climb ? climb.runwayHeadingDeg() : null;
+    }
+
+    public Double getDeferredInitialHeadingDeg() {
+        return lateral instanceof LateralNavigation.InitialClimb climb
+                ? climb.deferredInitialHeadingDeg()
+                : null;
     }
 
     public boolean isTowerHandoffActive() {
-        return towerHandoffActive;
+        return lateral.projectedTowerHandoff();
+    }
+
+    /** True while JOIN FINAL is Direct-To the intercept (approach course not yet established). */
+    public boolean isFinalApproachCoursePending() {
+        return lateral.approachCoursePending();
     }
 
     /**
@@ -935,15 +969,14 @@ public abstract class AircraftBase implements Aircraft {
      */
     public void beginTowerHandoff(double thresholdLatitude, double thresholdLongitude) {
         requireApproachControl();
-        if (goAroundActive) {
+        if (lateral instanceof LateralNavigation.GoAround) {
             throw new IllegalArgumentException("Cancel the go-around before handing off to the tower");
         }
-        clearInitialClimbActive();
         FixPosition threshold = new FixPosition(
                 new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Latitude(thresholdLatitude),
                 new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Longitude(thresholdLongitude));
         double distanceNm = GeodeticUtils.distanceToFix(aircraftPosition, threshold);
-        if (navigationMode != NavigationMode.HEADING) {
+        if (lateral.projectedNavigationMode() != NavigationMode.HEADING) {
             throw new IllegalArgumentException(
                     "Establish on the final approach course before tower handoff");
         }
@@ -958,8 +991,8 @@ public abstract class AircraftBase implements Aircraft {
             throw new IllegalArgumentException(
                     "Aircraft track does not reach the runway threshold");
         }
-        this.towerThreshold = threshold;
-        this.towerHandoffActive = true;
+        Double approachCourseFromCurrent = lateral.approachCourseHeadingOrNull();
+        this.lateral = new LateralNavigation.TowerHandoff(threshold, approachCourseFromCurrent);
     }
 
     /**
@@ -996,8 +1029,8 @@ public abstract class AircraftBase implements Aircraft {
             // Re-resolve TrackCourse anchors (JOIN FINAL) from the simulated position each second.
             Guidance stepGuidance = guidance;
             if (guidance instanceof Guidance.TrackCourse track
-                    && finalApproachCourseHeading != null
-                    && !finalApproachCoursePending) {
+                    && lateral.approachCourseHeadingOrNull() != null
+                    && !lateral.approachCoursePending()) {
                 stepGuidance = new Guidance.TrackCourse(
                         track.courseDeg(),
                         new FixPosition(new Latitude(state.latitude()), new Longitude(state.longitude())));
@@ -1043,10 +1076,10 @@ public abstract class AircraftBase implements Aircraft {
 
     /** @return true when the aircraft has reached the threshold and is marked for removal */
     public boolean markTowerHandoffArrival() {
-        if (!towerHandoffActive || towerThreshold == null) {
+        if (!(lateral instanceof LateralNavigation.TowerHandoff handoff)) {
             return false;
         }
-        double distanceNm = GeodeticUtils.distanceToFix(aircraftPosition, towerThreshold);
+        double distanceNm = GeodeticUtils.distanceToFix(aircraftPosition, handoff.threshold());
         if (distanceNm <= TOWER_HANDOFF_REMOVAL_NM) {
             markedForRemoval = true;
             return true;
@@ -1065,7 +1098,6 @@ public abstract class AircraftBase implements Aircraft {
             throw new IllegalArgumentException(
                     "Go-around climb altitude must be at least 500 ft above current altitude");
         }
-        setNavigationMode(NavigationMode.HEADING);
         clearHoldingState();
         this.directToTarget = null;
         this.directToFixName = null;
@@ -1075,8 +1107,7 @@ public abstract class AircraftBase implements Aircraft {
                 new Heading(runwayHeading),
                 new Altitude(climbAltitudeFeet),
                 this.instructedVector.instructedGroundSpeed);
-        this.goAroundActive = true;
-        clearInitialClimbActive();
+        this.lateral = new LateralNavigation.GoAround();
     }
 
     /**
@@ -1106,80 +1137,80 @@ public abstract class AircraftBase implements Aircraft {
             deferred = InitialClimbGeometry.normalizeHeading(initialHeadingDeg);
         }
 
-        setNavigationMode(NavigationMode.HEADING);
-        clearHoldingState();
-        clearGoAroundActive();
-        clearProcedureVa();
-        this.directToTarget = null;
-        this.directToFixName = null;
-        this.resumeFlightPlanAfterDirectTo = false;
-        this.previousDistanceToWaypoint = Double.MAX_VALUE;
-
         GroundSpeed instructedGs;
         if (instructedIndicatedAirspeedKnots != null) {
             instructedGs = this.instructedVector.instructedGroundSpeed;
         } else {
             instructedGs = new GroundSpeed(InitialClimbGeometry.DEFAULT_DEPARTURE_GROUND_SPEED_KT);
         }
-        this.instructedVector = new InstructedVector(
+        InstructedVector nextInstructed = new InstructedVector(
                 new Heading(runwayHeading),
                 new Altitude(climbAltitudeFeet),
                 instructedGs);
 
-        this.aircraftPosition = new AircraftPosition(
+        AircraftPosition nextPosition = new AircraftPosition(
                 new Latitude(startLatitude),
                 new Longitude(startLongitude),
                 new Altitude(startAltitudeFt));
 
         double tasKt = instructedGs.toDouble();
         if (instructedIndicatedAirspeedKnots != null) {
-            tasKt = resolveEffectiveTargetTrueAirspeedKnots(runwayHeading);
+            tasKt = IndicatedAirspeedConverter.indicatedToTrueAirspeedKnots(
+                    instructedIndicatedAirspeedKnots, startAltitudeFt);
         } else if (ambientWind.affectsMotion()) {
             tasKt = WindTriangle.trueAirspeedForGroundSpeed(
                     runwayHeading, instructedGs.toDouble(), ambientWind);
         }
+
         WindTriangle.GroundVelocity groundVelocity =
                 WindTriangle.groundVelocity(runwayHeading, tasKt, ambientWind);
-        this.aircraftVector = new AircraftVector(
+        AircraftVector nextVector = new AircraftVector(
                 new Heading(runwayHeading),
                 new GroundSpeed(groundVelocity.groundSpeedKt()),
                 new VerticalSpeed(0.0),
                 groundVelocity.trackDeg(),
                 tasKt);
 
-        this.initialClimbStartLatitude = startLatitude;
-        this.initialClimbStartLongitude = startLongitude;
-        this.initialClimbRunwayHeadingDeg = runwayHeading;
-        this.deferredInitialHeadingDeg = deferred;
-        this.derElevationFt = derElevationFt;
-        this.initialClimbActive = true;
+        clearHoldingState();
+        this.directToTarget = null;
+        this.directToFixName = null;
+        this.resumeFlightPlanAfterDirectTo = false;
+        this.previousDistanceToWaypoint = Double.MAX_VALUE;
+        this.instructedVector = nextInstructed;
+        this.aircraftPosition = nextPosition;
+        this.aircraftVector = nextVector;
+        this.lateral = new LateralNavigation.InitialClimb(
+                startLatitude, startLongitude, runwayHeading, deferred, derElevationFt);
     }
 
     private void maybeReleaseInitialClimbTurn() {
-        if (!initialClimbActive || deferredInitialHeadingDeg == null) {
+        if (!(lateral instanceof LateralNavigation.InitialClimb climb)
+                || climb.deferredInitialHeadingDeg() == null) {
             return;
         }
         if (aircraftPosition.altitude.toDouble()
-                >= InitialClimbGeometry.turnReleaseAltitudeFt(derElevationFt)) {
+                >= InitialClimbGeometry.turnReleaseAltitudeFt(climb.derElevationFt())) {
             this.instructedVector = new InstructedVector(
-                    new Heading(deferredInitialHeadingDeg),
+                    new Heading(climb.deferredInitialHeadingDeg()),
                     this.instructedVector.instructedAltitude,
                     this.instructedVector.instructedGroundSpeed);
-            this.deferredInitialHeadingDeg = null;
+            this.lateral = new LateralNavigation.InitialClimb(
+                    climb.startLatitude(),
+                    climb.startLongitude(),
+                    climb.runwayHeadingDeg(),
+                    null,
+                    climb.derElevationFt());
         }
     }
 
     public void joinFinalApproachIntercept(FixPosition interceptPoint, String fixLabel, double approachCourseHeading) {
         requireApproachControl();
-        clearFinalApproachInterceptState();
-        finalApproachCoursePending = true;
-        finalApproachCourseHeading = approachCourseHeading;
-        applyDirectToNavigation(interceptPoint, fixLabel, false);
-    }
-
-    private void clearFinalApproachInterceptState() {
-        finalApproachCoursePending = false;
-        finalApproachCourseHeading = null;
+        this.directToTarget = interceptPoint;
+        this.directToFixName = fixLabel;
+        this.resumeFlightPlanAfterDirectTo = false;
+        this.previousDistanceToWaypoint = Double.MAX_VALUE;
+        clearHoldingState();
+        this.lateral = LateralNavigation.DirectToNav.joinFinal(approachCourseHeading);
     }
 
     public InstructedVector getAtcClearance() {
@@ -1206,14 +1237,13 @@ public abstract class AircraftBase implements Aircraft {
 
     public void setFlightPlan(FlightPlan flightPlan) {
         requireApproachControl();
-        clearGoAroundActive();
-        clearInitialClimbActive();
-        clearProcedureVa();
         this.flightPlan = flightPlan;
         this.currentWaypointIndex = 0;
-        this.navigationMode = flightPlan != null ? NavigationMode.FLIGHT_PLAN : NavigationMode.HEADING;
         this.previousDistanceToWaypoint = Double.MAX_VALUE;
         clearHoldingState();
+        this.lateral = flightPlan != null
+                ? new LateralNavigation.FlightPlanNav()
+                : new LateralNavigation.PlainHeading();
     }
 
     /**
@@ -1226,57 +1256,46 @@ public abstract class AircraftBase implements Aircraft {
         if (flightPlan == null) {
             throw new IllegalArgumentException("flightPlan is required");
         }
-        setFlightPlan(flightPlan);
-        if (va == null) {
-            return;
+        this.flightPlan = flightPlan;
+        this.currentWaypointIndex = 0;
+        this.previousDistanceToWaypoint = Double.MAX_VALUE;
+        clearHoldingState();
+        this.directToTarget = null;
+        this.directToFixName = null;
+        this.resumeFlightPlanAfterDirectTo = false;
+        if (va != null && !va.isSatisfiedByAltitudeFt(aircraftPosition.altitude.toDouble())) {
+            double course = InitialClimbGeometry.normalizeHeading(va.courseTrueDeg());
+            this.lateral = new LateralNavigation.ProcedureVa(course, va.atOrAboveAltitudeFt());
+            refreshProcedureVaInstructedVector();
+        } else {
+            this.lateral = new LateralNavigation.FlightPlanNav();
         }
-        double currentAlt = aircraftPosition.altitude.toDouble();
-        if (va.isSatisfiedByAltitudeFt(currentAlt)) {
-            return;
-        }
-        this.procedureVaActive = true;
-        this.procedureVaCourseTrueDeg = InitialClimbGeometry.normalizeHeading(va.courseTrueDeg());
-        this.procedureVaAltitudeFt = va.atOrAboveAltitudeFt();
-        this.navigationMode = NavigationMode.HEADING;
-        refreshProcedureVaInstructedVector();
     }
 
     public boolean isProcedureVaActive() {
-        return procedureVaActive;
+        return lateral.projectedProcedureVa();
     }
 
     public Double getProcedureVaCourseTrueDeg() {
-        return procedureVaCourseTrueDeg;
+        return lateral instanceof LateralNavigation.ProcedureVa va ? va.courseTrueDeg() : null;
     }
 
     public Integer getProcedureVaAltitudeFt() {
-        return procedureVaAltitudeFt;
+        return lateral instanceof LateralNavigation.ProcedureVa va ? va.atOrAboveAltitudeFt() : null;
     }
 
     public void setDirectTo(FixPosition target, String fixName, boolean resumeFlightPlan) {
         requireApproachControl();
-        clearFinalApproachInterceptState();
-        applyDirectToNavigation(target, fixName, resumeFlightPlan);
-    }
-
-    private void applyDirectToNavigation(FixPosition target, String fixName, boolean resumeFlightPlan) {
-        clearGoAroundActive();
-        clearInitialClimbActive();
-        clearProcedureVa();
         this.directToTarget = target;
         this.directToFixName = fixName;
         this.resumeFlightPlanAfterDirectTo = resumeFlightPlan;
-        this.navigationMode = NavigationMode.DIRECT_TO;
         this.previousDistanceToWaypoint = Double.MAX_VALUE;
         clearHoldingState();
+        this.lateral = LateralNavigation.DirectToNav.plain();
     }
 
     public void setHoldAtFix(FixPosition fix, HoldInstruction instruction) {
         requireApproachControl();
-        clearGoAroundActive();
-        clearInitialClimbActive();
-        clearProcedureVa();
-        clearFinalApproachInterceptState();
         this.holdingFix = fix;
         this.holdingFixName = instruction.fixName();
         this.holdTurnDirection = instruction.turnDirection();
@@ -1310,11 +1329,11 @@ public abstract class AircraftBase implements Aircraft {
                 this.holdInboundCourseDeg,
                 this.holdTurnDirection);
         this.resumeFlightPlanIndexAfterHold = computeResumeFlightPlanIndexAfterHold(instruction.fixName());
-        this.navigationMode = NavigationMode.HOLDING;
         this.directToTarget = null;
         this.directToFixName = null;
         this.resumeFlightPlanAfterDirectTo = false;
         this.previousDistanceToWaypoint = Double.MAX_VALUE;
+        this.lateral = new LateralNavigation.HoldingNav();
     }
 
     /** Exposed for geometry / turn-direction unit tests. */
@@ -1331,7 +1350,7 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     public HoldEntryProcedure getHoldEntryProcedure() {
-        if (navigationMode != NavigationMode.HOLDING) {
+        if (!(lateral instanceof LateralNavigation.HoldingNav)) {
             return null;
         }
         if (!holdEntryProcedureFrozen) {
@@ -1372,7 +1391,7 @@ public abstract class AircraftBase implements Aircraft {
      * Instructed racetrack vertices from the frozen geometry used for both flight and overlay.
      */
     public List<FixPosition> getHoldingPatternVertices() {
-        if (navigationMode != NavigationMode.HOLDING || holdingFix == null) {
+        if (!(lateral instanceof LateralNavigation.HoldingNav) || holdingFix == null) {
             return List.of();
         }
         return HoldingPatternGeometry.buildPattern(
@@ -1385,82 +1404,63 @@ public abstract class AircraftBase implements Aircraft {
 
     public void setResumeNavigation() {
         requireApproachControl();
-        clearGoAroundActive();
-        clearInitialClimbActive();
-        clearFinalApproachInterceptState();
         this.directToTarget = null;
         this.directToFixName = null;
         this.resumeFlightPlanAfterDirectTo = false;
+        if (lateral instanceof LateralNavigation.ProcedureVa) {
+            // SID VA is own-nav: accept Resume, keep ProcedureVa (projection stays HEADING + VA).
+            clearHoldingState();
+            return;
+        }
         if (flightPlan != null) {
             if (resumeFlightPlanIndexAfterHold >= flightPlan.getWaypoints().size()) {
-                this.navigationMode = NavigationMode.HEADING;
+                this.lateral = new LateralNavigation.PlainHeading();
                 clearHoldingState();
                 return;
             }
             if (resumeFlightPlanIndexAfterHold >= 0) {
                 this.currentWaypointIndex = resumeFlightPlanIndexAfterHold;
             }
-            this.navigationMode = NavigationMode.FLIGHT_PLAN;
+            this.lateral = new LateralNavigation.FlightPlanNav();
             clearHoldingState();
             return;
         }
         // No flight plan: still end the hold (and any prior HOLDING) so Resume always clears overlay.
-        this.navigationMode = NavigationMode.HEADING;
+        this.lateral = new LateralNavigation.PlainHeading();
         clearHoldingState();
     }
 
-    private void clearGoAroundActive() {
-        this.goAroundActive = false;
-    }
-
-    private void clearInitialClimbActive() {
-        this.initialClimbActive = false;
-        this.initialClimbStartLatitude = null;
-        this.initialClimbStartLongitude = null;
-        this.initialClimbRunwayHeadingDeg = null;
-        this.deferredInitialHeadingDeg = null;
-        this.derElevationFt = 0.0;
-    }
-
-    private void clearProcedureVa() {
-        this.procedureVaActive = false;
-        this.procedureVaCourseTrueDeg = null;
-        this.procedureVaAltitudeFt = null;
-    }
-
     private void refreshProcedureVaInstructedVector() {
-        if (!procedureVaActive || procedureVaCourseTrueDeg == null) {
+        if (!(lateral instanceof LateralNavigation.ProcedureVa va)) {
             return;
         }
         Altitude climbTarget = flightPlan != null
                 ? flightPlan.getCruiseAltitude()
                 : instructedVector.instructedAltitude;
-        if (procedureVaAltitudeFt != null
-                && climbTarget.toDouble() < procedureVaAltitudeFt) {
-            climbTarget = new Altitude(procedureVaAltitudeFt);
+        if (climbTarget.toDouble() < va.atOrAboveAltitudeFt()) {
+            climbTarget = new Altitude(va.atOrAboveAltitudeFt());
         }
         GroundSpeed speed = resolveTargetSpeed();
         this.instructedVector = new InstructedVector(
-                new Heading(procedureVaCourseTrueDeg), climbTarget, speed);
+                new Heading(va.courseTrueDeg()), climbTarget, speed);
     }
 
     private void maybeCompleteProcedureVa() {
-        if (!procedureVaActive || procedureVaAltitudeFt == null || procedureVaCourseTrueDeg == null) {
+        if (!(lateral instanceof LateralNavigation.ProcedureVa va)) {
             return;
         }
-        ProcedureVaConstraint va =
-                new ProcedureVaConstraint(procedureVaCourseTrueDeg, procedureVaAltitudeFt);
-        if (va.isSatisfiedByAltitudeFt(aircraftPosition.altitude.toDouble())) {
-            clearProcedureVa();
-            if (flightPlan != null) {
-                this.navigationMode = NavigationMode.FLIGHT_PLAN;
-                this.previousDistanceToWaypoint = Double.MAX_VALUE;
-            }
+        ProcedureVaConstraint constraint =
+                new ProcedureVaConstraint(va.courseTrueDeg(), va.atOrAboveAltitudeFt());
+        if (constraint.isSatisfiedByAltitudeFt(aircraftPosition.altitude.toDouble())) {
+            this.lateral = flightPlan != null
+                    ? new LateralNavigation.FlightPlanNav()
+                    : new LateralNavigation.PlainHeading();
+            this.previousDistanceToWaypoint = Double.MAX_VALUE;
         }
     }
 
     private void requireApproachControl() {
-        if (towerHandoffActive) {
+        if (lateral.projectedTowerHandoff()) {
             throw new ApproachControlReleasedException(callsign.toString());
         }
     }
@@ -1519,13 +1519,12 @@ public abstract class AircraftBase implements Aircraft {
 
     public void setNavigationMode(NavigationMode mode) {
         requireApproachControl();
-        clearGoAroundActive();
-        clearInitialClimbActive();
-        clearProcedureVa();
-        if (mode != NavigationMode.DIRECT_TO) {
-            clearFinalApproachInterceptState();
-        }
-        this.navigationMode = mode;
+        this.lateral = switch (mode) {
+            case HEADING -> new LateralNavigation.PlainHeading();
+            case FLIGHT_PLAN -> new LateralNavigation.FlightPlanNav();
+            case DIRECT_TO -> LateralNavigation.DirectToNav.plain();
+            case HOLDING -> new LateralNavigation.HoldingNav();
+        };
     }
 
     public FlightPlan getFlightPlan() {
@@ -1533,7 +1532,7 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     public NavigationMode getNavigationMode() {
-        return navigationMode;
+        return lateral.projectedNavigationMode();
     }
 
     public int getCurrentWaypointIndex() {

@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-23 | 単一航法モード型と拒否指示の部分更新禁止（[20261123-nav-mode-validate](20261123-nav-mode-validate/spec.md)、PR-C）。`LateralNavigation` sealed、VA 中 Resume 維持、拒否ハンドオフで DEPART 残存、経路再割当で JOIN FINAL 消去。 |
 | 2026-11-23 | Hold / タワー移管の風一貫ガイダンス（[20261123-hold-handoff-wind](20261123-hold-handoff-wind/spec.md)）。`Guidance` + 共有 `KinematicStep`。N1／outbound WCA／移管予測を修正。 |
 | 2026-11-23 | 既定クイックスタートを RJTT RNAV STAR 到着シナリオに（[20261123-star-quickstart-scenario](20261123-star-quickstart-scenario/spec.md)）。`procedureId` / ATIS シードはシナリオ load に加算。VAMOS・VISIP・KIAS 自動は既定に含めない。 |
 | 2026-11-22 | RJTT SID/STAR 第一スライス（[20261122-sid-star](20261122-sid-star/spec.md)、**Done**）。RNAV STAR 15・VAMOS FOUR（TATEYAMA/DRAKY トランジション含む）、割当 API、レーダー経路。VISIP・公示ホールド自動・KIAS は未実装。 |

@@ -193,13 +193,13 @@ public class CommercialAircraft extends AircraftBase {
      * 高度同期問題を解決するため、航空機ベクトルの垂直速度を基準に判定
      */
     private boolean shouldUpdateVector() {
-        if (navigationMode == NavigationMode.DIRECT_TO && directToTarget != null) {
+        if (getNavigationMode() == NavigationMode.DIRECT_TO && directToTarget != null) {
             return true;
         }
-        if (navigationMode == NavigationMode.HOLDING && holdingFix != null) {
+        if (getNavigationMode() == NavigationMode.HOLDING && holdingFix != null) {
             return true;
         }
-        if (navigationMode == NavigationMode.FLIGHT_PLAN && flightPlan != null
+        if (getNavigationMode() == NavigationMode.FLIGHT_PLAN && flightPlan != null
                 && flightPlan.getNextWaypoint(currentWaypointIndex).isPresent()) {
             return true;
         }
