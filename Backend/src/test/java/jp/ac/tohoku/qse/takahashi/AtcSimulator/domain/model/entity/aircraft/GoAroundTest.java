@@ -44,7 +44,7 @@ class GoAroundTest {
         assertEquals(6000, aircraft.getInstructedVector().instructedAltitude.toDouble(), 0.01);
         assertEquals(180, aircraft.getInstructedVector().instructedGroundSpeed.toDouble(), 0.01);
         assertEquals(160, aircraft.getInstructedIndicatedAirspeedKnots());
-        assertFalse(pendingFlag(aircraft));
+        assertFalse(aircraft.isFinalApproachCoursePending());
     }
 
     @Test
@@ -62,12 +62,6 @@ class GoAroundTest {
         aircraft.setInstructedVector(
                 new InstructedVector(new Heading(90), new Altitude(7000), new GroundSpeed(200)));
         assertFalse(aircraft.isGoAroundActive());
-    }
-
-    private static boolean pendingFlag(AircraftBase aircraft) throws Exception {
-        var field = AircraftBase.class.getDeclaredField("finalApproachCoursePending");
-        field.setAccessible(true);
-        return field.getBoolean(aircraft);
     }
 
     private static AircraftBase createTestAircraft() {

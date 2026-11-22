@@ -232,10 +232,10 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/go-around` | 進入復行。滑走路方位のまま上昇（上昇高度は現在高度より 500 ft 以上、末端から 120NM 以内） |
 | GET | `/api/procedures?airport=RJTT` | RJTT SID/STAR カタログ一覧（RNAV STAR 15・VAMOS 滑走路系・トランジション・VISIP は一覧に含むが割当不可）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made. |
 | GET | `/api/procedures/{id}` | 手続き詳細（レグ・公示真方位・高度。Hold 行はカタログのみ） |
-| POST | `/api/aircraft/{callsign}/assign-procedure` | SID/STAR を飛行計画へ割当（ボディ: `procedureId`、任意 `transitionId`）。成功時に既存 FlightPlanWaypoint 列へ載せる。VAMOS 滑走路 SID には TATEYAMA / DRAKY トランジションを指定可（カタログ読込時に同一 family・`connectsAt`＝終端 Fix で付与）。VAMOS VA は公示 AT_OR_ABOVE 到達まで真方位を保持してから DF/TF。KIAS・VISIP 飛行・公示ホールド自動は未実装 |
+| POST | `/api/aircraft/{callsign}/assign-procedure` | SID/STAR を飛行計画へ割当（ボディ: `procedureId`、任意 `transitionId`）。成功時に既存 FlightPlanWaypoint 列へ載せる。VAMOS 滑走路 SID には TATEYAMA / DRAKY トランジションを指定可（カタログ読込時に同一 family・`connectsAt`＝終端 Fix で付与）。VAMOS VA は公示 AT_OR_ABOVE 到達まで真方位を保持してから DF/TF。飛行計画／STAR の再割当は JOIN FINAL の進入コースを消す。KIAS・VISIP 飛行・公示ホールド自動は未実装 |
 | POST | `/api/aircraft/{callsign}/depart` | 出発・初期上昇。カタログ物理進入端（TORA 始端）へ置き、標高+35 ft・滑走路真方位（FLY RUNWAY HEADING）で指定高度へ上昇。任意 `initialHeadingDeg` は DER 標高+400 ft まで滑走路方位を維持してから旋回。地上滑走・SID・V 速度なし。上昇は開始高度より 500 ft 以上（1,000–45,000）。RJTT 05 可。位置 API に `initialClimb`。出典: FAA JO 7110.65 5-8-2 / 5-8-3 NOTE 1。針路は真方位（磁偏差なし）。200 ft/NM 勾配は既存上昇率任せ |
-| POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつライブと同じ `KinematicStep`（風・WCA・トラック）で予測した軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
-| POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |
+| POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつライブと同じ `KinematicStep`（風・WCA・トラック）で予測した軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。距離・モード・予測の検証がすべて通ってから `DEPART` 状態を終える（拒否時は `initialClimb`・延期針路・MSAW 廊を残す）。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
+| POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開。SID VA 中の Resume は VA を維持し（射影は `HEADING` + `procedureVaActive`）、公示 AT_OR_ABOVE まで次フィックスへ進めない |
 | GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路・加算の整数 `revision`（セッション開始は 0。当該空港の GET 表現が変わる成功更新で +1。共有風の更新では風欄／本文が変わる各空港の `revision` も進む）。既定は各空港 16R / A（`DEFAULT_RUNWAY` は変更しない）。風は欠測（`windAvailable: false`）。QNH も欠測（`qnhAvailable: false`、`qnhHpa` 省略）。任意で `windDirectionDeg` / `windSpeedKt`（真方位・ノット。磁方位変換なし）と空港ごとの `qnhHpa`（hPa）。視程・雲等は未実装。シナリオ load は一旦既定に戻したあと、任意の `atis` シードを適用する |
 | PUT | `/api/atis/{airportIcao}` | 使用滑走路を更新（`runwayInUse` 必須）。任意 `wind`（`{ directionDeg, speedKt }` / CALM `speedKt: 0` / 欠測 `null`）。任意 `qnhHpa`（整数 850–1100 / 欠測 `null`）。任意 `expectedRevision`（キー省略時は現行どおり無条件更新。キーありで現在の `revision` と不一致なら状態を変えず **409**、本文は現在の空港オブジェクト + `message`）。風の値が変わると両空港の情報識別を 1 つ進める（共有一様風）。QNH が当該空港で変わると**その空港だけ**識別送り。キー省略は既存どおり風／QNH を変えない。範囲外は 400。JOIN FINAL／復行／`DEPART`／タワー移管／Hold／位置 API の契約は変更しない（高度・IAS→TAS・MSAW／STCA の垂直判定は QNH を見ない。RJTT 05 への JOIN FINAL のみ着陸不可で 400） |
 | GET | `/simulation/speed` | シミュレーション時間倍率と実時間ティック間隔（ms） |
@@ -253,6 +253,12 @@ npm run dev
 - 既定針路はカタログ真方位。横風では機首は滑走路方位のままトラックが偏流してよい（WCA なし）。
 - IAS 指示があれば維持。無ければ指示 GS 180 kt。
 - `initialClimb` 中かつ出発端から滑走路方位に沿って 5 NM・左右 1.0 NM の廊内では MSAW を抑制する。
+- 拒否されたタワー移管は `DEPART` 状態（延期針路・滑走路方位・MSAW 抑制の根拠）を消さない。[spec/20261123-nav-mode-validate](../spec/20261123-nav-mode-validate/spec.md)。
+
+**航法モード（横方向）** — [spec/20261123-nav-mode-validate](../spec/20261123-nav-mode-validate/spec.md):
+
+- 内部は判別可能な単一モード型（`LateralNavigation`）。位置 API の `navigationMode`（`FLIGHT_PLAN` / `HEADING` / `DIRECT_TO` / `HOLDING`）と `goAround` / `initialClimb` / `towerHandoff`、および飛行計画応答の `procedureVaActive` は射影であり、既存キーの意味は有効指示の経路で変えない。
+- 横方向指示は検証してから一度に代入する。拒否された指示は機体スナップショットを変えない。
 
 **対向派生**（`deriveReciprocal`）は、JSON に対向 designator が無いときだけのフォールバック。12 末端が揃っている現行カタログでは派生末端は作らない。
 
@@ -420,7 +426,7 @@ RESTful APIを提供しており、詳細なAPI仕様は`UranosAPI.yml`ファイ
    - `POST /api/aircraft/{callsign}/squawk` - **スクオークコード**を割り当て（Body: `{ "squawk": "1200" }`、4桁オクタル）
 
 2. **位置情報取得**（JSON 形式）
-   - `GET /aircraft/location/all` - 全航空機の現在位置を取得（各要素に `atcClearance`、未割当時は `null` の `squawk`、`navigationMode`、**`msawAlert`**、および待機中のみ **`holding`** を含む。`msawAlert` は未警報時 `null`、警報時は `{ type: "MSA"|"LOW", msaFt, trigger: "CURRENT"|"PREDICTED" }`。`holding` は `navigationMode=HOLDING` のときだけ出る指示レーストラック（`fixName` / 入方向 / 旋回 / レグ / `turnRadiusNm` / 閉じた `pattern` 頂点列 / 任意の **`entryProcedure`** `DIRECT`|`TEARDROP`|`PARALLEL`）。`entryProcedure` はフィックス到達前は到着針路からの予測、通過後は凍結。同一 Backend 幾何が飛行・進入判定・オーバーレイを駆動する。非待機機では `holding` キー自体が無い）
+   - `GET /aircraft/location/all` - 全航空機の現在位置を取得（各要素に `atcClearance`、未割当時は `null` の `squawk`、`navigationMode`、常時の真偽値 `goAround` / `initialClimb` / `towerHandoff`（内部モードの射影。レーダーの `GA` / `DEP` / `TWR` と同意味）、**`msawAlert`**、および待機中のみ **`holding`** を含む。`msawAlert` は未警報時 `null`、警報時は `{ type: "MSA"|"LOW", msaFt, trigger: "CURRENT"|"PREDICTED" }`。`holding` は `navigationMode=HOLDING` のときだけ出る指示レーストラック（`fixName` / 入方向 / 旋回 / レグ / `turnRadiusNm` / 閉じた `pattern` 頂点列 / 任意の **`entryProcedure`** `DIRECT`|`TEARDROP`|`PARALLEL`）。`entryProcedure` はフィックス到達前は到着針路からの予測、通過後は凍結。同一 Backend 幾何が飛行・進入判定・オーバーレイを駆動する。非待機機では `holding` キー自体が無い）
    - `GET /aircraft/location?callsign={callsign}` - 特定航空機の位置を取得
 
 #### ホールディング（標準率レーストラック）

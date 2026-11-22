@@ -271,7 +271,7 @@ Operator 専用。航空機の指示先 Fix をレーダー上で選択し、`Di
 
 ### 6. フライトプラン制御 (FlightPlanControl)
 
-Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、出発初期上昇（`DEPART`: カタログ物理進入端へ置き、標高+35 ft から滑走路真方位で上昇。任意の初期針路は DER 標高+400 ft まで滑走路方位維持。地上滑走・SID なし。開始高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、風込みの予測軌道が末端 0.5 NM 以内を通る機体）、Resume Navigation、および `POST /api/aircraft/{callsign}/assign-procedure`（SID/STAR 割当）をバックエンドへ送信。空港・滑走路入力は現行 ATIS の使用滑走路で初期表示するが、API には明示して送る（使用滑走路変更だけでは進入中機体は付け替わらない）。復行中は `GA`、初期上昇中は `DEP`、移管後は `TWR` をレーダーラベルに出す。詳細は [spec/20261122-initial-climb](../spec/20261122-initial-climb/spec.md)。
+Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、出発初期上昇（`DEPART`: カタログ物理進入端へ置き、標高+35 ft から滑走路真方位で上昇。任意の初期針路は DER 標高+400 ft まで滑走路方位維持。地上滑走・SID なし。開始高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、風込みの予測軌道が末端 0.5 NM 以内を通る機体。拒否時は `DEP` 状態を消さない）、Resume Navigation（SID VA 中は VA を維持し公示高度まで次フィックスへ進めない）、および `POST /api/aircraft/{callsign}/assign-procedure`（SID/STAR 割当。経路再割当は JOIN FINAL 進入コースを消す）をバックエンドへ送信。空港・滑走路入力は現行 ATIS の使用滑走路で初期表示するが、API には明示して送る（使用滑走路変更だけでは進入中機体は付け替わらない）。復行中は `GA`、初期上昇中は `DEP`、移管後は `TWR` をレーダーラベルに出す（位置 API の `goAround` / `initialClimb` / `towerHandoff` 射影と同意味）。詳細は [spec/20261122-initial-climb](../spec/20261122-initial-climb/spec.md)、[spec/20261123-nav-mode-validate](../spec/20261123-nav-mode-validate/spec.md)。
 
 ### 7. 経路情報表示設定 (RouteInfoDisplaySetting)
 

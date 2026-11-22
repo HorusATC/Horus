@@ -63,7 +63,7 @@ docker compose up --build
    - Tailwind CSSによるモダンなUI
    - 2つの主要画面（役割分担を想定した訓練シミュレーション）：
      - **Controller（管制官役）**: レーダーを見ながら音声で指示を出す。自分の発出指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。
-     - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume、JOIN FINAL／復行／DEPART 初期上昇／タワー移管、RJTT SID/STAR 割当（VAMOS は TATEYAMA / DRAKY トランジション可））を行う。
+     - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume（SID VA 中は VA 維持）、JOIN FINAL／復行／DEPART 初期上昇／タワー移管（拒否時は DEPART 状態を残す）、RJTT SID/STAR 割当（VAMOS は TATEYAMA / DRAKY トランジション可。再割当は JOIN FINAL 進入コースを消す））を行う。レーダーの `GA` / `DEP` / `TWR` は位置 API 射影のまま。
    - 最初のシナリオはトップの「START WITH SAMPLE (サンプルで始める)」で開始できる（既定サンプルは RJTT RNAV STAR `OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`・使用滑走路 34L。レーダー既定中心は RJTT）。独自シナリオは Flight Plan Setup（`/flight-plan-setup`）または JSON アップロードで投入する。
    - 詳細は `Frontend/README.md` を参照
 
