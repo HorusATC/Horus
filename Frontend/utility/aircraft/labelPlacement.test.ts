@@ -110,6 +110,25 @@ describe("computeLabelPlacements", () => {
     expect(other.label).not.toEqual({ x: 12, y: -34 });
   });
 
+  it("treats a later-sorted pinned label as an obstacle for earlier unpinned", () => {
+    // Without seeding pinned rects first, AAA001 would take NE and overlap N
+    // (intersection area 2800) because ZZZ999 is not yet in placedLabelRects.
+    const unpinned = aircraft("AAA001", 400, 400, { x: 50, y: 50 }, false);
+    const pinned = aircraft("ZZZ999", 400, 400, offsetForDirection("N"), true);
+    computeLabelPlacements([unpinned, pinned], {
+      canvas: CANVAS,
+      forcePlaceCallsigns: new Set(["AAA001"]),
+    });
+    expect(pinned.label).toEqual(offsetForDirection("N"));
+    expect(
+      rectIntersectionArea(
+        labelHitRect(unpinned.position, unpinned.label, HIT),
+        labelHitRect(pinned.position, pinned.label, HIT)
+      )
+    ).toBe(0);
+    expect(unpinned.label).not.toEqual(offsetForDirection("NE"));
+  });
+
   it("is deterministic for the same positions and callsigns", () => {
     const make = () => [
       aircraft("JAL100", 300, 300),

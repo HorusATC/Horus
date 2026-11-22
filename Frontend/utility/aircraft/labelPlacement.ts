@@ -237,6 +237,9 @@ function compareCallsign(a: string, b: string): number {
  * Assign / repair label offsets. Pinned labels never move.
  * Unpinned labels keep their offset unless invalid or listed in `forcePlaceCallsigns`.
  * Mutates `label` on each aircraft; deterministic for the same inputs.
+ *
+ * Pinned hit rects are collected first so a later-sorted pinned callsign still
+ * blocks earlier unpinned placements (callsign order alone is not enough).
  */
 export function computeLabelPlacements(
   aircraft: readonly LabelPlacementAircraft[],
@@ -249,20 +252,25 @@ export function computeLabelPlacements(
   );
 
   const placedLabelRects: Rect[] = [];
+  for (const current of ordered) {
+    if (!current.labelPinned) {
+      continue;
+    }
+    placedLabelRects.push(
+      labelHitRect(current.position, current.label, current.hitBottomOffsetPx)
+    );
+  }
 
   for (const current of ordered) {
+    if (current.labelPinned) {
+      continue;
+    }
+
     const otherSymbolObstacles = ordered
       .filter((other) => other.callsign !== current.callsign)
       .map((other) => symbolHitRect(other.position, symbolRadiusPx));
 
     const obstacles = [...placedLabelRects, ...otherSymbolObstacles];
-
-    if (current.labelPinned) {
-      placedLabelRects.push(
-        labelHitRect(current.position, current.label, current.hitBottomOffsetPx)
-      );
-      continue;
-    }
 
     const force =
       forcePlaceCallsigns != null && forcePlaceCallsigns.has(current.callsign);
