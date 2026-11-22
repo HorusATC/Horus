@@ -108,7 +108,7 @@
 - [x] QNH の有無にかかわらず、位置・指示高度・IAS→TAS・無風時の GS／トラック・MSAW／STCA の垂直判定が、QNH を導入する前と同一である（退行テスト）
 - [x] **退行なし**: 既存の Backend / Frontend テストが、契約を緩めずに合格する。風・`DEPART`／`JOIN FINAL`／復行／Hold の契約を壊さない
 - [x] Frontend と Backend のビルドおよびテストが合格する
-- [ ] CI の 4 ジョブが、マージするコミットの SHA で全部合格する
+- [x] CI の 4 ジョブが、マージするコミットの SHA で全部合格する
 - [x] Controller の ATIS パネルで空港ごとに QNH を入れ・欠測に戻せ、Operator は読取専用で本文を見る。ブラウザ確認とスクリーンショットを残す（欠測 → RJTT だけ 1013 → 識別と本文の更新、RJAA は欠測のまま → 欠測へ戻す）
 - [x] Backend README と Frontend README に、空港ごとの QNH（hPa）、欠測既定、本文の 4 通り、高度モデルを変えないこと、出典を書く。Frontend README の ATIS 説明から「QNH は未実装」を落とす
 - [x] Frontend README 冒頭の Operator 役割表に `DEPART`（出発初期上昇）が含まれる
@@ -147,7 +147,7 @@
 - [x] 4 通りの本文、空港分離、識別送り、400、キー省略時の非変更が、未実装では失敗し、実装後は成功する
 - [x] 既存の ATIS／風／無風運動／`DEPART` テストが退行しない
 - [x] ブラウザで RJTT のみ QNH を入れ・戻す操作を確認し、スクリーンショットを残す
-- [ ] CI 4 ジョブがマージ SHA で合格する
+- [x] CI 4 ジョブがマージ SHA で合格する
 - [x] Operator 役割表に `DEPART` がある
 
 ---
