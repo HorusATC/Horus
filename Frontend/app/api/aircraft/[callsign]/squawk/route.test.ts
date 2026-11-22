@@ -31,13 +31,15 @@ class TextPlainResponse extends Response {
     this.textContent = text;
   }
 
-  override async text(): Promise<string> {
-    return this.textContent;
+  override text(): Promise<string> {
+    return Promise.resolve(this.textContent);
   }
 
-  override async json(): Promise<never> {
-    throw new SyntaxError(
-      `Unexpected token '${this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`
+  override json(): Promise<never> {
+    return Promise.reject(
+      new SyntaxError(
+        `Unexpected token '${this.textContent.charAt(0)}', "${this.textContent.substring(0, 20)}"... is not valid JSON`
+      )
     );
   }
 }
@@ -56,7 +58,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
     );
 
     const request = {
-      json: async () => ({ squawk: "1234" }),
+      json: () => Promise.resolve({ squawk: "1234" }),
     } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "ANA404" }) };
@@ -64,7 +66,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
     expect(response.status).toBe(200);
     const text = await response.text();
-    const json = JSON.parse(text);
+    const json = JSON.parse(text) as { message: string };
     expect(json).toEqual({ message: "Squawk assigned: ANA404" });
     expect(mockedProxyToBackend).toHaveBeenCalledWith(
       "/api/aircraft/ANA404/squawk",
@@ -83,7 +85,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
     );
 
     const request = {
-      json: async () => ({ squawk: "7700" }),
+      json: () => Promise.resolve({ squawk: "7700" }),
     } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "UNKNOWN" }) };
@@ -91,13 +93,13 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
     expect(response.status).toBe(404);
     const text = await response.text();
-    const json = JSON.parse(text);
+    const json = JSON.parse(text) as { error: string };
     expect(json).toEqual({ error: "Aircraft not found" });
   });
 
   it("returns 400 for invalid squawk without calling backend", async () => {
     const request = {
-      json: async () => ({ squawk: "8888" }),
+      json: () => Promise.resolve({ squawk: "8888" }),
     } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "TEST" }) };
@@ -105,16 +107,14 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
     expect(response.status).toBe(400);
     const text = await response.text();
-    const json = JSON.parse(text);
+    const json = JSON.parse(text) as { error: string };
     expect(json).toEqual({ error: "squawk must be 4 octal digits (0-7)" });
     expect(mockedProxyToBackend).not.toHaveBeenCalled();
   });
 
   it("returns 400 for malformed JSON without calling backend", async () => {
     const request = {
-      json: async (): Promise<never> => {
-        throw new Error("Invalid JSON");
-      },
+      json: () => Promise.reject(new Error("Invalid JSON")),
     } as unknown as NextRequest;
 
     const context = { params: Promise.resolve({ callsign: "TEST" }) };
@@ -122,7 +122,7 @@ describe("POST /api/aircraft/[callsign]/squawk", () => {
 
     expect(response.status).toBe(400);
     const text = await response.text();
-    const json = JSON.parse(text);
+    const json = JSON.parse(text) as { error: string };
     expect(json).toEqual({ error: "Invalid JSON" });
     expect(mockedProxyToBackend).not.toHaveBeenCalled();
   });

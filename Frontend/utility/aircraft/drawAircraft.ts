@@ -21,11 +21,7 @@ import {
   EMERGENCY_SQUAWKS,
   type EmergencySquawkCode,
 } from "./emergencySquawk";
-import {
-  MSAW_ALERTS,
-  type MsawAlertDto,
-  type MsawAlertType,
-} from "./msawAlert";
+import { MSAW_ALERTS, type MsawAlertDto } from "./msawAlert";
 import {
   findThresholdDistance,
   formatThresholdReadout,
@@ -292,7 +288,7 @@ class DrawAircraft {
     } else if (msawAlert !== null) {
       ctx.beginPath();
       ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
-      const color = MSAW_ALERTS[msawAlert.type as MsawAlertType].color;
+      const color = MSAW_ALERTS[msawAlert.type].color;
       ctx.strokeStyle = `${color}f2`;
       ctx.lineWidth = 2;
       ctx.stroke();

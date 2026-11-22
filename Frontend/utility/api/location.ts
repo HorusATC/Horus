@@ -83,9 +83,10 @@ type _DtoPartitionCoversInterface =
 type _DtoPartitionNoExtras = DtoPartitionKey extends keyof AircraftLocationDto
   ? true
   : never;
-const _dtoPartitionBidirectional: _DtoPartitionCoversInterface &
-  _DtoPartitionNoExtras = true;
-void _dtoPartitionBidirectional;
+const _dtoPartitionCovers: _DtoPartitionCoversInterface = true;
+const _dtoPartitionNoExtras: _DtoPartitionNoExtras = true;
+void _dtoPartitionCovers;
+void _dtoPartitionNoExtras;
 
 type DtoIdentityKey = {
   [K in DtoPartitionKey]: (typeof AIRCRAFT_LOCATION_DTO_FIELD_PARTITION)[K] extends "identity"
@@ -145,9 +146,10 @@ type _EveryDtoPolledKeyIsMapped = DtoPolledMappedKey extends MappedDtoPolledKeys
 type _NoExtraMappedDtoKeys = MappedDtoPolledKeys extends DtoPolledMappedKey
   ? true
   : never;
-const _dtoPolledMappingBidirectional: _EveryDtoPolledKeyIsMapped &
-  _NoExtraMappedDtoKeys = true;
-void _dtoPolledMappingBidirectional;
+const _dtoPolledMappingCovers: _EveryDtoPolledKeyIsMapped = true;
+const _dtoPolledMappingNoExtras: _NoExtraMappedDtoKeys = true;
+void _dtoPolledMappingCovers;
+void _dtoPolledMappingNoExtras;
 
 type _IdentityKeysAlign = AircraftIdentityKey extends DtoIdentityKey
   ? DtoIdentityKey extends AircraftIdentityKey
@@ -173,7 +175,7 @@ export const fetchAircraftLocation = async (
     });
 
     if (response.ok) {
-      const data: AircraftLocationDto[] = await response.json();
+      const data = (await response.json()) as AircraftLocationDto[];
       const aircraftData = data.map((dto) =>
         mapDtoToAircraft(dto, centerCoordinate, displayRange)
       );

@@ -78,16 +78,18 @@ const FlightPlanControl: React.FC = () => {
         </div>
         <button
           type="button"
-          onClick={async () => {
-            if (!callsign) return;
-            setFinalResult("idle");
-            const ok = await joinFinalApproach(
-              callsign,
-              airportIcao,
-              runwayDesignator
-            );
-            setFinalResult(ok ? "success" : "error");
-            if (ok) setTimeout(() => setFinalResult("idle"), 2000);
+          onClick={() => {
+            void (async () => {
+              if (!callsign) return;
+              setFinalResult("idle");
+              const ok = await joinFinalApproach(
+                callsign,
+                airportIcao,
+                runwayDesignator
+              );
+              setFinalResult(ok ? "success" : "error");
+              if (ok) setTimeout(() => setFinalResult("idle"), 2000);
+            })();
           }}
           className="w-full px-4 py-2 bg-atc-surface-elevated text-atc-text font-bold text-xs rounded border border-atc-accent hover:bg-atc-accent hover:text-white"
         >
@@ -113,24 +115,26 @@ const FlightPlanControl: React.FC = () => {
         />
         <button
           type="button"
-          onClick={async () => {
-            if (!callsign) return;
-            const altitude = Number(climbAltitudeFt);
-            if (!Number.isFinite(altitude)) {
-              setGoAroundResult("error");
-              setGoAroundMessage("Enter a climb altitude in feet");
-              return;
-            }
-            setGoAroundResult("idle");
-            const result = await goAround(
-              callsign,
-              airportIcao,
-              runwayDesignator,
-              altitude
-            );
-            setGoAroundResult(result.ok ? "success" : "error");
-            setGoAroundMessage(result.message ?? "");
-            if (result.ok) setTimeout(() => setGoAroundResult("idle"), 2000);
+          onClick={() => {
+            void (async () => {
+              if (!callsign) return;
+              const altitude = Number(climbAltitudeFt);
+              if (!Number.isFinite(altitude)) {
+                setGoAroundResult("error");
+                setGoAroundMessage("Enter a climb altitude in feet");
+                return;
+              }
+              setGoAroundResult("idle");
+              const result = await goAround(
+                callsign,
+                airportIcao,
+                runwayDesignator,
+                altitude
+              );
+              setGoAroundResult(result.ok ? "success" : "error");
+              setGoAroundMessage(result.message ?? "");
+              if (result.ok) setTimeout(() => setGoAroundResult("idle"), 2000);
+            })();
           }}
           className="w-full px-4 py-2 bg-atc-surface-elevated text-atc-text font-bold text-xs rounded border border-atc-danger hover:bg-atc-danger hover:text-white"
         >
@@ -149,17 +153,19 @@ const FlightPlanControl: React.FC = () => {
         </div>
         <button
           type="button"
-          onClick={async () => {
-            if (!callsign) return;
-            setTowerResult("idle");
-            const result = await handOffToTower(
-              callsign,
-              airportIcao,
-              runwayDesignator
-            );
-            setTowerResult(result.ok ? "success" : "error");
-            setTowerMessage(result.message ?? "");
-            if (result.ok) setTimeout(() => setTowerResult("idle"), 2000);
+          onClick={() => {
+            void (async () => {
+              if (!callsign) return;
+              setTowerResult("idle");
+              const result = await handOffToTower(
+                callsign,
+                airportIcao,
+                runwayDesignator
+              );
+              setTowerResult(result.ok ? "success" : "error");
+              setTowerMessage(result.message ?? "");
+              if (result.ok) setTimeout(() => setTowerResult("idle"), 2000);
+            })();
           }}
           className="w-full px-4 py-2 bg-atc-surface-elevated text-atc-text font-bold text-xs rounded border border-atc-accent hover:bg-atc-accent hover:text-white"
         >
@@ -177,7 +183,9 @@ const FlightPlanControl: React.FC = () => {
 
       <div className="border-t border-atc-border pt-3">
         <button
-          onClick={handleResume}
+          onClick={() => {
+            void handleResume();
+          }}
           className="w-full px-4 py-2 bg-atc-surface-elevated text-atc-text font-bold text-xs rounded
                      border border-atc-accent
                      hover:bg-atc-accent hover:text-white transition-colors duration-200"

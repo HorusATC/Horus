@@ -22,6 +22,7 @@
 - **状態管理**: React Context API
 - **ビルドツール**: esbuild
 - **TypeScript Flags**: noImplicitReturns, noUnusedLocals, noUnusedParameters, noUncheckedIndexedAccess, forceConsistentCasingInFileNames, etc.
+- **ESLint**: `next/core-web-vitals` + `next/typescript` + `plugin:@typescript-eslint/recommended-type-checked-only`（`parserOptions.project` / `projectService`）。`@typescript-eslint/switch-exhaustiveness-check` は error。テストファイル（`**/*.{test,spec}.{ts,tsx}`）でのみ `unbound-method` を off。対象ディレクトリは `app` / `components` / `utility` / `context` / `types`。
 
 ## 🎨 デザインシステム
 
@@ -387,7 +388,7 @@ npm start           # ビルド後の本番実行
 ### 静的チェック
 
 ```bash
-npm run lint         # ESLint (app, components, utility, context, types)
+npm run lint         # ESLint type-aware (app, components, utility, context, types)
 npm run format       # Prettier で自動フォーマット
 npm run format:check # Prettier チェック (CI用)
 npm run typecheck    # TypeScript 型チェック (tsc --noEmit)

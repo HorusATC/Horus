@@ -74,7 +74,9 @@ const SimulationControlButtons: React.FC = () => {
       <div className="flex flex-col space-y-2">
         <button
           type="button"
-          onClick={onStart}
+          onClick={() => {
+            void onStart();
+          }}
           className="w-full px-3 py-2 bg-atc-accent text-white font-bold text-sm
                      rounded border border-transparent font-mono tracking-wider
                      transition-colors duration-200
@@ -87,7 +89,9 @@ const SimulationControlButtons: React.FC = () => {
         <div className="flex space-x-2">
           <button
             type="button"
-            onClick={onPause}
+            onClick={() => {
+              void onPause();
+            }}
             className="flex-1 px-3 py-2 bg-atc-warning text-white font-bold text-xs
                        rounded border border-transparent font-mono tracking-wider
                        transition-opacity duration-200

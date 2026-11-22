@@ -76,33 +76,40 @@ const SelectFixMode = () => {
                        transition-colors duration-200
                        hover:bg-atc-accent-hover
                        focus:outline-none focus:ring-2 focus:ring-atc-accent focus:ring-offset-2 focus:ring-offset-atc-bg"
-            onClick={async () => {
-              if (!callsign || callsign.length < 2) return;
-              if (!selectedFixName || selectedFixName === "No fixes selected") {
-                return;
-              }
-              try {
-                const ok =
-                  commandType === "DIRECT_TO"
-                    ? await directToFix(callsign, selectedFixName, false)
-                    : await holdAtFix(callsign, selectedFixName);
-                if (ok) {
-                  console.log(`Aircraft ${callsign} controlled successfully.`);
-                } else {
+            onClick={() => {
+              void (async () => {
+                if (!callsign || callsign.length < 2) return;
+                if (
+                  !selectedFixName ||
+                  selectedFixName === "No fixes selected"
+                ) {
+                  return;
+                }
+                try {
+                  const ok =
+                    commandType === "DIRECT_TO"
+                      ? await directToFix(callsign, selectedFixName, false)
+                      : await holdAtFix(callsign, selectedFixName);
+                  if (ok) {
+                    console.log(
+                      `Aircraft ${callsign} controlled successfully.`
+                    );
+                  } else {
+                    console.error(
+                      `Failed to control aircraft ${callsign}. Status:`
+                    );
+                  }
+                } catch (error) {
                   console.error(
-                    `Failed to control aircraft ${callsign}. Status:`
+                    "Error occurred while controlling aircraft:",
+                    error
                   );
                 }
-              } catch (error) {
-                console.error(
-                  "Error occurred while controlling aircraft:",
-                  error
-                );
-              }
 
-              setSelectedFixName("No fixes selected");
-              setCommandType("DIRECT_TO");
-              setIsSelectFixMode({ selectFixMode: false });
+                setSelectedFixName("No fixes selected");
+                setCommandType("DIRECT_TO");
+                setIsSelectFixMode({ selectFixMode: false });
+              })();
             }}
           >
             <span className="font-mono tracking-wider">✓ CONFIRM</span>

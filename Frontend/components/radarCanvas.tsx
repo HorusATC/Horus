@@ -164,7 +164,7 @@ const RadarCanvas: React.FC = () => {
     }
 
     // Load ATS route data and initialize event listeners
-    initializeAtsRouteData();
+    void initializeAtsRouteData();
 
     const handleMouseEvents = (canvas: HTMLCanvasElement) => {
       canvas.addEventListener("mousedown", onMouseDown);
@@ -607,28 +607,30 @@ const RadarCanvas: React.FC = () => {
   };
 
   const startUpdatingAircraftLocations = () => {
-    const fetchLocationInterval = setInterval(async () => {
-      try {
-        const [speed, updatedAircrafts] = await Promise.all([
-          fetchSimulationSpeed(),
-          fetchAircraftLocation(
-            controllingAircraftsRef.current,
-            centerCoordinateRef.current,
-            displayRangeRef.current
-          ),
-        ]);
-        if (speed != null) {
-          simulationSpeedMultiplierRef.current = speed.speedMultiplier;
-        }
-        // console.log("updatedAircrafts", updatedAircrafts);
+    const fetchLocationInterval = setInterval(() => {
+      void (async () => {
+        try {
+          const [speed, updatedAircrafts] = await Promise.all([
+            fetchSimulationSpeed(),
+            fetchAircraftLocation(
+              controllingAircraftsRef.current,
+              centerCoordinateRef.current,
+              displayRangeRef.current
+            ),
+          ]);
+          if (speed != null) {
+            simulationSpeedMultiplierRef.current = speed.speedMultiplier;
+          }
+          // console.log("updatedAircrafts", updatedAircrafts);
 
-        // 最新の controllingAircrafts を取得して状態を更新
-        setControllingAircrafts(() => {
-          return updatedAircrafts;
-        });
-      } catch (error) {
-        console.error("Error fetching or setting aircraft locations:", error);
-      }
+          // 最新の controllingAircrafts を取得して状態を更新
+          setControllingAircrafts(() => {
+            return updatedAircrafts;
+          });
+        } catch (error) {
+          console.error("Error fetching or setting aircraft locations:", error);
+        }
+      })();
     }, GLOBAL_CONSTANTS.LOCATION_UPDATE_INTERVAL);
 
     return () => clearInterval(fetchLocationInterval);

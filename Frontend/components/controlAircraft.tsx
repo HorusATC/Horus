@@ -83,7 +83,9 @@ const ControlAircraft = () => {
         ))}
 
         <button
-          onClick={handleExecute}
+          onClick={() => {
+            void handleExecute();
+          }}
           className="w-full mt-4 px-4 py-3 bg-atc-accent text-white font-bold text-sm
                      rounded-lg border border-transparent
                      transition-colors duration-200

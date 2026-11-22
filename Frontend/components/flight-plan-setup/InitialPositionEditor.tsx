@@ -45,7 +45,7 @@ export function InitialPositionEditor({
     (field: keyof InitialPositionDto, value: string) => {
       if (!aircraft) return;
       const fallback = aircraft.initialPosition[field];
-      const num = parseNum(value, fallback as number);
+      const num = parseNum(value, fallback);
       onUpdate(aircraft.flightPlan.callsign, { [field]: num });
     },
     [aircraft, onUpdate]
