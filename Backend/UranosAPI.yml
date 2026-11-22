@@ -313,9 +313,10 @@ paths:
       summary: "Get ATIS / runway-in-use state"
       description: >
         Returns session ATIS state for each airport that has runway catalog entries.
-        Defaults are 16R / information A. availableRunways lists surveyed catalog
-        ends (RJTT A/B/C/D and RJAA A/B). Wind and live weather are not modelled;
-        the composed text states that wind and weather are not available.
+        Defaults are 16R / information A with wind missing (windAvailable false).
+        availableRunways lists surveyed catalog ends (RJTT A/B/C/D and RJAA A/B).
+        Session-wide wind is shared across airports; windDirectionDeg and windSpeedKt
+        appear when wind is observed (calm or measured). QNH and visibility are not modelled.
         Scenario load resets state to defaults.
       responses:
         "200":
@@ -330,13 +331,16 @@ paths:
   "/api/atis/{airportIcao}":
     put:
       tags: ["atis"]
-      summary: "Update runway in use / ATIS information ident"
+      summary: "Update runway in use / ATIS information ident / session wind"
       description: >
-        Sets the runway in use for a catalog airport. When runwayInUse changes and
-        informationIdent is omitted, the information letter advances A→Z→A.
-        The same runway re-sent without informationIdent does not advance the letter.
-        Optional informationIdent sets the letter explicitly. Unknown airport or runway → 400.
-        Does not alter JOIN FINAL / go-around / tower-handoff / hold / location contracts.
+        Sets the runway in use for a catalog airport. Optional wind object updates
+        session-wide wind (true degrees from, speed 0–99 kt). Omit wind to leave wind
+        unchanged; JSON null clears wind to missing. When wind observation changes,
+        information ident advances on all catalog airports once (FAA 2-9-2). Re-sending
+        the same wind does not advance ident. When runwayInUse changes and wind is
+        unchanged and informationIdent is omitted, only that airport's ident advances.
+        Optional informationIdent sets the letter explicitly on the target airport.
+        Unknown airport or runway → 400. Invalid wind → 400.
       parameters:
         - name: airportIcao
           in: path
@@ -357,6 +361,16 @@ paths:
                 value:
                   runwayInUse: "16R"
                   informationIdent: "C"
+              setWind:
+                value:
+                  runwayInUse: "16R"
+                  wind:
+                    directionDeg: 160
+                    speedKt: 12
+              clearWind:
+                value:
+                  runwayInUse: "16R"
+                  wind: null
       responses:
         "200":
           description: Updated ATIS state
@@ -595,7 +609,8 @@ components:
   schemas:
     AtisState:
       type: object
-      required: [airportIcao, airportName, runwayInUse, informationIdent, text, availableRunways]
+      required:
+        [airportIcao, airportName, runwayInUse, informationIdent, text, availableRunways, windAvailable]
       properties:
         airportIcao:
           type: string
@@ -612,7 +627,20 @@ components:
           example: A
         text:
           type: string
-          description: Composed ATIS text. Does not invent wind or QNH values.
+          description: Composed ATIS text including wind when observed; QNH not invented.
+        windAvailable:
+          type: boolean
+          description: false when wind is missing; true for calm or measured wind.
+        windDirectionDeg:
+          type: integer
+          minimum: 1
+          maximum: 360
+          description: True wind from-direction; omitted when missing or calm.
+        windSpeedKt:
+          type: integer
+          minimum: 0
+          maximum: 99
+          description: Wind speed in knots; 0 when calm; omitted when missing.
         availableRunways:
           type: array
           items:
@@ -629,6 +657,21 @@ components:
           type: string
           pattern: "^[A-Za-z]$"
           description: Optional explicit information letter. When omitted, advances only if runwayInUse changes.
+        wind:
+          type: object
+          nullable: true
+          description: >
+            Optional session wind. Omitted leaves wind unchanged. null clears to missing.
+            speedKt 0 means calm (direction ignored). speedKt 1–99 requires directionDeg 1–360.
+          properties:
+            directionDeg:
+              type: integer
+              minimum: 1
+              maximum: 360
+            speedKt:
+              type: integer
+              minimum: 0
+              maximum: 99
     HoldRequest:
       type: object
       required: [fixName]
@@ -675,10 +718,14 @@ components:
           properties:
             heading:
               type: number
+              description: Aircraft heading (degrees)
             groundSpeed:
               type: number
             verticalSpeed:
               type: number
+            track:
+              type: number
+              description: Ground track (degrees); equals heading when wind is missing or calm.
         instructedVector:
           type: object
           properties:

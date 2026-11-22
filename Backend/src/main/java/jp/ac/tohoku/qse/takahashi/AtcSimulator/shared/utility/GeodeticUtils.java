@@ -115,7 +115,7 @@ public final class GeodeticUtils {
         return PositionUtils.calculateNextPosition(
             currentPosition,
             vector.groundSpeed.toDouble(),
-            vector.heading.toDouble(),
+            vector.motionDirectionDeg(),
             vector.verticalSpeed.toDouble(),
             timeInSeconds
         );
@@ -132,7 +132,7 @@ public final class GeodeticUtils {
         double distanceTraveled = groundSpeedKmPerSec * timeInSeconds;
 
         // ヘディングをラジアンに変換（北を0度とする航空機の座標系）
-        double headingRad = MathUtils.toRadians(vector.heading.toDouble());
+        double headingRad = MathUtils.toRadians(vector.motionDirectionDeg());
 
         // 現在位置の緯度・経度をラジアンに変換
         double currentLatRad = MathUtils.toRadians(currentPosition.latitude.toDouble());
@@ -182,9 +182,9 @@ public final class GeodeticUtils {
     public static double calculateRelativeSpeed(AircraftVector vector1, AircraftVector vector2) {
         // ベクトル成分を一度に計算（最適化）
         double[] v1Components = PositionUtils.decomposeVelocityVector(
-            vector1.groundSpeed.toDouble(), vector1.heading.toDouble());
+            vector1.groundSpeed.toDouble(), vector1.motionDirectionDeg());
         double[] v2Components = PositionUtils.decomposeVelocityVector(
-            vector2.groundSpeed.toDouble(), vector2.heading.toDouble());
+            vector2.groundSpeed.toDouble(), vector2.motionDirectionDeg());
 
         // 相対速度ベクトル
         double relativeVx = v2Components[0] - v1Components[0];

@@ -17,7 +17,7 @@ public class FixedWingFlightBehavior implements FlightBehavior {
         return PositionUtils.calculateNextPosition(
             currentPos,
             vector.groundSpeed.toDouble(),
-            vector.heading.toDouble(),
+            vector.motionDirectionDeg(),
             vector.verticalSpeed.toDouble(),
             simDeltaSeconds
         );

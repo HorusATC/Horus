@@ -107,7 +107,7 @@ class DrawAircraft {
         ctx,
         aircraft.position,
         aircraft.vector.groundSpeed,
-        aircraft.vector.heading,
+        aircraft.vector.track ?? aircraft.vector.heading,
         displayRange,
         durationMinutes
       );
@@ -371,13 +371,13 @@ class DrawAircraft {
     ctx: CanvasRenderingContext2D,
     position: { x: number; y: number },
     groundSpeed: number,
-    heading: number,
+    groundTrackDeg: number,
     displayRange: DisplayRange,
     durationMinutes: number
   ) {
     const futurePosition = CoordinateManager.calculateFuturePositionOnCanvas(
       groundSpeed,
-      heading,
+      groundTrackDeg,
       GLOBAL_SETTINGS.canvasWidth,
       GLOBAL_SETTINGS.canvasHeight,
       displayRange,

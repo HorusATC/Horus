@@ -2,6 +2,7 @@ import { Coordinate } from "@/context/centerCoordinateContext";
 import {
   Aircraft,
   type AircraftIdentityKey,
+  type AircraftMotionVector,
   type PolledAircraftServerFields,
 } from "../aircraft/aircraftClass";
 import { CoordinateManager } from "../coordinateManager/CoordinateManager";
@@ -23,7 +24,7 @@ export type { HoldingPatternDto, HoldingPatternPointDto };
 export interface AircraftLocationDto {
   callsign: string;
   position: { latitude: number; longitude: number; altitude: number };
-  vector: { heading: number; groundSpeed: number; verticalSpeed: number };
+  vector: AircraftMotionVector;
   /** Pilot target from backend; distinct from ATC clearance memo (see spec 20260326-instruction-memo-radar-label). */
   instructedVector: {
     heading: number;
@@ -248,6 +249,7 @@ function mapDtoToAircraft(
       heading: dto.vector.heading,
       groundSpeed: dto.vector.groundSpeed,
       verticalSpeed: dto.vector.verticalSpeed,
+      track: dto.vector.track ?? dto.vector.heading,
     },
     {
       heading: dto.instructedVector.heading,

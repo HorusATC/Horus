@@ -401,4 +401,48 @@ describe("Aircraft", () => {
 
     expect(aircraft.positionHistory.length).toBe(POSITION_HISTORY_MAX_POINTS);
   });
+
+  it("applyPolledFields refreshes optional ground track on vector", () => {
+    const aircraft = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      50,
+      50,
+      0
+    );
+    const polled = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      { heading: 90, groundSpeed: 250, verticalSpeed: 0, track: 95 },
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      50,
+      50,
+      0
+    );
+    aircraft.applyPolledFields(polled);
+    expect(aircraft.vector.track).toBe(95);
+    expect(aircraft.vector.heading).toBe(90);
+  });
 });

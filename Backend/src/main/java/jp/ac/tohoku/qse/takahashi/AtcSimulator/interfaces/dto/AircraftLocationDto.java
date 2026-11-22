@@ -32,7 +32,7 @@ public record AircraftLocationDto(
     HoldingDto holding
 ) {
     public record PositionDto(double latitude, double longitude, double altitude) {}
-    public record VectorDto(double heading, double groundSpeed, double verticalSpeed) {}
+    public record VectorDto(double heading, double groundSpeed, double verticalSpeed, double track) {}
     public record InstructedVectorDto(
             double heading,
             double groundSpeed,

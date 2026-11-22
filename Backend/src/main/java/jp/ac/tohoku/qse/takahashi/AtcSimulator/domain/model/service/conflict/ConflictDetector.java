@@ -448,15 +448,15 @@ public class ConflictDetector {
     private double[] calculateRelativeVelocity(AircraftVector vec1, AircraftVector vec2) {
         // 速度ベクトルをメートル/秒に変換
         double v1x = vec1.groundSpeed.toDouble() * KNOTS_TO_KM_PER_HOUR / 3.6 *
-                    Math.sin(Math.toRadians(vec1.heading.toDouble()));
+                    Math.sin(Math.toRadians(vec1.motionDirectionDeg()));
         double v1y = vec1.groundSpeed.toDouble() * KNOTS_TO_KM_PER_HOUR / 3.6 *
-                    Math.cos(Math.toRadians(vec1.heading.toDouble()));
+                    Math.cos(Math.toRadians(vec1.motionDirectionDeg()));
         double v1z = vec1.verticalSpeed.toDouble() / 60.0; // ft/min to ft/s
 
         double v2x = vec2.groundSpeed.toDouble() * KNOTS_TO_KM_PER_HOUR / 3.6 *
-                    Math.sin(Math.toRadians(vec2.heading.toDouble()));
+                    Math.sin(Math.toRadians(vec2.motionDirectionDeg()));
         double v2y = vec2.groundSpeed.toDouble() * KNOTS_TO_KM_PER_HOUR / 3.6 *
-                    Math.cos(Math.toRadians(vec2.heading.toDouble()));
+                    Math.cos(Math.toRadians(vec2.motionDirectionDeg()));
         double v2z = vec2.verticalSpeed.toDouble() / 60.0;
 
         return new double[]{v2x - v1x, v2y - v1y, v2z - v1z};

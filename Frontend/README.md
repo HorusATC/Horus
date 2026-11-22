@@ -171,7 +171,9 @@ Frontend/
 
 **STCA（コンフリクト）BFF**: `app/api/conflict/*` が Java `ConflictAlertController` の `/api/conflict/all`・`filtered`・`critical`・`violations`・`statistics`・`health`・`aircraft/{callsign}` へプロキシする。クライアント型・取得ヘルパーは `utility/api/conflict.ts`。
 
-**ATIS / 使用滑走路 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替可）と Operator（読取専用）に現行 ATIS 本文と使用滑走路を表示する。風・気象の造値は出さない。選択可能滑走路は Backend カタログの調査値末端（RJTT 8・RJAA 4）。既定は各空港 16R / A。`JOIN FINAL`／復行／タワー移管の送信契約は従来どおり明示フィールドのまま（Operator 入力の初期表示に使用滑走路を反映するだけ）。RJTT 05 は着陸不可のため `JOIN FINAL` は Backend が 400 を返す。
+**ATIS / 使用滑走路・風 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替・**風向真方位／風速 kt** の入力、CALM・欠測へ戻す）と Operator（読取専用）に ATIS 本文と使用滑走路を表示する。風はセッション一様で両空港の本文に反映される。視程・QNH 等は未実装。選択可能滑走路は Backend カタログの調査値末端（RJTT 8・RJAA 4）。既定は各空港 16R / A・風欠測。`JOIN FINAL`／復行／タワー移管の送信契約は従来どおり明示フィールドのまま。RJTT 05 は着陸不可のため `JOIN FINAL` は Backend が 400 を返す。
+
+**速度ベクトル（トラック）**: レーダーの速度ベクトル線・STCA／RBL の直線予測は、位置 API の `vector.track` があれば **トラック＋GS** を用い、無ければ従来どおり `vector.heading` を用いる（`drawAircraft.ts` / `radarCanvas.tsx`）。
 
 **STCA 距離の単位（UI と一致）**: バックエンド `RiskAssessment` に合わせ、**水平隔離 `closestHorizontalDistance` は海里（NM）**、**鉛直隔離 `closestVerticalDistance` はフィート（ft）**、**最接近までの時間 `timeToClosest` は秒**。選択機のペア一覧は `selectedAircraftConflictsPanel.tsx`（`fetchAircraftConflicts`、位置更新と同じ 1s 間隔）。API は `pairId` 文字列ではなく `callsignA` / `callsignB` を返すため、相手機表示は構造化データで解決できる。**違反・高リスクの強通知**は `separationViolationAlerts.tsx` が `/api/conflict/all` の差分から新規ペアを検知してレーダー下にバナーを出す（約 10s で自動消去）。同一ペアは **30s クールダウン**で連打を抑制。Controller / Operator でそれぞれマウントするため通知は画面ごとに独立。
 

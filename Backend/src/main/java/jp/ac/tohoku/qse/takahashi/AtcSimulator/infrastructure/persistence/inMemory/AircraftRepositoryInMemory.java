@@ -5,15 +5,20 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.AircraftConflictException;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.AircraftNotFoundException;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Aircraft;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftBase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 
 /**
@@ -31,8 +36,17 @@ public class AircraftRepositoryInMemory implements AircraftRepository {
 
     private final ConcurrentHashMap<String, Aircraft> aircraftMap = new ConcurrentHashMap<>();
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Supplier<UniformWind> ambientWindSupplier;
 
+    /** Unit tests without Spring. */
     public AircraftRepositoryInMemory() {
+        this.ambientWindSupplier = UniformWind::missing;
+        logger.info("AircraftRepositoryInMemory初期化完了");
+    }
+
+    @Autowired
+    public AircraftRepositoryInMemory(@Qualifier("sessionWind") Supplier<UniformWind> ambientWindSupplier) {
+        this.ambientWindSupplier = ambientWindSupplier != null ? ambientWindSupplier : UniformWind::missing;
         logger.info("AircraftRepositoryInMemory初期化完了");
     }
 
@@ -111,8 +125,12 @@ public class AircraftRepositoryInMemory implements AircraftRepository {
 
             int processedCount = 0;
             List<Aircraft> toRemove = new ArrayList<>();
+            UniformWind ambientWind = ambientWindSupplier.get();
             for (Aircraft aircraft : aircraftMap.values()) {
                 try {
+                    if (aircraft instanceof AircraftBase base) {
+                        base.setAmbientWind(ambientWind);
+                    }
                     aircraft.calculateNextAircraftVector(simDeltaSeconds);
                     aircraft.calculateNextAircraftPosition(simDeltaSeconds);
                     processedCount++;

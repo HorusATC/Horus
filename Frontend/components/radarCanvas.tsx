@@ -420,12 +420,13 @@ const RadarCanvas: React.FC = () => {
       cpaSeconds = horizontalCpaSeconds(
         startGeo,
         {
-          headingDeg: start.aircraft.vector.heading,
+          headingDeg:
+            start.aircraft.vector.track ?? start.aircraft.vector.heading,
           groundSpeedKt: start.aircraft.vector.groundSpeed,
         },
         endGeo,
         {
-          headingDeg: end.aircraft.vector.heading,
+          headingDeg: end.aircraft.vector.track ?? end.aircraft.vector.heading,
           groundSpeedKt: end.aircraft.vector.groundSpeed,
         }
       );

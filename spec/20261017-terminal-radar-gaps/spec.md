@@ -18,16 +18,16 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 - 操縦目標は針路・高度・地速。経路操作は Direct To、ホールド（入方向・レグ・左右旋回）、Resume。スクオーク割当とフィルタ強調、管制メモ行がある。
 - コンフリクトは水平 5海里・垂直 1,000フィート固定（`RiskAssessment`）。
 - フライトプランのウェイポイントには高度制約のデータ型があるが、機体の飛行更新はフィックスへの針路更新が中心で、通過高度・速度制限には従わない。
-- ホールド API は入方向・レグ（分/NM）・左右旋回を受け付ける（[20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。無風の標準率レーストラック飛行と指示経路オーバーレイは [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)。進入セクター（DIRECT／TEARDROP／PARALLEL）は [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)。公示ホールディング（AS PUBLISHED）・EAT／EFC・風修正は未実装。
+- ホールド API は入方向・レグ（分/NM）・左右旋回を受け付ける（[20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。標準率レーストラック飛行と指示経路オーバーレイは [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)。進入セクター（DIRECT／TEARDROP／PARALLEL）は [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)。一様風のレグ WCA・GS／トラックは [20261122-uniform-wind](../20261122-uniform-wind/spec.md) で実装済み。公示ホールディング（AS PUBLISHED）・EAT／EFC・**待機レグ時間の公式風補正**は未実装。
 - 経路末尾の `REMOVE_AIRCRAFT` は機体削除であり、シナリオ終端の削除として残す。タワー移管は別 API として実装済み（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)）。
-- セクター境界、シミュレーション速度の可変、セッション記録、複数セクター、風（6-1）はロードマップ上の別項目である。ATIS・使用滑走路（6-2）は [20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md) で実装済み（PR [#132](https://github.com/HorusATC/Horus/pull/132)）。
+- セクター境界、シミュレーション速度の可変、セッション記録、複数セクターはロードマップ上の別項目である。ATIS・使用滑走路（6-2）は [20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md) で実装済み（PR [#132](https://github.com/HorusATC/Horus/pull/132)）。一様風・GS／トラック（6-1）は [20261122-uniform-wind](../20261122-uniform-wind/spec.md) で実装済み（シアー・高度別風・待機時間補正は残課題）。
 
 ### 課題（Problem Statement）
 
 - 到着機をファイナルへ誘導し、滑走路まで届ける一連の指示が出せない。
 - 速度が地速のため、ターミナルで使う指示対気速度（250／210／180／160 など）を出せない。
 - 水平間隔が 5海里固定で、レーダーサイト近傍の 3海里や後方乱気流間隔がない。到着順序の訓練に使えない。
-- 最低安全高度警報・緊急スクオーク（7500／7600／7700）・滑走路までの距離・時間・使用滑走路と ATIS は実装済み。残る課題の一つは風モデル（6-1）である。
+- 最低安全高度警報・緊急スクオーク（7500／7600／7700）・滑走路までの距離・時間・使用滑走路と ATIS、一様風による GS／トラック（6-1）は実装済み。残る気象系は高度別風・シアー・待機時間補正等。
 
 ### なぜ今か（Motivation）
 
@@ -110,7 +110,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 
 レーダー画面の残り。
 
-- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。ATIS・使用滑走路 → Done（風なし。[20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md)）。滑走路カタログ拡張（羽田 A/B/C/D・成田 A/B）→ Done（[20261122-runway-catalog](../20261122-runway-catalog/spec.md)）。リーダー線の自動配置 → Done（[20261122-leader-line-auto-placement](../20261122-leader-line-auto-placement/spec.md)）。方位目盛、セクター境界（ロードマップ 2-5、Deferred）、風モデル（ロードマップ 6-1）は残課題。
+- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。ATIS・使用滑走路 → Done（[20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md)）。一様風・GS／トラック → Done（[20261122-uniform-wind](../20261122-uniform-wind/spec.md)。シアー・待機時間補正は残る）。滑走路カタログ拡張（羽田 A/B/C/D・成田 A/B）→ Done（[20261122-runway-catalog](../20261122-runway-catalog/spec.md)）。リーダー線の自動配置 → Done（[20261122-leader-line-auto-placement](../20261122-leader-line-auto-placement/spec.md)）。方位目盛、セクター境界（ロードマップ 2-5、Deferred）は残課題。
 
 訓練運用の残り。
 
