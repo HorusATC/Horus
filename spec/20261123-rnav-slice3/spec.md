@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-23
 - **関連**: [spec/20261122-sid-star/spec.md](../20261122-sid-star/spec.md)（#139）、[spec/20261123-sid-star-slice2/spec.md](../20261123-sid-star-slice2/spec.md)（draft-16）、Issue [#114](https://github.com/HorusATC/Horus/issues/114)
@@ -126,8 +126,8 @@ AIRAC 1 Nov 2026 の RNAV プレート 22 枚（RJTT `AD 2.24.13–18, 87` と R
 
 ## 検証
 
-- [ ] スライス 3 JSON のスキーマ検査が通る（必須フィールド、パス記述子、高度 ft/fl、符号なし速度の uncertain、シリアル連続、フィックスが waypoints に存在）。
-- [ ] 手続きごとの幾何・制約検査が通る（`crossCheck.flaggedPairs` 16 件を丸めとして残し、値は修正しない）。代表例:
+- [x] スライス 3 JSON のスキーマ検査が通る（必須フィールド、パス記述子、高度 ft/fl、符号なし速度の uncertain、シリアル連続、フィックスが waypoints に存在）。
+- [x] 手続きごとの幾何・制約検査が通る（`crossCheck.flaggedPairs` 16 件を丸めとして残し、値は修正しない）。代表例:
   - `LAXAS4.RWY16R`：VA 158°M / 150.0°T、+500、DF T6R11、TF TAURA +9000 9.0 NM、IMOLA +FL150、LAXAS +FL170。
   - `TETRA8.RWY16R`：VA 157 / 149.6 +600、DF ASPEN fly-over、TF A6R11 4.5 NM … TF TETRA。
   - `TETRA8.AGRIS`：IF TETRA +12000、TF RADIX +FL150、WHARF +FL180、AGRIS +FL200。
@@ -135,10 +135,10 @@ AIRAC 1 Nov 2026 の RNAV プレート 22 枚（RJTT `AD 2.24.13–18, 87` と R
   - `RUTASE`：IF RUTAS … SIGMA at-or-below 8000、ホールド 4（RUTAS / AQUOS / CORGI / ELGAR）。
   - `SUPOKG`：AA657 速度 -250（at or below 250 KIAS）、VOGUE 符号なし 210。
   - `OLVAN2.RWY16L` と `ROVER3A.RWY16L`：CHANGE で分断された行が表どおり再結合されている。
-- [ ] `listByAirport("RJTT")` が 90、`listByAirport("RJAA")` が 48。エンジン未対応レグ種別は 0。
-- [ ] 既定の到着クイックスタートと VAMOS 出発サンプルの 10 分ガードが退行しない。スライス 1 JSON を変更していない。
-- [ ] README（root / Backend / Frontend）に出典一行と二ファイルカタログ、RJAA 割当可を書いた。UI バナーなし。
-- [ ] CI 4 ジョブが最終 head で合格する。
+- [x] `listByAirport("RJTT")` が 90、`listByAirport("RJAA")` が 48。エンジン未対応レグ種別は 0。
+- [x] 既定の到着クイックスタートと VAMOS 出発サンプルの 10 分ガードが退行しない。スライス 1 JSON を変更していない。
+- [x] README（root / Backend / Frontend）に出典一行と二ファイルカタログ、RJAA 割当可を書いた。UI バナーなし。
+- [x] CI 4 ジョブが最終 head で合格する。
 
 ## README
 
