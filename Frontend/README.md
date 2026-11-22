@@ -12,7 +12,7 @@
 | **Operator**          | パイロット役 | 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。航空機の実際の操作（高度・速度・針路、Direct To、Hold、最終進入、進入復行、タワー移管、Resume）を行う。 |
 | **Flight Plan Setup** | シナリオ準備 | 機体選択で経路編集（Suggest / ATS）、任意で O/D バルク同一化、JSON 入出力、シナリオ投入。                                                                         |
 
-フライトプラン作成・航空機 spawn は **Flight Plan Setup** ページ（`/flight-plan-setup`）で一括割り当てできる。Swagger（`http://localhost:8080/docs.html`）でも可能。
+最初のシナリオはトップの「**START WITH SAMPLE (サンプルで始める)**」で開始できる。独自シナリオは **Flight Plan Setup**（`/flight-plan-setup`）またはトップの JSON アップロードで投入する。
 
 ## 技術スタック
 
@@ -47,9 +47,18 @@
 
 ## 環境構築
 
-### クイックスタート（Docker）
+### クイックスタート（ローカル・推奨）
 
-最も簡単な方法は、リポジトリのルートディレクトリで Docker Compose を使用することです:
+リポジトリルートで Backend + Frontend をまとめて起動できます（Java 21 / Node 18+）:
+
+```bash
+cd ..  # リポジトリのルートへ
+./scripts/dev-up.sh
+```
+
+準備完了後、http://localhost:3333 を開き「**START WITH SAMPLE (サンプルで始める)**」をクリックしてください。詳細は [ルートの README.md](../README.md) を参照。
+
+### クイックスタート（Docker・代替）
 
 ```bash
 cd ..  # リポジトリのルートへ
@@ -58,12 +67,13 @@ docker compose up --build
 
 詳細は [ルートの README.md](../README.md) を参照してください。
 
-### 開発環境（ローカル実行）
+### 開発環境（ローカル実行・個別）
 
 #### 前提条件
 
 - Node.js 18.0.0以上
 - npm 9.0.0以上
+- Java 21（Backend を別途起動する場合。`./scripts/dev-up.sh` 利用時はスクリプトが解決）
 
 #### インストール手順
 
@@ -81,7 +91,7 @@ npm ci
 # または npm install
 ```
 
-`prepare` によりリポジトリルートの Git hooks（`.husky`）が自動で有効になる。pre-commit は staged の Frontend ファイルに Prettier / ESLint `--fix` を適用する。pre-push は Frontend 変更時に `npm run typecheck` と `npm run format:check` を実行する（`Frontend/node_modules` が無い場合は `cd Frontend && npm ci` を促して失敗する）。`--no-verify` は使わない。CI が最終ゲート。
+`prepare` によりリポジトリルートの Git hooks（`.husky`）が自動で有効になる。pre-commit は staged の Frontend ファイルに Prettier / ESLint `--fix` を適用する。pre-push は Frontend 変更時に `npm run typecheck` と `npm run format:check` を実行する（`Frontend/node_modules` が無い場合は `cd Frontend && npm ci` を促して失敗する）。`--no-verify` は使わない。CI が最終ゲート。`./scripts/dev-up.sh` は `node_modules` が無い／古いときだけ `npm ci` を実行する。
 
 3. 環境変数の設定
 
@@ -89,7 +99,7 @@ npm ci
 cp .env.sample .env.local
 ```
 
-`.env.local`ファイルを開き、以下の環境変数を設定してください：
+サンプルの値は次のとおりです（**編集不要**。別ホストの Backend に繋ぐときだけ変更）:
 
 ```
 BACKEND_SERVER_IP=localhost   # Java バックエンドのホスト（サーバー側のみ、クライアントに公開されない）
@@ -117,6 +127,8 @@ npm run dev:clean
 ```
 http://localhost:3333
 ```
+
+トップの「START WITH SAMPLE (サンプルで始める)」で到着サンプル 5 機を開始できます。
 
 6. テストの実行
 

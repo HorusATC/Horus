@@ -41,6 +41,7 @@ jobs:
               - 'spec/**'
               - '*.md'
               - 'docs/**'
+              - 'scripts/**'
 
       - name: Decide which jobs to run
         id: pick
@@ -118,6 +119,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify quickstart README contract
+        working-directory: .
+        run: bash scripts/verify-quickstart.sh --readme-only
+
       - name: Prettier check
         run: npm run format:check
 
@@ -191,36 +196,11 @@ jobs:
           done
           echo "Frontend is ready"
 
-      - name: Load quickstart sample scenario and start simulation
+      - name: Verify quickstart live checks (2–4)
         run: |
-          echo "Loading quickstart sample scenario..."
-          response=$(curl -sf -X POST \
-            -H "Content-Type: application/json" \
-            -d @Backend/docs/test-data/quickstart-arrival-sample.json \
-            http://localhost:3333/api/scenario/load)
-          echo "Scenario load response: $response"
-          
-          echo "Starting simulation..."
-          curl -sf -X POST http://localhost:3333/api/simulation/start
-          echo "Simulation started"
-          
-          sleep 5
-
-      - name: Verify aircraft count
-        run: |
-          echo "Fetching aircraft location data..."
-          response=$(curl -sf http://localhost:3333/api/aircraft/location/all)
-          echo "Response: $response"
-          
-          count=$(echo "$response" | jq '. | length')
-          echo "Aircraft count: $count"
-          
-          if [ "$count" -ne 5 ]; then
-            echo "Expected 5 aircraft, got $count"
-            exit 1
-          fi
-          
-          echo "Verification passed: 5 aircraft found"
+          # Reuses already-up Compose services; adds homepage text + position-change
+          # checks without a second stack. Cost is a few curl/sleep seconds.
+          bash scripts/verify-quickstart.sh --live
 
       - name: Show logs on failure
         if: failure()

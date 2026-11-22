@@ -105,9 +105,18 @@ curl http://localhost:8080/api/conflict/statistics
 
 ## 環境構築
 
-### クイックスタート（Docker）
+### クイックスタート（ローカル・推奨）
 
-最も簡単な方法は、リポジトリのルートディレクトリで Docker Compose を使用することです:
+リポジトリルートで Backend + Frontend をまとめて起動できます（Java 21 / Node 18+）:
+
+```bash
+cd ..  # リポジトリのルートへ
+./scripts/dev-up.sh
+```
+
+準備完了後、http://localhost:3333 を開き「**START WITH SAMPLE (サンプルで始める)**」をクリックしてください。詳細は [ルートの README.md](../README.md) を参照。
+
+### クイックスタート（Docker・代替）
 
 ```bash
 cd ..  # リポジトリのルートへ
@@ -116,7 +125,7 @@ docker compose up --build
 
 詳細は [ルートの README.md](../README.md) を参照してください。
 
-### 開発環境（ローカル実行）
+### 開発環境（ローカル実行・個別）
 
 #### 前提条件
 
@@ -144,14 +153,14 @@ cd Horus/Backend
 > ```bash
 > JAVA_HOME=/path/to/java21 ./gradlew build
 > ```
-> Macの場合は通常 `/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home` にインストールされます。
+> Macの場合は通常 `/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home` にインストールされます。`./scripts/dev-up.sh` は `JAVA_HOME`・`java_home -v 21`・SDKMAN・`/usr/lib/jvm/*21*`・`~/jdk21`・PATH 上の Java 21 の順で探します。
 
 3. アプリケーションの実行
 ```bash
 ./gradlew bootRun
 ```
 
-4. APIドキュメントへのアクセス
+4. APIドキュメントへのアクセス（開発者向け）
 ```
 http://localhost:8080/docs.html
 ```
@@ -185,12 +194,12 @@ cd Backend
 
 ### フロントエンドの実行
 
-別ターミナルで以下を実行：
+別ターミナルで以下を実行（またはルートで `./scripts/dev-up.sh`）:
 
 ```bash
 cd Frontend
-npm install
-cp .env.sample .env.local   # 初回のみ。BACKEND_SERVER_IP / PORT を編集
+npm ci
+cp .env.sample .env.local   # 初回のみ。サンプル値（localhost:8080）のまま編集不要
 npm run dev
 ```
 
@@ -199,14 +208,13 @@ npm run dev
 
 ### 連携確認の手順
 
-1. バックエンドを起動（`./gradlew bootRun`）
-2. フロントエンドを起動（`npm run dev`）
-3. ブラウザで http://localhost:3333 を開く
-4. シミュレーション開始 → 航空機作成 → レーダー表示・管制指示が動作することを確認
+1. ルートで `./scripts/dev-up.sh`（または Backend / Frontend を個別起動）
+2. ブラウザで http://localhost:3333 を開く
+3. 「**START WITH SAMPLE (サンプルで始める)**」をクリックし、Controller に到着 5 機が表示されることを確認
 
 ### フライトプラン機能のマニュアルテスト
 
-- **手順書**: [docs/test-data/MANUAL_TEST.md](docs/test-data/MANUAL_TEST.md)（Swagger で spawn / direct-to / resume 等）
+- **手順書**: [docs/test-data/MANUAL_TEST.md](docs/test-data/MANUAL_TEST.md)（開発者向け。Swagger で個別 API を試す場合）
 - **サンプル JSON 一覧**: [docs/test-data/README.md](docs/test-data/README.md)（`scenario-load-minimal.json`、`spawn-with-flightplan-*.json` 等）
 - **実装計画・テスト網羅表**: リポジトリルートの [spec/20260509-t3-flight-plan-tests-docs/spec.md](../spec/20260509-t3-flight-plan-tests-docs/spec.md)（T-3）
 
