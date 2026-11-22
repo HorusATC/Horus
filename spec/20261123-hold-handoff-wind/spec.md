@@ -117,7 +117,7 @@
 - [x] 組み合わせ: Hold 割当 → 風設定 → ティック；風変更を OUTBOUND 中に行ってもレーストラック維持；DEPART/STAR 機の Hold＋風
 - [x] API 契約不変（`ApiContractTest`）
 - [x] Backend README（必要なら root）を同じ変更で更新。未実装の主張を書かない
-- [x] Gates: Backend spotless + test、Frontend format/typecheck/lint/tailwind/Jest/build、`scripts/verify-quickstart.sh --readme-only` と `--all`（CI 4/4 は PR head で確認）
+- [x] Gates: Backend spotless + test、Frontend format/typecheck/lint/tailwind/Jest/build、`scripts/verify-quickstart.sh --readme-only` と `--all`、CI 4/4 on `da79459`
 - [x] 検証レポートの HoldTrace / ReviewRepro（N1, ②, ③関連, ④, ⑧）を恒久回帰テストへ反転して配置
 
 ---
