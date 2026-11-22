@@ -88,6 +88,10 @@ docker compose down
 
 各コンポーネントの詳細なセットアップ手順は、それぞれのディレクトリのREADMEを参照してください。
 
+### Git hooks（自動）
+
+`Frontend` で `npm ci`（または `npm install`）すると `prepare` がリポジトリルートの `.husky` を有効化する。ルートで `npm ci` / `npm install` しても同様。pre-commit は staged ファイルに Prettier / ESLint / Spotless をかけ、pre-push は変更があった側で `tsc`・`format:check` または `spotlessCheck` を走らせる。`--no-verify` は使わない。CI が最終ゲート。
+
 ## 開発方針
 
 新機能・リファクタリングを実施する際は **必ず spec を作成**してください。形式は `spec/YYYYMMDD-xxxxxx/spec.md`。テンプレートから作成するには `npm run spec:new <スラッグ>` を実行。詳細は [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) を参照。

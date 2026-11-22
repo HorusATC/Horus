@@ -1,3 +1,11 @@
-#!/bin/sh
-# Run lint-staged: Backend (Spotless), Frontend (ESLint --fix, Prettier)
-npx lint-staged
+#!/usr/bin/env sh
+set -e
+cd "$(dirname "$0")/.." || exit 1
+
+if [ ! -x node_modules/.bin/lint-staged ]; then
+  echo "error: root hook tooling missing — run: npm ci" >&2
+  exit 1
+fi
+
+# Never let npx download a random lint-staged; use the local binary only.
+./node_modules/.bin/lint-staged

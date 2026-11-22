@@ -3,7 +3,8 @@ FROM node:18-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# Skip prepare (git hooks); hooks are for local/Cloud Agent clones, not image builds
+RUN npm ci --ignore-scripts
 
 FROM base AS builder
 WORKDIR /app

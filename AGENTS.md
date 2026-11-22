@@ -44,17 +44,20 @@ npm run spec:new <slug>
 
 詳細は [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) を参照。
 
-### 2. 依存関係のインストール
+### 2. 依存関係のインストール（フックも自動有効化）
 
 ```bash
 # Backend
 cd Backend
 ./gradlew build
 
-# Frontend
+# Frontend（prepare がリポジトリルートの .husky を core.hooksPath に設定する）
 cd Frontend
-npm install
+npm ci
+# または npm install
 ```
+
+`Frontend` での `npm ci` / `npm install`、またはルートでの `npm ci` / `npm install` のたびに Git hooks（pre-commit / pre-push）が自動インストールされる。Cloud Agent も `.cursor/environment.json` の `install`（`cd Frontend && npm ci`）で同様に有効化される。**`--no-verify` は使わない。** CI が最終ゲートである。
 
 ### 3. 静的チェックの実行
 
@@ -121,15 +124,17 @@ cd Backend
 # 変更をステージング
 git add -A
 
-# 意味のあるコミットメッセージ
+# 意味のあるコミットメッセージ（pre-commit が lint-staged を実行する）
 git commit -m "feat(backend): add new endpoint for X
 
 - Implement Y
 - Add tests for Z"
 
-# Push
+# Push（pre-push が変更範囲に応じて tsc / format:check / spotlessCheck を実行する）
 git push -u origin <branch-name>
 ```
+
+**禁止**: `git commit --no-verify` / `git push --no-verify`。フックをスキップせず、失敗したら修正してから再実行する。CI（Prettier / tsc / ESLint / Spotless / test / build）が最終ゲート。
 
 ## コーディング規約
 

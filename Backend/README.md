@@ -420,7 +420,7 @@ RESTful APIを提供しており、詳細なAPI仕様は`UranosAPI.yml`ファイ
 - **Spotless** で未使用 import の削除、import 順序、末尾空白・改行を統一
 - `./gradlew spotlessApply` … 自動整形
 - `./gradlew spotlessCheck` … CI で実行（違反があれば fail）
-- **pre-commit フック**: ルートで `npm install` 実行後、`.java` を commit すると自動で `spotlessApply` が走る
+- **Git hooks（自動）**: `Frontend` またはリポジトリルートで `npm ci` / `npm install` すると `.husky` が有効になる。pre-commit は **staged の `.java` のみ** に Spotless IdeHook（`-PspotlessIdeHook=<abs>`）をかけ、unstaged の Java は触らない。Backend 変更の push 前は pre-push で `spotlessCheck`。`--no-verify` は使わない。CI が最終ゲート
 
 ### テスト
 
