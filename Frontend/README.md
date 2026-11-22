@@ -9,7 +9,7 @@
 | 画面                  | 役割         | 操作                                                                                                                                                              |
 | --------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Controller**        | 管制官役     | レーダーを見ながら音声で指示を出す。発出した指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。                                              |
-| **Operator**          | パイロット役 | 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。航空機の実際の操作（高度・速度・針路、Direct To、Hold、最終進入、進入復行、タワー移管、Resume）を行う。 |
+| **Operator**          | パイロット役 | 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。航空機の実際の操作（高度・速度・針路、Direct To、Hold、最終進入、進入復行、出発初期上昇（`DEPART`）、タワー移管、Resume）を行う。 |
 | **Flight Plan Setup** | シナリオ準備 | 機体選択で経路編集（Suggest / ATS）、任意で O/D バルク同一化、JSON 入出力、シナリオ投入。                                                                         |
 
 最初のシナリオはトップの「**START WITH SAMPLE (サンプルで始める)**」で開始できる。独自シナリオは **Flight Plan Setup**（`/flight-plan-setup`）またはトップの JSON アップロードで投入する。
@@ -171,7 +171,7 @@ Frontend/
 
 **STCA（コンフリクト）BFF**: `app/api/conflict/*` が Java `ConflictAlertController` の `/api/conflict/all`・`filtered`・`critical`・`violations`・`statistics`・`health`・`aircraft/{callsign}` へプロキシする。クライアント型・取得ヘルパーは `utility/api/conflict.ts`。
 
-**ATIS / 使用滑走路・風 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替・**風向真方位／風速 kt** の入力、CALM・欠測へ戻す）と Operator（読取専用）に ATIS 本文と使用滑走路を表示する。風はセッション一様で両空港の本文に反映される。視程・QNH 等は未実装。選択可能滑走路は Backend カタログの調査値末端（RJTT 8・RJAA 4）。既定は各空港 16R / A・風欠測。`JOIN FINAL`／復行／`DEPART`／タワー移管の送信契約は明示フィールドのまま。RJTT 05 は着陸不可のため `JOIN FINAL` は Backend が 400 を返す（`DEPART` は 05 可）。
+**ATIS / 使用滑走路・風・QNH BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替・**風向真方位／風速 kt**・**空港ごとの QNH hPa** の入力、CALM／欠測へ戻す）と Operator（読取専用）に ATIS 本文と使用滑走路を表示する。風はセッション一様、QNH は空港ごと。本文は両方欠測／風のみ／QNH のみ／両方ありの 4 通り（Backend 合成）。高度・IAS・警報の垂直判定は QNH を見ない（[spec/20261122-atis-qnh](../spec/20261122-atis-qnh/spec.md)）。視程・雲は未実装。選択可能滑走路は Backend カタログの調査値末端（RJTT 8・RJAA 4）。既定は各空港 16R / A・風欠測・QNH 欠測。`JOIN FINAL`／復行／`DEPART`／タワー移管の送信契約は明示フィールドのまま。RJTT 05 は着陸不可のため `JOIN FINAL` は Backend が 400 を返す（`DEPART` は 05 可）。
 
 **速度ベクトル（トラック）**: レーダーの速度ベクトル線・STCA／RBL の直線予測は、位置 API の `vector.track` があれば **トラック＋GS** を用い、無ければ従来どおり `vector.heading` を用いる（`drawAircraft.ts` / `radarCanvas.tsx`）。
 

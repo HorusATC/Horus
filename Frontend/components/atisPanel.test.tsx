@@ -16,6 +16,7 @@ const sample: atisApi.AtisState = {
   text: "Tokyo International Airport (RJTT) INFORMATION ALPHA.\nLANDING AND DEPARTURE RUNWAY 16R.\nWIND AND WEATHER NOT AVAILABLE.\nADVISE YOU HAVE INFORMATION ALPHA.",
   availableRunways: ["16R", "34L", "16L", "34R", "04", "22", "05", "23"],
   windAvailable: false,
+  qnhAvailable: false,
 };
 
 describe("AtisPanel", () => {
@@ -119,6 +120,53 @@ describe("AtisPanel", () => {
     });
   });
 
+  it("applies and clears QNH", async () => {
+    (atisApi.updateAtis as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        state: {
+          ...sample,
+          informationIdent: "B",
+          qnhAvailable: true,
+          qnhHpa: 1013,
+          text: sample.text
+            .replaceAll("ALPHA", "BRAVO")
+            .replace(
+              "WIND AND WEATHER NOT AVAILABLE.",
+              "WIND NOT AVAILABLE.\nQNH 1013."
+            ),
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        state: {
+          ...sample,
+          informationIdent: "C",
+          qnhAvailable: false,
+        },
+      });
+    const user = userEvent.setup();
+    render(<AtisPanel editable />);
+    await waitFor(() => {
+      expect(screen.getByLabelText(/QNH hectopascals/i)).toBeInTheDocument();
+    });
+    await user.type(screen.getByLabelText(/QNH hectopascals/i), "1013");
+    await user.click(screen.getByRole("button", { name: /Apply QNH/i }));
+    await waitFor(() => {
+      expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
+        runwayInUse: "16R",
+        qnhHpa: 1013,
+      });
+    });
+    await user.click(screen.getByRole("button", { name: /Clear QNH/i }));
+    await waitFor(() => {
+      expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
+        runwayInUse: "16R",
+        qnhHpa: null,
+      });
+    });
+  });
+
   it("is read-only for operator", async () => {
     render(<AtisPanel editable={false} />);
     await waitFor(() => {
@@ -128,6 +176,9 @@ describe("AtisPanel", () => {
     expect(screen.queryByLabelText(/Runway in use/i)).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText(/Wind direction degrees/i)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/QNH hectopascals/i)
     ).not.toBeInTheDocument();
   });
 });

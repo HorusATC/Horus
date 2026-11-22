@@ -10,9 +10,9 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphe
 class AtisTextComposerTest {
 
     @Test
-    void composeGoldenRjttAlpha16R() {
+    void composeGoldenBothMissing() {
         String text = AtisTextComposer.compose(
-                "Tokyo International Airport", "RJTT", 'A', "16R", UniformWind.missing());
+                "Tokyo International Airport", "RJTT", 'A', "16R", UniformWind.missing(), null);
         assertEquals(
                 """
                 Tokyo International Airport (RJTT) INFORMATION ALPHA.
@@ -26,7 +26,75 @@ class AtisTextComposerTest {
     }
 
     @Test
-    void composeGoldenCalm() {
+    void composeGoldenWindOnly() {
+        String text = AtisTextComposer.compose(
+                "Tokyo International Airport",
+                "RJTT",
+                'C',
+                "22",
+                UniformWind.measured(160, 12),
+                null);
+        assertEquals(
+                """
+                Tokyo International Airport (RJTT) INFORMATION CHARLIE.
+                LANDING AND DEPARTURE RUNWAY 22.
+                WIND 160 DEGREES 12 KNOTS.
+                WEATHER NOT AVAILABLE.
+                ADVISE YOU HAVE INFORMATION CHARLIE.""",
+                text);
+        assertFalse(text.matches("(?s).*\\bQNH\\b.*\\d+.*"));
+    }
+
+    @Test
+    void composeGoldenQnhOnly() {
+        String text = AtisTextComposer.compose(
+                "Tokyo International Airport", "RJTT", 'B', "16R", UniformWind.missing(), 1013);
+        assertEquals(
+                """
+                Tokyo International Airport (RJTT) INFORMATION BRAVO.
+                LANDING AND DEPARTURE RUNWAY 16R.
+                WIND NOT AVAILABLE.
+                QNH 1013.
+                ADVISE YOU HAVE INFORMATION BRAVO.""",
+                text);
+    }
+
+    @Test
+    void composeGoldenWindAndQnh() {
+        String text = AtisTextComposer.compose(
+                "Tokyo International Airport",
+                "RJTT",
+                'D',
+                "16R",
+                UniformWind.measured(270, 15),
+                995);
+        assertEquals(
+                """
+                Tokyo International Airport (RJTT) INFORMATION DELTA.
+                LANDING AND DEPARTURE RUNWAY 16R.
+                WIND 270 DEGREES 15 KNOTS.
+                QNH 0995.
+                ADVISE YOU HAVE INFORMATION DELTA.""",
+                text);
+        assertFalse(text.contains("WEATHER NOT AVAILABLE"));
+    }
+
+    @Test
+    void composeGoldenCalmWithQnh() {
+        String text = AtisTextComposer.compose(
+                "Tokyo International Airport", "RJTT", 'E', "16R", UniformWind.calm(), 1013);
+        assertEquals(
+                """
+                Tokyo International Airport (RJTT) INFORMATION ECHO.
+                LANDING AND DEPARTURE RUNWAY 16R.
+                WIND CALM.
+                QNH 1013.
+                ADVISE YOU HAVE INFORMATION ECHO.""",
+                text);
+    }
+
+    @Test
+    void composeGoldenCalmWithoutQnh() {
         String text = AtisTextComposer.compose(
                 "Tokyo International Airport", "RJTT", 'B', "16R", UniformWind.calm());
         assertEquals(
@@ -36,20 +104,6 @@ class AtisTextComposerTest {
                 WIND CALM.
                 WEATHER NOT AVAILABLE.
                 ADVISE YOU HAVE INFORMATION BRAVO.""",
-                text);
-    }
-
-    @Test
-    void composeGoldenMeasuredWind() {
-        String text = AtisTextComposer.compose(
-                "Tokyo International Airport", "RJTT", 'C', "22", UniformWind.measured(160, 12));
-        assertEquals(
-                """
-                Tokyo International Airport (RJTT) INFORMATION CHARLIE.
-                LANDING AND DEPARTURE RUNWAY 22.
-                WIND 160 DEGREES 12 KNOTS.
-                WEATHER NOT AVAILABLE.
-                ADVISE YOU HAVE INFORMATION CHARLIE.""",
                 text);
     }
 

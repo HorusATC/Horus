@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In Progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-22
 - **関連**: [spec/spec.md](../spec.md) フェーズ 6-2、[spec/20261122-atis-runway-in-use/spec.md](../20261122-atis-runway-in-use/spec.md)、[spec/20261122-uniform-wind/spec.md](../20261122-uniform-wind/spec.md)、[spec/20261017-terminal-radar-gaps/spec.md](../20261017-terminal-radar-gaps/spec.md)、Issue [#71](https://github.com/HorusATC/Horus/issues/71)
@@ -101,18 +101,18 @@
 
 ## 完了条件（Success Criteria）
 
-- [ ] `spec/20261122-atis-qnh/spec.md` がリポジトリにあり、実装完了後に Status が Done になっている。出典 URL がある
-- [ ] 風も QNH も欠測のとき、ATIS 本文は現行の `WIND AND WEATHER NOT AVAILABLE.` のままである。風あり・QNH 欠測では現行の風行 + `WEATHER NOT AVAILABLE.` のままである。既存形の PUT（`runwayInUse` のみ、または風キーのみ）は QNH を変えない
-- [ ] `GET /api/atis` に `qnhAvailable` / `qnhHpa`（欠測時は後者を省略）が付く。`PUT` で空港ごとに QNH を設定すると、その空港の本文に `QNH …` が入り、その空港の情報識別だけが進む。他空港の QNH と識別は変わらない。`qnhHpa: null` で欠測に戻せる。850–1100 の外は 400
-- [ ] 合成関数のゴールデン文字列が、4 通り（両方欠測、風のみ、QNH のみ、両方あり）を固定する
-- [ ] QNH の有無にかかわらず、位置・指示高度・IAS→TAS・無風時の GS／トラック・MSAW／STCA の垂直判定が、QNH を導入する前と同一である（退行テスト）
-- [ ] **退行なし**: 既存の Backend / Frontend テストが、契約を緩めずに合格する。風・`DEPART`／`JOIN FINAL`／復行／Hold の契約を壊さない
-- [ ] Frontend と Backend のビルドおよびテストが合格する
+- [x] `spec/20261122-atis-qnh/spec.md` がリポジトリにあり、実装完了後に Status が Done になっている。出典 URL がある
+- [x] 風も QNH も欠測のとき、ATIS 本文は現行の `WIND AND WEATHER NOT AVAILABLE.` のままである。風あり・QNH 欠測では現行の風行 + `WEATHER NOT AVAILABLE.` のままである。既存形の PUT（`runwayInUse` のみ、または風キーのみ）は QNH を変えない
+- [x] `GET /api/atis` に `qnhAvailable` / `qnhHpa`（欠測時は後者を省略）が付く。`PUT` で空港ごとに QNH を設定すると、その空港の本文に `QNH …` が入り、その空港の情報識別だけが進む。他空港の QNH と識別は変わらない。`qnhHpa: null` で欠測に戻せる。850–1100 の外は 400
+- [x] 合成関数のゴールデン文字列が、4 通り（両方欠測、風のみ、QNH のみ、両方あり）を固定する（本文は `QNH 0995.` のように 4 桁ゼロ埋め）
+- [x] QNH の有無にかかわらず、位置・指示高度・IAS→TAS・無風時の GS／トラック・MSAW／STCA の垂直判定が、QNH を導入する前と同一である（退行テスト）
+- [x] **退行なし**: 既存の Backend / Frontend テストが、契約を緩めずに合格する。風・`DEPART`／`JOIN FINAL`／復行／Hold の契約を壊さない
+- [x] Frontend と Backend のビルドおよびテストが合格する
 - [ ] CI の 4 ジョブが、マージするコミットの SHA で全部合格する
 - [ ] Controller の ATIS パネルで空港ごとに QNH を入れ・欠測に戻せ、Operator は読取専用で本文を見る。ブラウザ確認とスクリーンショットを残す（欠測 → RJTT だけ 1013 → 識別と本文の更新、RJAA は欠測のまま → 欠測へ戻す）
-- [ ] Backend README と Frontend README に、空港ごとの QNH（hPa）、欠測既定、本文の 4 通り、高度モデルを変えないこと、出典を書く。Frontend README の ATIS 説明から「QNH は未実装」を落とす
-- [ ] Frontend README 冒頭の Operator 役割表に `DEPART`（出発初期上昇）が含まれる
-- [ ] `spec/spec.md` の 6-2 とギャップ台帳を、QNH が入ったこと（高度換算・視程は残る）に合わせて更新する。#71 の「風・QNH・使用滑走路」は本スライスで揃う
+- [x] Backend README と Frontend README に、空港ごとの QNH（hPa）、欠測既定、本文の 4 通り、高度モデルを変えないこと、出典を書く。Frontend README の ATIS 説明から「QNH は未実装」を落とす
+- [x] Frontend README 冒頭の Operator 役割表に `DEPART`（出発初期上昇）が含まれる
+- [x] `spec/spec.md` の 6-2 とギャップ台帳を、QNH が入ったこと（高度換算・視程は残る）に合わせて更新する。#71 の「風・QNH・使用滑走路」は本スライスで揃う
 
 ---
 
@@ -144,17 +144,17 @@
 
 ## 検証
 
-- [ ] 4 通りの本文、空港分離、識別送り、400、キー省略時の非変更が、未実装では失敗し、実装後は成功する
-- [ ] 既存の ATIS／風／無風運動／`DEPART` テストが退行しない
+- [x] 4 通りの本文、空港分離、識別送り、400、キー省略時の非変更が、未実装では失敗し、実装後は成功する
+- [x] 既存の ATIS／風／無風運動／`DEPART` テストが退行しない
 - [ ] ブラウザで RJTT のみ QNH を入れ・戻す操作を確認し、スクリーンショットを残す
 - [ ] CI 4 ジョブがマージ SHA で合格する
-- [ ] Operator 役割表に `DEPART` がある
+- [x] Operator 役割表に `DEPART` がある
 
 ---
 
 ## 未解決事項（Unresolved Questions）
 
-- 本文の QNH を 4 桁ゼロ埋めにするか（`QNH 0995.` 対 `QNH 995.`）は、合成関数のゴールデン文字列でどちらか一方に固定する。気象庁電文は `Q0995` である。
+- 本文の QNH は `QNH 0995.` の 4 桁ゼロ埋めで固定した（気象庁電文 `Q0995` に合わせる）。
 - 移行高度の公式値を後続で使う場合は、入手できた AIP 本文を確認してからにする。
 
 ---
