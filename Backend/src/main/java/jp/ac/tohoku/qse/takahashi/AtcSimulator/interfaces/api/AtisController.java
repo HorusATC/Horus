@@ -37,10 +37,14 @@ public class AtisController {
             @Valid @RequestBody UpdateAtisRequestDto request) {
         try {
             Character ident = null;
-            if (request.informationIdent() != null && !request.informationIdent().isBlank()) {
-                ident = request.informationIdent().charAt(0);
+            if (request.getInformationIdent() != null && !request.getInformationIdent().isBlank()) {
+                ident = request.getInformationIdent().charAt(0);
             }
-            return ResponseEntity.ok(atisService.updateAtis(airportIcao, request.runwayInUse(), ident));
+            return ResponseEntity.ok(atisService.updateAtis(
+                    airportIcao,
+                    request.getRunwayInUse(),
+                    ident,
+                    request.resolveWindUpdate()));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "message", ex.getMessage()));

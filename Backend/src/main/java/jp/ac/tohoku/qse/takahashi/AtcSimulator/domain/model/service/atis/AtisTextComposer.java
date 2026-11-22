@@ -2,9 +2,11 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atis;
 
 import java.util.Locale;
 
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
+
 /**
- * Builds ATIS text without wind or live weather values.
- * Missing observations are stated explicitly rather than fabricated.
+ * Builds ATIS text without live weather values beyond session wind.
+ * Missing wind observations are stated explicitly rather than fabricated.
  */
 public final class AtisTextComposer {
 
@@ -22,7 +24,9 @@ public final class AtisTextComposer {
             String airportName,
             String airportIcao,
             char informationIdent,
-            String runwayInUse) {
+            String runwayInUse,
+            UniformWind wind) {
+        UniformWind sessionWind = wind != null ? wind : UniformWind.missing();
         String name = airportName == null || airportName.isBlank()
                 ? airportIcao
                 : airportName.trim();
@@ -31,8 +35,24 @@ public final class AtisTextComposer {
         String runway = runwayInUse.toUpperCase(Locale.ROOT).trim();
         return name + " (" + icao + ") INFORMATION " + letterWord + ".\n"
                 + "LANDING AND DEPARTURE RUNWAY " + runway + ".\n"
-                + "WIND AND WEATHER NOT AVAILABLE.\n"
+                + windSection(sessionWind)
                 + "ADVISE YOU HAVE INFORMATION " + letterWord + ".";
+    }
+
+    private static String windSection(UniformWind wind) {
+        if (wind.isMissing()) {
+            return "WIND AND WEATHER NOT AVAILABLE.\n";
+        }
+        if (wind.isCalm()) {
+            return "WIND CALM.\nWEATHER NOT AVAILABLE.\n";
+        }
+        int direction = wind.directionDegOrZero();
+        int speed = wind.speedKnotsOrZero();
+        return String.format(
+                Locale.ROOT,
+                "WIND %03d DEGREES %d KNOTS.\nWEATHER NOT AVAILABLE.\n",
+                direction,
+                speed);
     }
 
     public static String phoneticWord(char informationIdent) {

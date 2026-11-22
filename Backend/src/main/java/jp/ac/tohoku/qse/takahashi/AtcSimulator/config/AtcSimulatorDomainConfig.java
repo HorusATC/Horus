@@ -1,5 +1,8 @@
 package jp.ac.tohoku.qse.takahashi.AtcSimulator.config;
 
+import java.util.function.Supplier;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,6 +17,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.aggregate.airspace.A
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.fix.FixPositionRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.msaw.MsawDetector;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.AtsRouteFixPositionRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.MsaCatalog;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
@@ -75,6 +79,12 @@ public class AtcSimulatorDomainConfig {
             RunwayCatalog runwayCatalog,
             AtsRouteFixPositionRepository atsRouteFixPositionRepository) {
         return new AtisService(runwayCatalog, atsRouteFixPositionRepository);
+    }
+
+    @Bean
+    @Qualifier("sessionWind")
+    public Supplier<UniformWind> sessionWindSupplier(AtisService atisService) {
+        return atisService::getSessionWind;
     }
 
 }

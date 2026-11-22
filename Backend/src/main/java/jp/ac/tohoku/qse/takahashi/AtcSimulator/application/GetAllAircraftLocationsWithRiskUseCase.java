@@ -89,7 +89,8 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 new AircraftLocationDto.VectorDto(
                         base.getAircraftVector().heading.toDouble(),
                         base.getAircraftVector().groundSpeed.toDouble(),
-                        base.getAircraftVector().verticalSpeed.toDouble()
+                        base.getAircraftVector().verticalSpeed.toDouble(),
+                        base.getAircraftVector().trackDeg
                 ),
                 new AircraftLocationDto.InstructedVectorDto(
                         base.getInstructedVector().instructedHeading.toDouble(),
@@ -119,7 +120,7 @@ public class GetAllAircraftLocationsWithRiskUseCase {
         return new AircraftLocationDto(
                 aircraft.getCallsign().toString(),
                 new AircraftLocationDto.PositionDto(0, 0, 0),
-                new AircraftLocationDto.VectorDto(0, 0, 0),
+                new AircraftLocationDto.VectorDto(0, 0, 0, 0),
                 new AircraftLocationDto.InstructedVectorDto(0, 0, 0, null),
                 null,
                 "UNKNOWN",

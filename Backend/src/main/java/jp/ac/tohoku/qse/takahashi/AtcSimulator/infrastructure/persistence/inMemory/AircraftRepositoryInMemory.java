@@ -3,12 +3,14 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.persistence.inMem
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.AircraftConflictException;
@@ -36,11 +38,14 @@ public class AircraftRepositoryInMemory implements AircraftRepository {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Supplier<UniformWind> ambientWindSupplier;
 
+    /** Unit tests without Spring. */
     public AircraftRepositoryInMemory() {
-        this(UniformWind::missing);
+        this.ambientWindSupplier = UniformWind::missing;
+        logger.info("AircraftRepositoryInMemory初期化完了");
     }
 
-    public AircraftRepositoryInMemory(Supplier<UniformWind> ambientWindSupplier) {
+    @Autowired
+    public AircraftRepositoryInMemory(@Qualifier("sessionWind") Supplier<UniformWind> ambientWindSupplier) {
         this.ambientWindSupplier = ambientWindSupplier != null ? ambientWindSupplier : UniformWind::missing;
         logger.info("AircraftRepositoryInMemory初期化完了");
     }

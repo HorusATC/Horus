@@ -2,6 +2,7 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +82,77 @@ class AtisApiIntegrationTest {
                 baseUrl() + "/api/atis/XXXX",
                 put,
                 new HttpEntity<>(Map.of("runwayInUse", "16R")),
+                Map.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void getAtisIncludesWindAvailableFalseByDefault() {
+        ResponseEntity<List> response = restTemplate.getForEntity(baseUrl() + "/api/atis", List.class);
+        assertThat(response.getBody()).isNotNull();
+        Map<?, ?> rjtt = (Map<?, ?>) response.getBody().stream()
+                .filter(m -> "RJTT".equals(((Map<?, ?>) m).get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(rjtt.get("windAvailable")).isEqualTo(false);
+    }
+
+    @Test
+    void putWithWindUpdatesTextAndAdvancesBothIdents() {
+        HttpMethod put = HttpMethod.PUT;
+        ResponseEntity<Map> response = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of(
+                        "runwayInUse", "16R",
+                        "wind", Map.of("directionDeg", 160, "speedKt", 12))),
+                Map.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsEntry("windAvailable", true);
+        assertThat(response.getBody()).containsEntry("windDirectionDeg", 160);
+        assertThat(response.getBody()).containsEntry("windSpeedKt", 12);
+        assertThat(response.getBody()).containsEntry("informationIdent", "B");
+        assertThat((String) response.getBody().get("text")).contains("WIND 160 DEGREES 12 KNOTS");
+
+        ResponseEntity<List> all = restTemplate.getForEntity(baseUrl() + "/api/atis", List.class);
+        Map<?, ?> rjaa = (Map<?, ?>) all.getBody().stream()
+                .filter(m -> "RJAA".equals(((Map<?, ?>) m).get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(rjaa.get("informationIdent")).isEqualTo("B");
+    }
+
+    @Test
+    void putWindNullClearsObservation() {
+        HttpMethod put = HttpMethod.PUT;
+        restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of(
+                        "runwayInUse", "16R",
+                        "wind", Map.of("speedKt", 0))),
+                Map.class);
+        Map<String, Object> clearBody = new HashMap<>();
+        clearBody.put("runwayInUse", "16R");
+        clearBody.put("wind", null);
+        ResponseEntity<Map> cleared = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(clearBody),
+                Map.class);
+        assertThat(cleared.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(cleared.getBody()).containsEntry("windAvailable", false);
+    }
+
+    @Test
+    void putBadWindReturns400() {
+        HttpMethod put = HttpMethod.PUT;
+        ResponseEntity<Map> response = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of(
+                        "runwayInUse", "16R",
+                        "wind", Map.of("directionDeg", 160, "speedKt", 100))),
                 Map.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }

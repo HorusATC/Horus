@@ -17,9 +17,9 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Na
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAltitudeTargetResolver;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atmosphere.WindTriangle;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude;
-import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.GroundSpeed;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Heading;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.AircraftPosition;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.AircraftVector;
@@ -300,10 +300,17 @@ public abstract class AircraftBase implements Aircraft {
             case ENTRY_TEARDROP_INBOUND_TURN, ENTRY_PARALLEL_INBOUND_TURN, INBOUND_TURN -> holdInboundCourseDeg;
             case ENTRY_PARALLEL_OUTBOUND_TURN, ENTRY_PARALLEL_LEG, OUTBOUND_TURN -> outbound;
             case OUTBOUND_LEG -> outbound;
-            case INBOUND_LEG, ENTRY -> flightBehavior.calculateTurnAngle(
-                    aircraftPosition, aircraftVector.heading.toDouble(), holdingFix);
+            case INBOUND_LEG, ENTRY -> {
+                if (ambientWind.affectsMotion()) {
+                    yield holdInboundCourseDeg;
+                }
+                yield flightBehavior.calculateTurnAngle(
+                        aircraftPosition, aircraftVector.heading.toDouble(), holdingFix);
+            }
         };
-        if (holdPhase == HoldPhase.OUTBOUND_LEG && holdingOutboundTarget != null) {
+        if (holdPhase == HoldPhase.OUTBOUND_LEG
+                && holdingOutboundTarget != null
+                && !ambientWind.affectsMotion()) {
             heading = flightBehavior.calculateTurnAngle(
                     aircraftPosition, aircraftVector.heading.toDouble(), holdingOutboundTarget);
         }
@@ -555,6 +562,7 @@ public abstract class AircraftBase implements Aircraft {
             case ENTRY_TEARDROP_TURN, ENTRY_TEARDROP_LEG,
                  ENTRY_TEARDROP_INBOUND_TURN, ENTRY_PARALLEL_INBOUND_TURN, INBOUND_TURN,
                  ENTRY_PARALLEL_OUTBOUND_TURN, ENTRY_PARALLEL_LEG, OUTBOUND_TURN -> true;
+            case INBOUND_LEG -> true;
             case OUTBOUND_LEG -> holdingOutboundTarget == null;
             default -> false;
         };
@@ -843,6 +851,7 @@ public abstract class AircraftBase implements Aircraft {
 
     public void setInstructedVector(final InstructedVector newInstructedVector, Integer indicatedAirspeedKnots) {
         requireApproachControl();
+        clearFinalApproachInterceptState();
         this.instructedVector = newInstructedVector;
         this.instructedIndicatedAirspeedKnots = indicatedAirspeedKnots;
     }
