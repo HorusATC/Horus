@@ -19,30 +19,80 @@ export type PositionHistoryPoint = {
 export const POSITION_HISTORY_MAX_POINTS = 120;
 
 /**
- * Server-owned Aircraft fields refreshed from each location poll.
- * Client-owned fields (`label`, `positionHistory`, and static identity/type
- * metadata) are intentionally excluded.
+ * Data-property keys of {@link Aircraft} (methods excluded).
+ * Used so a new class field must land in {@link AIRCRAFT_FIELD_PARTITION}.
  */
-export type PolledAircraftServerFields = Pick<
-  Aircraft,
-  | "position"
-  | "geoPosition"
-  | "vector"
-  | "instructedVector"
-  | "atcClearance"
-  | "squawk"
-  | "eta"
-  | "navigationMode"
-  | "riskLevel"
-  | "indicatedAirspeedKnots"
-  | "goAround"
-  | "towerHandoff"
-  | "msawAlert"
->;
+export type AircraftDataKey = {
+  [K in keyof Aircraft]: Aircraft[K] extends (...args: never[]) => unknown
+    ? never
+    : K;
+}[keyof Aircraft];
+
+/** Closed ownership kinds for every Aircraft data field. */
+export type AircraftFieldKind = "client" | "identity" | "polled";
+
+/**
+ * Exhaustive partition of Aircraft data keys.
+ * Adding a field to the class without an entry here is a TypeScript error;
+ * an entry without a class field is also an error (`satisfies` + reverse check).
+ */
+export const AIRCRAFT_FIELD_PARTITION = {
+  label: "client",
+  positionHistory: "client",
+  callsign: "identity",
+  type: "identity",
+  model: "identity",
+  originIata: "identity",
+  originIcao: "identity",
+  destinationIata: "identity",
+  destinationIcao: "identity",
+  position: "polled",
+  geoPosition: "polled",
+  vector: "polled",
+  instructedVector: "polled",
+  atcClearance: "polled",
+  squawk: "polled",
+  eta: "polled",
+  navigationMode: "polled",
+  riskLevel: "polled",
+  indicatedAirspeedKnots: "polled",
+  goAround: "polled",
+  towerHandoff: "polled",
+  msawAlert: "polled",
+} as const satisfies Record<AircraftDataKey, AircraftFieldKind>;
+
+type AircraftPartitionKey = keyof typeof AIRCRAFT_FIELD_PARTITION;
+type _AircraftPartitionCoversClass =
+  AircraftDataKey extends AircraftPartitionKey ? true : never;
+type _AircraftPartitionNoExtras = AircraftPartitionKey extends AircraftDataKey
+  ? true
+  : never;
+const _aircraftPartitionBidirectional: _AircraftPartitionCoversClass &
+  _AircraftPartitionNoExtras = true;
+void _aircraftPartitionBidirectional;
+
+type PolledAircraftKey = {
+  [K in AircraftPartitionKey]: (typeof AIRCRAFT_FIELD_PARTITION)[K] extends "polled"
+    ? K
+    : never;
+}[AircraftPartitionKey];
+
+export type AircraftIdentityKey = {
+  [K in AircraftPartitionKey]: (typeof AIRCRAFT_FIELD_PARTITION)[K] extends "identity"
+    ? K
+    : never;
+}[AircraftPartitionKey];
+
+/**
+ * Server-owned Aircraft fields refreshed from each location poll.
+ * Client-owned (`label`, `positionHistory`) and identity fields are excluded;
+ * identity is set at construction and not overwritten by polling.
+ */
+export type PolledAircraftServerFields = Pick<Aircraft, PolledAircraftKey>;
 
 /**
  * Exhaustive key checklist for {@link PolledAircraftServerFields}.
- * Adding a field to that type without an entry here is a TypeScript error.
+ * Adding a polled partition entry without an entry here is a TypeScript error.
  */
 export const POLLED_AIRCRAFT_SERVER_FIELD_KEYS = {
   position: true,
@@ -161,8 +211,8 @@ export class Aircraft {
 
   /**
    * Apply server-owned fields from a location poll while keeping client-owned
-   * `label` and `positionHistory`. Keys are driven by
-   * {@link POLLED_AIRCRAFT_SERVER_FIELD_KEYS} so a new server-owned field cannot
+   * `label` / `positionHistory` and identity fields. Keys are driven by
+   * {@link POLLED_AIRCRAFT_SERVER_FIELD_KEYS} so a new polled field cannot
    * be silently skipped (tsc error via `satisfies`).
    */
   public applyPolledFields(source: PolledAircraftServerFields): void {
