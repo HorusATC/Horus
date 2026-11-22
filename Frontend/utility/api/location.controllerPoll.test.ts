@@ -71,10 +71,14 @@ describe("Controller location poll instructedVector", () => {
       json: () => Promise.resolve([dto]),
     }) as unknown as typeof fetch;
 
-    const updated = await fetchAircraftLocation(existing, center, range);
+    const result = await fetchAircraftLocation(existing, center, range);
 
-    expect(updated).toHaveLength(1);
-    const aircraft = updated[0];
+    expect(result.kind).toBe("ok");
+    if (result.kind !== "ok") {
+      throw new Error("expected ok");
+    }
+    expect(result.data).toHaveLength(1);
+    const aircraft = result.data[0];
     expect(aircraft).toBeDefined();
     if (!aircraft) {
       throw new Error("expected updated[0]");

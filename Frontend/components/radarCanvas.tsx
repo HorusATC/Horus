@@ -11,6 +11,11 @@ import {
 import { GLOBAL_CONSTANTS } from "@/utility/globals/constants";
 import { GLOBAL_SETTINGS } from "@/utility/globals/settings";
 import { fetchAircraftLocation } from "@/utility/api/location";
+import {
+  beginLocationPoll,
+  createLocationPollGate,
+  finishLocationPoll,
+} from "@/utility/api/locationPollGate";
 import { fetchSimulationSpeed } from "@/utility/api/simulation";
 import {
   DATA_BLOCK_HIT_LEFT_PAD_PX,
@@ -697,10 +702,15 @@ const RadarCanvas: React.FC = () => {
   };
 
   const startUpdatingAircraftLocations = () => {
+    const pollGate = createLocationPollGate();
     const fetchLocationInterval = setInterval(() => {
       void (async () => {
+        const seq = beginLocationPoll(pollGate);
+        if (seq == null) {
+          return;
+        }
         try {
-          const [speed, updatedAircrafts] = await Promise.all([
+          const [speed, locationResult] = await Promise.all([
             fetchSimulationSpeed(),
             fetchAircraftLocation(
               controllingAircraftsRef.current,
@@ -711,13 +721,20 @@ const RadarCanvas: React.FC = () => {
           if (speed != null) {
             simulationSpeedMultiplierRef.current = speed.speedMultiplier;
           }
-          // console.log("updatedAircrafts", updatedAircrafts);
-
+          const updatedAircrafts = finishLocationPoll(
+            pollGate,
+            seq,
+            locationResult
+          );
+          if (updatedAircrafts == null) {
+            return;
+          }
           applyLabelPlacements(updatedAircrafts);
           setControllingAircrafts(() => {
             return updatedAircrafts;
           });
         } catch (error) {
+          pollGate.inFlight = false;
           console.error("Error fetching or setting aircraft locations:", error);
         }
       })();
