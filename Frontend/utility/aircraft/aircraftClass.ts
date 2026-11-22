@@ -1,3 +1,4 @@
+import type { HoldingPatternDto } from "./holdingPattern";
 import type { MsawAlertDto } from "./msawAlert";
 
 export type AtcClearanceVector = {
@@ -59,6 +60,7 @@ export const AIRCRAFT_FIELD_PARTITION = {
   goAround: "polled",
   towerHandoff: "polled",
   msawAlert: "polled",
+  holding: "polled",
 } as const satisfies Record<AircraftDataKey, AircraftFieldKind>;
 
 type AircraftPartitionKey = keyof typeof AIRCRAFT_FIELD_PARTITION;
@@ -109,6 +111,7 @@ export const POLLED_AIRCRAFT_SERVER_FIELD_KEYS = {
   goAround: true,
   towerHandoff: true,
   msawAlert: true,
+  holding: true,
 } as const satisfies Record<keyof PolledAircraftServerFields, true>;
 
 export class Aircraft {
@@ -144,6 +147,11 @@ export class Aircraft {
   riskLevel: number; // 危険度（0-100）
   /** MSAW alert from Backend; null when no alert (or older Backend omitting the field). */
   msawAlert: MsawAlertDto | null;
+  /**
+   * Instructed holding pattern from location poll; null when not holding.
+   * Cleared automatically when Backend omits `holding` after resume/replace.
+   */
+  holding: HoldingPatternDto | null;
   positionHistory: PositionHistoryPoint[];
 
   constructor(
@@ -172,7 +180,8 @@ export class Aircraft {
     indicatedAirspeedKnots: number | null = null,
     goAround: boolean = false,
     towerHandoff: boolean = false,
-    msawAlert: MsawAlertDto | null = null
+    msawAlert: MsawAlertDto | null = null,
+    holding: HoldingPatternDto | null = null
   ) {
     this.callsign = callsign;
     this.position = position;
@@ -195,6 +204,7 @@ export class Aircraft {
     this.goAround = goAround;
     this.towerHandoff = towerHandoff;
     this.msawAlert = msawAlert;
+    this.holding = holding;
     this.positionHistory = [];
   }
 
@@ -235,6 +245,7 @@ export class Aircraft {
       goAround: source.goAround,
       towerHandoff: source.towerHandoff,
       msawAlert: source.msawAlert,
+      holding: source.holding,
     } satisfies PolledAircraftServerFields;
     const _keysMatchChecklist: Record<keyof typeof next, true> =
       POLLED_AIRCRAFT_SERVER_FIELD_KEYS;

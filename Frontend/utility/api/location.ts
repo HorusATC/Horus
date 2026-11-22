@@ -6,7 +6,13 @@ import {
 } from "../aircraft/aircraftClass";
 import { CoordinateManager } from "../coordinateManager/CoordinateManager";
 import { DisplayRange } from "@/context/displayRangeContext";
+import {
+  type HoldingPatternDto,
+  type HoldingPatternPointDto,
+} from "../aircraft/holdingPattern";
 import { parseMsawAlert, type MsawAlertDto } from "../aircraft/msawAlert";
+
+export type { HoldingPatternDto, HoldingPatternPointDto };
 
 export interface AircraftLocationDto {
   callsign: string;
@@ -40,6 +46,13 @@ export interface AircraftLocationDto {
   riskLevel: number;
   /** Absent or null means no MSAW alert (tolerant of older backends). */
   msawAlert?: MsawAlertDto | null;
+  /**
+   * Instructed holding racetrack from Backend geometry.
+   * Present only while navigationMode is HOLDING; omitted otherwise.
+   * Polled (not client-only): Controller never issues Hold, so the overlay
+   * must arrive on the location stream from the same vertices that drive flight.
+   */
+  holding?: HoldingPatternDto | null;
 }
 
 /**
@@ -72,6 +85,7 @@ export const AIRCRAFT_LOCATION_DTO_FIELD_PARTITION = {
   towerHandoff: "polledMapped",
   riskLevel: "polledMapped",
   msawAlert: "polledMapped",
+  holding: "polledMapped",
 } as const satisfies Record<
   keyof AircraftLocationDto,
   AircraftLocationDtoFieldKind
@@ -133,6 +147,7 @@ export const POLLED_AIRCRAFT_DTO_SOURCE = {
   goAround: "goAround",
   towerHandoff: "towerHandoff",
   msawAlert: "msawAlert",
+  holding: "holding",
 } as const satisfies Record<
   keyof PolledAircraftServerFields,
   DtoPolledMappedKey
@@ -249,8 +264,21 @@ function mapDtoToAircraft(
     dto.instructedVector.indicatedAirspeed ?? null,
     dto.goAround === true,
     dto.towerHandoff === true,
-    parseMsawAlert(dto.msawAlert)
+    parseMsawAlert(dto.msawAlert),
+    parseHoldingPattern(dto.holding)
   );
+}
+
+function parseHoldingPattern(
+  holding: HoldingPatternDto | null | undefined
+): HoldingPatternDto | null {
+  if (holding == null) {
+    return null;
+  }
+  if (!Array.isArray(holding.pattern) || holding.pattern.length < 2) {
+    return null;
+  }
+  return holding;
 }
 
 function updateControllingAircrafts(
@@ -297,7 +325,8 @@ function updateControllingAircrafts(
       newAircraft.indicatedAirspeedKnots,
       newAircraft.goAround,
       newAircraft.towerHandoff,
-      newAircraft.msawAlert
+      newAircraft.msawAlert,
+      newAircraft.holding
     );
     controllingAircrafts.push(newAirplane);
   });

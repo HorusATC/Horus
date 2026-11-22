@@ -608,6 +608,16 @@ components:
           type: string
         riskLevel:
           type: number
+        navigationMode:
+          type: string
+          description: HEADING / FLIGHT_PLAN / DIRECT_TO / HOLDING
+        squawk:
+          type: string
+          nullable: true
+        goAround:
+          type: boolean
+        towerHandoff:
+          type: boolean
         msawAlert:
           type: object
           nullable: true
@@ -620,6 +630,47 @@ components:
             trigger:
               type: string
               enum: [CURRENT, PREDICTED]
+        holding:
+          type: object
+          nullable: true
+          description: >
+            Present only while navigationMode is HOLDING. Omitted for non-holding aircraft.
+            Pattern vertices come from the same backend racetrack geometry that drives flight.
+          properties:
+            fixName:
+              type: string
+            fixLatitude:
+              type: number
+            fixLongitude:
+              type: number
+            inboundCourseDeg:
+              type: number
+            turnDirection:
+              type: string
+              enum: [LEFT, RIGHT]
+            legMinutes:
+              type: number
+              nullable: true
+            legNm:
+              type: number
+              nullable: true
+            outboundLegNm:
+              type: number
+            turnRateDegPerSec:
+              type: number
+            turnRadiusNm:
+              type: number
+            pattern:
+              type: array
+              minItems: 2
+              items:
+                type: object
+                required: [latitude, longitude]
+                properties:
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
     Flight:
       type: "object"
       example:

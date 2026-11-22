@@ -85,6 +85,79 @@ describe("Aircraft", () => {
     expect(historyEntry.recordedAt).toEqual(expect.any(String));
   });
 
+  it("applyPolledFields copies holding pattern and clears it when null", () => {
+    const holding = {
+      fixName: "ABENO",
+      fixLatitude: 35.1,
+      fixLongitude: 139.0,
+      inboundCourseDeg: 90,
+      turnDirection: "RIGHT",
+      legMinutes: 1,
+      outboundLegNm: 3,
+      turnRateDegPerSec: 3,
+      turnRadiusNm: 0.95,
+      pattern: [
+        { latitude: 35.1, longitude: 139.0 },
+        { latitude: 35.0, longitude: 139.0 },
+        { latitude: 35.1, longitude: 139.0 },
+      ],
+    };
+    const aircraft = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      50,
+      50,
+      0,
+      "HOLDING",
+      null,
+      false,
+      false,
+      null,
+      holding
+    );
+    const cleared = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      50,
+      50,
+      0,
+      "HEADING",
+      null,
+      false,
+      false,
+      null,
+      null
+    );
+    expect(aircraft.holding?.fixName).toBe("ABENO");
+    aircraft.applyPolledFields(cleared);
+    expect(aircraft.holding).toBeNull();
+    expect(aircraft.navigationMode).toBe("HEADING");
+  });
+
   it("applyPolledFields copies goAround", () => {
     const aircraft = new Aircraft(
       "JAL123",

@@ -8,11 +8,14 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Airc
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftBase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.types.commercial.CommercialAircraft;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldLeg;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.conflict.ConflictDetector;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.msaw.MsawDetector;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Conflict.RiskAssessment;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Msaw.MsawAlert;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.FixPosition;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.AircraftLocationDto;
 
 /**
@@ -107,7 +110,8 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 base.isGoAroundActive(),
                 base.isTowerHandoffActive(),
                 riskLevel,
-                toMsawAlertDto(msawAlert)
+                toMsawAlertDto(msawAlert),
+                toHoldingDto(base)
         );
     }
 
@@ -124,7 +128,35 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 false,
                 false,
                 riskLevel,
-                toMsawAlertDto(msawAlert)
+                toMsawAlertDto(msawAlert),
+                null
+        );
+    }
+
+    private static AircraftLocationDto.HoldingDto toHoldingDto(AircraftBase base) {
+        if (base.getNavigationMode() != NavigationMode.HOLDING || base.getHoldingFix() == null) {
+            return null;
+        }
+        FixPosition fix = base.getHoldingFix();
+        HoldLeg leg = base.getHoldLeg();
+        Double legMinutes = leg instanceof HoldLeg.TimedMinutes timed ? timed.minutes() : null;
+        Double legNm = leg instanceof HoldLeg.DistanceNm distance ? distance.nauticalMiles() : null;
+        List<AircraftLocationDto.PatternPointDto> pattern = base.getHoldingPatternVertices().stream()
+                .map(p -> new AircraftLocationDto.PatternPointDto(
+                        p.latitude.toDouble(), p.longitude.toDouble()))
+                .toList();
+        return new AircraftLocationDto.HoldingDto(
+                base.getHoldingFixName() != null ? base.getHoldingFixName() : "",
+                fix.latitude.toDouble(),
+                fix.longitude.toDouble(),
+                base.getHoldInboundCourseDeg(),
+                base.getHoldTurnDirection().name(),
+                legMinutes,
+                legNm,
+                base.getHoldFrozenOutboundLegNm(),
+                base.getHoldFrozenTurnRateDegPerSec(),
+                base.getHoldFrozenTurnRadiusNm(),
+                pattern
         );
     }
 

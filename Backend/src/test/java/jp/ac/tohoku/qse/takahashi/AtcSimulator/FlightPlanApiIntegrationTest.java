@@ -558,4 +558,70 @@ class FlightPlanApiIntegrationTest {
         assertThat(response.getBody()).containsEntry("success", true);
         assertThat(response.getBody()).containsEntry("navigationMode", "HEADING");
     }
+
+    @Test
+    @DisplayName("location/all includes holding.pattern while HOLDING and omits it after resume")
+    void locationApi_includesHoldingPatternWhileHolding() {
+        spawnWithSingleWaypointFlightPlan("HOLDLOC1", "ABENO");
+
+        ResponseEntity<List> beforeHold = restTemplate.getForEntity(
+                baseUrl() + "/aircraft/location/all", List.class);
+        assertThat(beforeHold.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> beforeDto = findLocationByCallsign(beforeHold.getBody(), "HOLDLOC1");
+        assertThat(beforeDto).doesNotContainKey("holding");
+
+        ResponseEntity<Map> holdResp = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/HOLDLOC1/hold",
+                Map.of(
+                        "fixName", "ABENO",
+                        "inboundCourseDeg", 90,
+                        "legMinutes", 1.0,
+                        "turnDirection", "RIGHT"),
+                Map.class);
+        assertThat(holdResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<List> duringHold = restTemplate.getForEntity(
+                baseUrl() + "/aircraft/location/all", List.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> holdingDto = findLocationByCallsign(duringHold.getBody(), "HOLDLOC1");
+        assertThat(holdingDto).containsKey("holding");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> holding = (Map<String, Object>) holdingDto.get("holding");
+        assertThat(holding).containsEntry("fixName", "ABENO");
+        assertThat(holding).containsEntry("turnDirection", "RIGHT");
+        assertThat(holding.get("inboundCourseDeg")).isEqualTo(90.0);
+        assertThat(holding.get("legMinutes")).isEqualTo(1.0);
+        assertThat(holding).containsKey("outboundLegNm");
+        assertThat(holding).containsKey("turnRadiusNm");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> pattern = (List<Map<String, Object>>) holding.get("pattern");
+        assertThat(pattern).isNotNull();
+        assertThat(pattern.size()).isGreaterThanOrEqualTo(4);
+        assertThat(pattern.get(0).get("latitude"))
+                .isEqualTo(pattern.get(pattern.size() - 1).get("latitude"));
+
+        restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/HOLDLOC1/resume-navigation",
+                null,
+                Map.class);
+
+        ResponseEntity<List> afterResume = restTemplate.getForEntity(
+                baseUrl() + "/aircraft/location/all", List.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> afterDto = findLocationByCallsign(afterResume.getBody(), "HOLDLOC1");
+        assertThat(afterDto).doesNotContainKey("holding");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> findLocationByCallsign(List<?> body, String callsign) {
+        assertThat(body).isNotNull();
+        for (Object item : body) {
+            Map<String, Object> dto = (Map<String, Object>) item;
+            if (callsign.equals(dto.get("callsign"))) {
+                return dto;
+            }
+        }
+        throw new AssertionError("callsign not found: " + callsign);
+    }
 }
