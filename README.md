@@ -114,6 +114,8 @@ docker compose down
 | Operator | `/operator` | 管制官指示の入力・航空機操作 |
 | Controller | `/controller` | レーダー表示・管制官役（指示メモ） |
 
+レーダー（Controller / Operator 共通）では、進入廊内の到着機に進入端までの沿コース距離・概算時間をデータブロックへ出し、測距線（RBL）ツールで 2 点間の距離と真方位を測れる（詳細は [Frontend/README.md](Frontend/README.md)、[spec/20261122-runway-distance-rbl/spec.md](spec/20261122-runway-distance-rbl/spec.md)）。
+
 > シミュレーションを動作させるには、別途バックエンド（`./gradlew bootRun`）の起動が必要です。
 
 # Java環境のセットアップの実行手順

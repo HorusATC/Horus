@@ -73,6 +73,10 @@ export function renderMap(
 }
 
 export interface RunwayMapGeometry {
+  airportIcao: string;
+  designator: string;
+  heading: number;
+  approachCourseHeading: number;
   thresholdLatitude: number;
   thresholdLongitude: number;
   departureEndLatitude: number;

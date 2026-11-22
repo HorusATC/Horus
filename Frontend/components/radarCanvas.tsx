@@ -26,6 +26,18 @@ import { useSelectFixMode } from "@/context/selectFixModeContext";
 import { useSelectedAircraft } from "@/context/selectedAircraftContext";
 import { searchFixName } from "@/utility/AtsRouteManager/FixNameSearch";
 import { usePathname } from "next/navigation";
+import CoordinateManager from "@/utility/coordinateManager/CoordinateManager";
+import {
+  useRblTool,
+  type RblEndpoint,
+  type RblLine,
+} from "@/context/rblToolContext";
+import {
+  formatRblLabel,
+  haversineDistanceNm,
+  horizontalCpaSeconds,
+  initialBearingDeg,
+} from "@/utility/measure/rangeBearing";
 
 function resetCanvas2dState(ctx: CanvasRenderingContext2D): void {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -75,6 +87,16 @@ const RadarCanvas: React.FC = () => {
   const velocityVectorDurationRef = useRef(durationMinutes);
   const { rangeRingsSetting } = useRangeRingsSetting();
   const rangeRingsSettingRef = useRef(rangeRingsSetting);
+  const {
+    toolEnabled: rblToolEnabled,
+    activeRbl,
+    beginOrCompleteEndpoint,
+    handleEscape: handleRblEscape,
+  } = useRblTool();
+  const rblToolEnabledRef = useRef(rblToolEnabled);
+  const activeRblRef = useRef(activeRbl);
+  const beginOrCompleteEndpointRef = useRef(beginOrCompleteEndpoint);
+  const handleRblEscapeRef = useRef(handleRblEscape);
   const { dataBlockDisplaySetting } = useDataBlockDisplaySetting();
   const pathname = usePathname();
   const dataBlockRadarSetting = useMemo<DataBlockDisplaySetting>(() => {
@@ -106,6 +128,10 @@ const RadarCanvas: React.FC = () => {
   displayRangeRef.current = displayRange;
   velocityVectorDurationRef.current = durationMinutes;
   rangeRingsSettingRef.current = rangeRingsSetting;
+  rblToolEnabledRef.current = rblToolEnabled;
+  activeRblRef.current = activeRbl;
+  beginOrCompleteEndpointRef.current = beginOrCompleteEndpoint;
+  handleRblEscapeRef.current = handleRblEscape;
   dataBlockDisplaySettingRef.current = dataBlockRadarSetting;
   isSelectFixModeRef.current = isSelectFixMode;
   atsRouteDataRef.current = atsRouteData;
@@ -154,11 +180,19 @@ const RadarCanvas: React.FC = () => {
       if (canvas) handleMouseEvents(canvas);
     });
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleRblEscapeRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
     return () => {
       canvasRefs.forEach((canvasRef) => {
         const canvas = canvasRef.current;
         if (canvas) removeMouseEvents(canvas);
       });
+      window.removeEventListener("keydown", onKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setup on mount only; canvasRefs/onMouseDown are refs/stable
   }, []);
@@ -248,6 +282,7 @@ const RadarCanvas: React.FC = () => {
     resetCanvas2dState(ctx);
     renderMapOnCanvas(ctx);
     renderAircraftsOnCanvas(ctx, nowMs);
+    drawRblOnCanvas(ctx);
 
     toggleCanvasDisplay();
   };
@@ -298,9 +333,97 @@ const RadarCanvas: React.FC = () => {
         velocityVectorDurationRef.current,
         nowMs,
         squawkHighlightRef.current,
-        simulationSpeedMultiplierRef.current
+        simulationSpeedMultiplierRef.current,
+        runwayGeometriesRef.current
       );
     });
+  };
+
+  const resolveRblEndpointGeo = (
+    endpoint: RblEndpoint
+  ): {
+    latitude: number;
+    longitude: number;
+    aircraft: Aircraft | null;
+  } | null => {
+    if (endpoint.kind === "geo") {
+      return {
+        latitude: endpoint.latitude,
+        longitude: endpoint.longitude,
+        aircraft: null,
+      };
+    }
+    const aircraft = controllingAircraftsRef.current.find(
+      (a) => a.callsign === endpoint.callsign
+    );
+    if (!aircraft) {
+      return null;
+    }
+    return {
+      latitude: aircraft.geoPosition.latitude,
+      longitude: aircraft.geoPosition.longitude,
+      aircraft,
+    };
+  };
+
+  const drawRblOnCanvas = (ctx: CanvasRenderingContext2D) => {
+    const line: RblLine | null = activeRblRef.current;
+    if (line == null) {
+      return;
+    }
+    const start = resolveRblEndpointGeo(line.start);
+    const end = resolveRblEndpointGeo(line.end);
+    if (start == null || end == null) {
+      return;
+    }
+    const startCanvas = CoordinateManager.calculateCanvasCoordinates(
+      { latitude: start.latitude, longitude: start.longitude },
+      centerCoordinateRef.current,
+      displayRangeRef.current
+    );
+    const endCanvas = CoordinateManager.calculateCanvasCoordinates(
+      { latitude: end.latitude, longitude: end.longitude },
+      centerCoordinateRef.current,
+      displayRangeRef.current
+    );
+    ctx.save();
+    ctx.strokeStyle = "#67e8f9";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(startCanvas.x, startCanvas.y);
+    ctx.lineTo(endCanvas.x, endCanvas.y);
+    ctx.stroke();
+
+    const startGeo = {
+      latitude: start.latitude,
+      longitude: start.longitude,
+    };
+    const endGeo = { latitude: end.latitude, longitude: end.longitude };
+    const distanceNm = haversineDistanceNm(startGeo, endGeo);
+    const bearingDeg = initialBearingDeg(startGeo, endGeo);
+    let cpaSeconds: number | null = null;
+    if (start.aircraft != null && end.aircraft != null) {
+      cpaSeconds = horizontalCpaSeconds(
+        startGeo,
+        {
+          headingDeg: start.aircraft.vector.heading,
+          groundSpeedKt: start.aircraft.vector.groundSpeed,
+        },
+        endGeo,
+        {
+          headingDeg: end.aircraft.vector.heading,
+          groundSpeedKt: end.aircraft.vector.groundSpeed,
+        }
+      );
+    }
+    const label = formatRblLabel(distanceNm, bearingDeg, cpaSeconds);
+    const midX = (startCanvas.x + endCanvas.x) / 2;
+    const midY = (startCanvas.y + endCanvas.y) / 2;
+    ctx.fillStyle = "#67e8f9";
+    ctx.font = GLOBAL_CONSTANTS.FONT_STYLE_IN_CANVAS;
+    ctx.textAlign = "center";
+    ctx.fillText(label, midX, midY - 6);
+    ctx.restore();
   };
 
   const clearCanvas = (
@@ -356,6 +479,31 @@ const RadarCanvas: React.FC = () => {
       return;
     }
 
+    if (rblToolEnabledRef.current) {
+      let endpoint: RblEndpoint | null = null;
+      for (const aircraft of currentControllingAircrafts) {
+        if (isWithinRadius(x, y, aircraft.position, aircraftRadius)) {
+          endpoint = { kind: "aircraft", callsign: aircraft.callsign };
+          break;
+        }
+      }
+      if (endpoint == null) {
+        const geo = CoordinateManager.calculateGeoCoordinates(
+          x,
+          y,
+          centerCoordinateRef.current,
+          displayRangeRef.current
+        );
+        endpoint = {
+          kind: "geo",
+          latitude: geo.latitude,
+          longitude: geo.longitude,
+        };
+      }
+      beginOrCompleteEndpointRef.current(endpoint);
+      return;
+    }
+
     for (let index = 0; index < currentControllingAircrafts.length; index++) {
       const aircraft = currentControllingAircrafts[index];
       const { position, label, callsign } = aircraft;
@@ -366,15 +514,15 @@ const RadarCanvas: React.FC = () => {
         changeDisplayAircraftInfo(aircraft);
         setSelectedAircraft(aircraft);
         console.log("Clicked on aircraft", aircraft);
-        break; // 条件が満たされた場合はループを抜ける
+        break;
       }
 
-      if (isWithinLabelBounds(x, y, labelX, labelY)) {
+      if (isWithinLabelBounds(x, y, labelX, labelY, aircraft)) {
         console.log("Clicked on label", callsign);
         draggingLabelIndexRef.current = index;
         offsetXRef.current = x - labelX;
         offsetYRef.current = y - labelY;
-        break; // 条件が満たされた場合はループを抜ける
+        break;
       }
     }
   };
@@ -397,13 +545,20 @@ const RadarCanvas: React.FC = () => {
     x: number,
     y: number,
     labelX: number,
-    labelY: number
+    labelY: number,
+    aircraft: Aircraft
   ) => {
+    const bottom = DrawAircraft.labelHitBottomOffsetPx(
+      aircraft,
+      dataBlockDisplaySettingRef.current,
+      controllerClearanceAltitudeRowRef.current,
+      runwayGeometriesRef.current
+    );
     return (
       x >= labelX - 5 &&
-      x <= labelX + 70 &&
-      y >= labelY - 20 &&
-      y <= labelY + 40
+      x <= labelX + DrawAircraft.labelHitWidthPx() &&
+      y >= labelY - DrawAircraft.labelHitTopPadPx() &&
+      y <= labelY + bottom
     );
   };
 
