@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.FlightPlanFromDtoConverter;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ProcedureFlightPlanMapper;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ProcedureSpawnSupport;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ScenarioService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.AircraftConflictException;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.AircraftNotFoundException;
@@ -61,11 +62,13 @@ public class FlightPlanController {
     private final RunwayCatalog runwayCatalog;
     private final ProcedureCatalog procedureCatalog;
     private final ProcedureFlightPlanMapper procedureFlightPlanMapper;
+    private final ProcedureSpawnSupport procedureSpawnSupport;
 
     public FlightPlanController(ScenarioService scenarioService, AircraftRepository aircraftRepository,
             FlightPlanFromDtoConverter flightPlanConverter, AtsRouteFixPositionRepository airportRepository,
             RunwayCatalog runwayCatalog, ProcedureCatalog procedureCatalog,
-            ProcedureFlightPlanMapper procedureFlightPlanMapper) {
+            ProcedureFlightPlanMapper procedureFlightPlanMapper,
+            ProcedureSpawnSupport procedureSpawnSupport) {
         this.scenarioService = scenarioService;
         this.aircraftRepository = aircraftRepository;
         this.flightPlanConverter = flightPlanConverter;
@@ -73,6 +76,7 @@ public class FlightPlanController {
         this.runwayCatalog = runwayCatalog;
         this.procedureCatalog = procedureCatalog;
         this.procedureFlightPlanMapper = procedureFlightPlanMapper;
+        this.procedureSpawnSupport = procedureSpawnSupport;
     }
 
     @Operation(
@@ -99,9 +103,21 @@ public class FlightPlanController {
             throw new AircraftConflictException(callsign.toString());
         }
 
-        FlightPlan flightPlan = flightPlanConverter.toDomain(dto.flightPlan());
+        ProcedureSpawnSupport.ResolveResult resolved = procedureSpawnSupport.resolve(dto);
+        if (resolved.kind() == ProcedureSpawnSupport.ResolveKind.NOT_FOUND) {
+            return ResponseEntity.notFound().build();
+        }
+        if (resolved.kind() == ProcedureSpawnSupport.ResolveKind.BAD_REQUEST) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", resolved.message()));
+        }
+
         CommercialAircraft aircraft = createAircraftWithInitialPosition(dto.flightPlan(), dto.initialPosition());
-        aircraft.setFlightPlan(flightPlan);
+        if (resolved.kind() == ProcedureSpawnSupport.ResolveKind.OK) {
+            procedureSpawnSupport.apply(aircraft, resolved.mapped());
+        } else {
+            FlightPlan flightPlan = flightPlanConverter.toDomain(dto.flightPlan());
+            aircraft.setFlightPlan(flightPlan);
+        }
 
         scenarioService.spawnAircraft(aircraft);
 

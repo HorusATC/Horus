@@ -25,11 +25,20 @@ export interface InitialPositionDto {
   verticalSpeed: number;
 }
 
+export interface ScenarioAtisSeed {
+  icao: string;
+  runwayInUse: string;
+}
+
 export interface ScenarioAircraft {
   flightPlan: FlightPlanDto;
   initialPosition: InitialPositionDto;
   /** Relative seconds from simulation start. null/0 = immediate spawn. Reserved for future delayed spawn. */
   spawnTime?: number;
+  /** Optional catalog procedure id; backend maps route like assign-procedure. */
+  procedureId?: string;
+  /** Optional SID enroute transition id (only with procedureId). */
+  transitionId?: string;
 }
 
 export interface ScenarioJson {
@@ -37,4 +46,6 @@ export interface ScenarioJson {
   description?: string;
   createdAt?: string;
   aircraft: ScenarioAircraft[];
+  /** Optional ATIS runway seeds applied after reset-to-defaults on scenario load. */
+  atis?: ScenarioAtisSeed[];
 }

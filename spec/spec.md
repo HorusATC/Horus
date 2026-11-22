@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-23 | 既定クイックスタートを RJTT RNAV STAR 到着シナリオに（[20261123-star-quickstart-scenario](20261123-star-quickstart-scenario/spec.md)）。`procedureId` / ATIS シードはシナリオ load に加算。VAMOS・VISIP・KIAS 自動は既定に含めない。 |
 | 2026-11-22 | RJTT SID/STAR 第一スライス（[20261122-sid-star](20261122-sid-star/spec.md)、**Done**）。RNAV STAR 15・VAMOS FOUR（TATEYAMA/DRAKY トランジション含む）、割当 API、レーダー経路。VISIP・公示ホールド自動・KIAS は未実装。 |
 | 2026-11-22 | ATIS 空港ごと QNH（[20261122-atis-qnh](20261122-atis-qnh/spec.md)）。6-2 の風・QNH・使用滑走路が揃う。高度換算・視程は残課題。 |
 | 2026-11-22 | 一様風・GS／トラック・ATIS 風欄（[20261122-uniform-wind](20261122-uniform-wind/spec.md)）。6-1 を完了扱いに更新。シアー・待機時間公式補正は残課題。 |

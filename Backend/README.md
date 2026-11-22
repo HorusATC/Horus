@@ -210,7 +210,7 @@ npm run dev
 
 1. ルートで `./scripts/dev-up.sh`（または Backend / Frontend を個別起動）
 2. ブラウザで http://localhost:3333 を開く
-3. 「**START WITH SAMPLE (サンプルで始める)**」をクリックし、Controller に到着 5 機が表示されることを確認
+3. 「**START WITH SAMPLE (サンプルで始める)**」をクリックし、Controller に RJTT RNAV STAR 到着 5 機（経路折れ線あり・ATIS 使用滑走路 34L）が表示されることを確認
 
 ### フライトプラン機能のマニュアルテスト
 
@@ -222,8 +222,8 @@ npm run dev
 
 | メソッド | パス | 説明 |
 |----------|------|------|
-| POST | `/api/scenario/load` | シナリオ一括ロード（空域クリア＋複数機スポーン）。シミュ開始は別途 `POST /simulation/start` |
-| POST | `/api/aircraft/spawn-with-flightplan` | 1 機スポーン＋フライトプラン |
+| POST | `/api/scenario/load` | シナリオ一括ロード（空域クリア＋複数機スポーン）。任意で機体ごとの `procedureId` / `transitionId`（`assign-procedure` と同じマッピング）と `atis` シード（例: RJTT `34L`）。省略時の ATIS 既定は 16R のまま。シミュ開始は別途 `POST /simulation/start` |
+| POST | `/api/aircraft/spawn-with-flightplan` | 1 機スポーン＋フライトプラン。任意 `procedureId` / `transitionId`（シナリオ load と同じ） |
 | POST | `/api/aircraft/{callsign}/flightplan` | 既存機にフライトプランを付与・差し替え |
 | GET | `/api/aircraft/{callsign}/flightplan` | ナビモード・残ウェイポイント等 |
 | POST | `/api/aircraft/{callsign}/direct-to` | Direct To |
@@ -236,7 +236,7 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/depart` | 出発・初期上昇。カタログ物理進入端（TORA 始端）へ置き、標高+35 ft・滑走路真方位（FLY RUNWAY HEADING）で指定高度へ上昇。任意 `initialHeadingDeg` は DER 標高+400 ft まで滑走路方位を維持してから旋回。地上滑走・SID・V 速度なし。上昇は開始高度より 500 ft 以上（1,000–45,000）。RJTT 05 可。位置 API に `initialClimb`。出典: FAA JO 7110.65 5-8-2 / 5-8-3 NOTE 1。針路は真方位（磁偏差なし）。200 ft/NM 勾配は既存上昇率任せ |
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
 | POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |
-| GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路。既定は各空港 16R / A。風は欠測（`windAvailable: false`）。QNH も欠測（`qnhAvailable: false`、`qnhHpa` 省略）。任意で `windDirectionDeg` / `windSpeedKt`（真方位・ノット。磁方位変換なし）と空港ごとの `qnhHpa`（hPa）。視程・雲等は未実装。シナリオ load で風・QNH 含め既定に戻る |
+| GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路。既定は各空港 16R / A（`DEFAULT_RUNWAY` は変更しない）。風は欠測（`windAvailable: false`）。QNH も欠測（`qnhAvailable: false`、`qnhHpa` 省略）。任意で `windDirectionDeg` / `windSpeedKt`（真方位・ノット。磁方位変換なし）と空港ごとの `qnhHpa`（hPa）。視程・雲等は未実装。シナリオ load は一旦既定に戻したあと、任意の `atis` シードを適用する |
 | PUT | `/api/atis/{airportIcao}` | 使用滑走路を更新（`runwayInUse` 必須）。任意 `wind`（`{ directionDeg, speedKt }` / CALM `speedKt: 0` / 欠測 `null`）。任意 `qnhHpa`（整数 850–1100 / 欠測 `null`）。風の値が変わると両空港の情報識別を 1 つ進める（共有一様風）。QNH が当該空港で変わると**その空港だけ**識別送り。キー省略は既存どおり風／QNH を変えない。範囲外は 400。JOIN FINAL／復行／`DEPART`／タワー移管／Hold／位置 API の契約は変更しない（高度・IAS→TAS・MSAW／STCA の垂直判定は QNH を見ない。RJTT 05 への JOIN FINAL のみ着陸不可で 400） |
 | GET | `/simulation/speed` | シミュレーション時間倍率と実時間ティック間隔（ms） |
 | PUT | `/simulation/speed` | JSON `{"speedMultiplier": …}`（必須。欠落・`null` は 400）。値は離散プリセットのみ（`0.25` / `0.5` / `1` / `2` / `4` / `10`）。他は 400 |

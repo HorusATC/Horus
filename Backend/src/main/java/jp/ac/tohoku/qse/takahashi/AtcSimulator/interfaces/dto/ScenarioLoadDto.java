@@ -12,6 +12,7 @@ public record ScenarioLoadDto(
         String scenarioName,
         String description,
         String createdAt,
-        @Valid @NotNull List<SpawnWithFlightPlanDto> aircraft
+        @Valid @NotNull List<SpawnWithFlightPlanDto> aircraft,
+        @Valid List<ScenarioAtisSeedDto> atis
 ) {
 }
