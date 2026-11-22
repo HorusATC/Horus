@@ -8,6 +8,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Airc
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftBase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.types.commercial.CommercialAircraft;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlan;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldLeg;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.conflict.ConflictDetector;
@@ -113,7 +114,8 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 base.isTowerHandoffActive(),
                 riskLevel,
                 toMsawAlertDto(msawAlert),
-                toHoldingDto(base)
+                toHoldingDto(base),
+                toFlightPlanRoute(base)
         );
     }
 
@@ -132,8 +134,25 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 false,
                 riskLevel,
                 toMsawAlertDto(msawAlert),
+                null,
                 null
         );
+    }
+
+    private static List<AircraftLocationDto.FlightPlanRoutePointDto> toFlightPlanRoute(AircraftBase base) {
+        FlightPlan plan = base.getFlightPlan();
+        if (plan == null || plan.getWaypoints().isEmpty()) {
+            return null;
+        }
+        int start = Math.max(0, base.getCurrentWaypointIndex());
+        List<AircraftLocationDto.FlightPlanRoutePointDto> route = plan.getWaypoints().stream()
+                .skip(start)
+                .map(wp -> new AircraftLocationDto.FlightPlanRoutePointDto(
+                        wp.getFixName(),
+                        wp.getPosition().latitude.toDouble(),
+                        wp.getPosition().longitude.toDouble()))
+                .toList();
+        return route.isEmpty() ? null : route;
     }
 
     private static AircraftLocationDto.HoldingDto toHoldingDto(AircraftBase base) {

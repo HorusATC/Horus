@@ -109,9 +109,23 @@ public class RouteSuggestionService {
     }
 
     private Optional<String> findNearestFix(double lat, double lon) {
+        // Prefer ATS/RNAV graph nodes so SID/STAR-only catalog fixes (e.g. TT501 near RJTT)
+        // do not steal airport snap and force FALLBACK_NO_PATH. Fall back to any fix when
+        // the synthetic/unit graph has isolated nodes (same-airport / orphan-edge cases).
+        Optional<String> onGraph = findNearestFixAmong(lat, lon, true);
+        if (onGraph.isPresent()) {
+            return onGraph;
+        }
+        return findNearestFixAmong(lat, lon, false);
+    }
+
+    private Optional<String> findNearestFixAmong(double lat, double lon, boolean requireGraphNode) {
         String nearest = null;
         double minDist = MAX_NEAREST_FIX_DISTANCE_KM;
         for (Map.Entry<String, double[]> e : fixPositions.entrySet()) {
+            if (requireGraphNode && !graph.containsKey(e.getKey())) {
+                continue;
+            }
             double d = PositionUtils.calculateApproximateDistance(lat, lon, e.getValue()[0], e.getValue()[1]);
             if (d < minDist) {
                 minDist = d;

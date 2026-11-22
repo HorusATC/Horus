@@ -17,6 +17,8 @@ import { SelectedAircraftProvider } from "@/context/selectedAircraftContext";
 import SelectFixMode from "@/components/selectFixMode";
 import SelectedCallsignDisplay from "@/components/selectedCallsignDisplay";
 import FlightPlanControl from "@/components/flightPlanControl";
+import ProcedureAssignControl from "@/components/procedureAssignControl";
+import FlightPlanDisplay from "@/components/flightPlanDisplay";
 import SimulationControlButtons from "@/components/simulationControlButtons";
 import ConflictSummaryStrip from "@/components/conflictSummaryStrip";
 import AtisPanel from "@/components/atisPanel";
@@ -61,6 +63,8 @@ export default function OperatorPage() {
                               <ControlAircraft />
                               <SquawkControl />
                               <SelectFixMode />
+                              <ProcedureAssignControl />
+                              <FlightPlanDisplay />
                               <FlightPlanControl />
 
                               {/* Settings Area */}

@@ -15,6 +15,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Ho
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldingPatternGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAltitudeTargetResolver;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureVaConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atmosphere.WindTriangle;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.departure.InitialClimbGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude;
@@ -102,6 +103,13 @@ public abstract class AircraftBase implements Aircraft {
     /** When set, turn to this heading only after DER elevation + 400 ft. */
     protected Double deferredInitialHeadingDeg;
     protected double derElevationFt;
+    /**
+     * Simplified SID VA: hold published true course until at-or-above altitude, then fly the
+     * assigned flight-plan fixes (DF/TF). Not a full ARINC 424 path-terminator engine.
+     */
+    protected boolean procedureVaActive;
+    protected Double procedureVaCourseTrueDeg;
+    protected Integer procedureVaAltitudeFt;
     /** True after the approach seat has transferred the aircraft to the tower. */
     protected boolean towerHandoffActive;
     protected FixPosition towerThreshold;
@@ -176,6 +184,7 @@ public abstract class AircraftBase implements Aircraft {
     @Override
     public void calculateNextAircraftVector(double simDeltaSeconds) {
         maybeReleaseInitialClimbTurn();
+        maybeCompleteProcedureVa();
         updateInstructedVectorFromNavigation();
         advanceHoldingPhase(simDeltaSeconds);
 
@@ -283,6 +292,10 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private void updateInstructedVectorFromNavigation() {
+        if (procedureVaActive) {
+            refreshProcedureVaInstructedVector();
+            return;
+        }
         if (navigationMode == NavigationMode.HEADING) {
             return;
         }
@@ -1073,6 +1086,7 @@ public abstract class AircraftBase implements Aircraft {
         setNavigationMode(NavigationMode.HEADING);
         clearHoldingState();
         clearGoAroundActive();
+        clearProcedureVa();
         this.directToTarget = null;
         this.directToFixName = null;
         this.resumeFlightPlanAfterDirectTo = false;
@@ -1171,11 +1185,49 @@ public abstract class AircraftBase implements Aircraft {
         requireApproachControl();
         clearGoAroundActive();
         clearInitialClimbActive();
+        clearProcedureVa();
         this.flightPlan = flightPlan;
         this.currentWaypointIndex = 0;
         this.navigationMode = flightPlan != null ? NavigationMode.FLIGHT_PLAN : NavigationMode.HEADING;
         this.previousDistanceToWaypoint = Double.MAX_VALUE;
         clearHoldingState();
+    }
+
+    /**
+     * Assigns a procedure-derived flight plan. When {@code va} is set, holds that true course
+     * until the published AT_OR_ABOVE altitude is reached (or already met), then continues
+     * on the flight-plan fixes.
+     */
+    public void assignProcedureRoute(FlightPlan flightPlan, ProcedureVaConstraint va) {
+        requireApproachControl();
+        if (flightPlan == null) {
+            throw new IllegalArgumentException("flightPlan is required");
+        }
+        setFlightPlan(flightPlan);
+        if (va == null) {
+            return;
+        }
+        double currentAlt = aircraftPosition.altitude.toDouble();
+        if (va.isSatisfiedByAltitudeFt(currentAlt)) {
+            return;
+        }
+        this.procedureVaActive = true;
+        this.procedureVaCourseTrueDeg = InitialClimbGeometry.normalizeHeading(va.courseTrueDeg());
+        this.procedureVaAltitudeFt = va.atOrAboveAltitudeFt();
+        this.navigationMode = NavigationMode.HEADING;
+        refreshProcedureVaInstructedVector();
+    }
+
+    public boolean isProcedureVaActive() {
+        return procedureVaActive;
+    }
+
+    public Double getProcedureVaCourseTrueDeg() {
+        return procedureVaCourseTrueDeg;
+    }
+
+    public Integer getProcedureVaAltitudeFt() {
+        return procedureVaAltitudeFt;
     }
 
     public void setDirectTo(FixPosition target, String fixName, boolean resumeFlightPlan) {
@@ -1187,6 +1239,7 @@ public abstract class AircraftBase implements Aircraft {
     private void applyDirectToNavigation(FixPosition target, String fixName, boolean resumeFlightPlan) {
         clearGoAroundActive();
         clearInitialClimbActive();
+        clearProcedureVa();
         this.directToTarget = target;
         this.directToFixName = fixName;
         this.resumeFlightPlanAfterDirectTo = resumeFlightPlan;
@@ -1199,6 +1252,7 @@ public abstract class AircraftBase implements Aircraft {
         requireApproachControl();
         clearGoAroundActive();
         clearInitialClimbActive();
+        clearProcedureVa();
         clearFinalApproachInterceptState();
         this.holdingFix = fix;
         this.holdingFixName = instruction.fixName();
@@ -1345,6 +1399,43 @@ public abstract class AircraftBase implements Aircraft {
         this.derElevationFt = 0.0;
     }
 
+    private void clearProcedureVa() {
+        this.procedureVaActive = false;
+        this.procedureVaCourseTrueDeg = null;
+        this.procedureVaAltitudeFt = null;
+    }
+
+    private void refreshProcedureVaInstructedVector() {
+        if (!procedureVaActive || procedureVaCourseTrueDeg == null) {
+            return;
+        }
+        Altitude climbTarget = flightPlan != null
+                ? flightPlan.getCruiseAltitude()
+                : instructedVector.instructedAltitude;
+        if (procedureVaAltitudeFt != null
+                && climbTarget.toDouble() < procedureVaAltitudeFt) {
+            climbTarget = new Altitude(procedureVaAltitudeFt);
+        }
+        GroundSpeed speed = resolveTargetSpeed();
+        this.instructedVector = new InstructedVector(
+                new Heading(procedureVaCourseTrueDeg), climbTarget, speed);
+    }
+
+    private void maybeCompleteProcedureVa() {
+        if (!procedureVaActive || procedureVaAltitudeFt == null || procedureVaCourseTrueDeg == null) {
+            return;
+        }
+        ProcedureVaConstraint va =
+                new ProcedureVaConstraint(procedureVaCourseTrueDeg, procedureVaAltitudeFt);
+        if (va.isSatisfiedByAltitudeFt(aircraftPosition.altitude.toDouble())) {
+            clearProcedureVa();
+            if (flightPlan != null) {
+                this.navigationMode = NavigationMode.FLIGHT_PLAN;
+                this.previousDistanceToWaypoint = Double.MAX_VALUE;
+            }
+        }
+    }
+
     private void requireApproachControl() {
         if (towerHandoffActive) {
             throw new ApproachControlReleasedException(callsign.toString());
@@ -1427,6 +1518,7 @@ public abstract class AircraftBase implements Aircraft {
         requireApproachControl();
         clearGoAroundActive();
         clearInitialClimbActive();
+        clearProcedureVa();
         if (mode != NavigationMode.DIRECT_TO) {
             clearFinalApproachInterceptState();
         }

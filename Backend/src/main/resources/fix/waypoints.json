@@ -16522,5 +16522,149 @@
     "latitude": 36.630525,
     "longitude": 136.949808,
     "type": "waypoint"
+  },
+  {
+    "name": "T6L21",
+    "latitude": 35.44419444,
+    "longitude": 139.87277778,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6R11",
+    "latitude": 35.43125,
+    "longitude": 139.86033333,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT450",
+    "latitude": 34.88166667,
+    "longitude": 139.785,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT451",
+    "latitude": 34.838,
+    "longitude": 139.95952778,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT452",
+    "latitude": 34.85366667,
+    "longitude": 140.10002778,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT453",
+    "latitude": 34.91069444,
+    "longitude": 140.22386111,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT454",
+    "latitude": 34.81244444,
+    "longitude": 139.95702778,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT455",
+    "latitude": 34.8295,
+    "longitude": 140.10980556,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT456",
+    "latitude": 34.89147222,
+    "longitude": 140.2445,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT457",
+    "latitude": 34.78730556,
+    "longitude": 140.26741667,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT458",
+    "latitude": 34.80530556,
+    "longitude": 140.11958333,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT459",
+    "latitude": 34.78688889,
+    "longitude": 139.95452778,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT460",
+    "latitude": 34.81461111,
+    "longitude": 140.32688889,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT461",
+    "latitude": 35.00838889,
+    "longitude": 140.49941667,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT462",
+    "latitude": 35.24258333,
+    "longitude": 140.38188889,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT463",
+    "latitude": 35.35705556,
+    "longitude": 140.37697222,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT464",
+    "latitude": 35.43822222,
+    "longitude": 140.32738889,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT465",
+    "latitude": 35.49422222,
+    "longitude": 140.20983333,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT466",
+    "latitude": 35.4275,
+    "longitude": 140.31113889,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT467",
+    "latitude": 35.35283333,
+    "longitude": 140.35677778,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT468",
+    "latitude": 35.20455556,
+    "longitude": 140.23405556,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT501",
+    "latitude": 35.55797222,
+    "longitude": 139.84163889,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT502",
+    "latitude": 35.54011111,
+    "longitude": 139.95575,
+    "type": "waypoint"
+  },
+  {
+    "name": "XAC",
+    "latitude": 34.71225,
+    "longitude": 139.41402778,
+    "type": "waypoint"
   }
 ]

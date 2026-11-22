@@ -25,16 +25,19 @@ jobs:
           filters: |
             backend:
               - 'Backend/**'
+              - 'aip/**'
             frontend:
               - 'Frontend/**'
             docker:
               - 'docker-compose.yml'
               - 'Backend/Dockerfile'
               - 'Backend/.dockerignore'
+              - '.dockerignore'
               - 'Frontend/Dockerfile'
               - 'Frontend/.dockerignore'
               - 'Backend/**'
               - 'Frontend/**'
+              - 'aip/**'
               - 'scripts/**'
             workflow:
               - '.github/**'

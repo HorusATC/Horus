@@ -35,6 +35,14 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// Single committed source: aip/rjtt-sid-star-20261101.json → classpath fix/
+tasks.named('processResources') {
+	from("${projectDir}/../aip") {
+		include 'rjtt-sid-star-20261101.json'
+		into 'fix'
+	}
+}
+
 tasks.withType(JavaCompile).configureEach {
 	if (it.name == 'compileJava') {
 		options.compilerArgs += ['-Xlint:all', '-Werror']

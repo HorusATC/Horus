@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.FlightPlanFromDtoConverter;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ProcedureFlightPlanMapper;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ScenarioService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.AircraftConflictException;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.AircraftNotFoundException;
@@ -26,9 +27,12 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Ho
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldLeg;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldTurnDirection;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldingPatternGeometry;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.InstrumentProcedure;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.AtsRouteFixPositionRepository;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.ProcedureCatalog;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.AssignProcedureRequestDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.DepartRequestDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.DirectToRequestDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.FinalApproachRequestDto;
@@ -55,15 +59,20 @@ public class FlightPlanController {
     private final FlightPlanFromDtoConverter flightPlanConverter;
     private final AtsRouteFixPositionRepository airportRepository;
     private final RunwayCatalog runwayCatalog;
+    private final ProcedureCatalog procedureCatalog;
+    private final ProcedureFlightPlanMapper procedureFlightPlanMapper;
 
     public FlightPlanController(ScenarioService scenarioService, AircraftRepository aircraftRepository,
             FlightPlanFromDtoConverter flightPlanConverter, AtsRouteFixPositionRepository airportRepository,
-            RunwayCatalog runwayCatalog) {
+            RunwayCatalog runwayCatalog, ProcedureCatalog procedureCatalog,
+            ProcedureFlightPlanMapper procedureFlightPlanMapper) {
         this.scenarioService = scenarioService;
         this.aircraftRepository = aircraftRepository;
         this.flightPlanConverter = flightPlanConverter;
         this.airportRepository = airportRepository;
         this.runwayCatalog = runwayCatalog;
+        this.procedureCatalog = procedureCatalog;
+        this.procedureFlightPlanMapper = procedureFlightPlanMapper;
     }
 
     @Operation(
@@ -102,6 +111,75 @@ public class FlightPlanController {
                 "callsign", callsign.toString(),
                 "message", "Aircraft spawned with flight plan"
         ));
+    }
+
+    @Operation(
+            summary = "Assign SID/STAR procedure",
+            description = "Maps an assignable RJTT RNAV STAR or VAMOS FOUR SID (optional enroute transition) "
+                    + "onto the aircraft flight plan. VISIP and published holds are not flown. "
+                    + "Path-table KIAS is not applied as ground speed."
+    )
+    @PostMapping(path = "/{callsign}/assign-procedure", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> assignProcedure(
+            @PathVariable String callsign,
+            @Valid @RequestBody AssignProcedureRequestDto request) {
+        if (!aircraftRepository.isAircraftExist(new Callsign(callsign))) {
+            throw new AircraftNotFoundException(callsign);
+        }
+        var primaryOpt = procedureCatalog.findById(request.procedureId());
+        if (primaryOpt.isEmpty() || !primaryOpt.get().isAssignablePrimary()) {
+            return ResponseEntity.notFound().build();
+        }
+        InstrumentProcedure primary = primaryOpt.get();
+        java.util.Optional<InstrumentProcedure> transition = java.util.Optional.empty();
+        if (request.transitionId() != null && !request.transitionId().isBlank()) {
+            var transitionOpt = procedureCatalog.findById(request.transitionId().trim());
+            if (transitionOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            transition = transitionOpt;
+        }
+
+        ProcedureFlightPlanMapper.MappedProcedureRoute mapped;
+        try {
+            mapped = procedureFlightPlanMapper.map(
+                    new Callsign(callsign),
+                    primary,
+                    transition,
+                    request.cruiseAltitude(),
+                    request.cruiseSpeed());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", ex.getMessage()));
+        }
+
+        Aircraft aircraft = aircraftRepository.findByCallsign(new Callsign(callsign));
+        AircraftBase base = (AircraftBase) aircraft;
+        base.assignProcedureRoute(mapped.flightPlan(), mapped.vaConstraint());
+
+        logger.info(
+                "Procedure {} (transition={}) assigned to {} waypoints={}",
+                primary.id(),
+                request.transitionId(),
+                callsign,
+                mapped.waypointNames());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", true);
+        body.put("callsign", callsign);
+        body.put("procedureId", primary.id());
+        if (request.transitionId() != null && !request.transitionId().isBlank()) {
+            body.put("transitionId", request.transitionId().trim());
+        }
+        body.put("waypoints", mapped.waypointNames());
+        body.put("navigationMode", base.getNavigationMode().name());
+        body.put("procedureVaActive", base.isProcedureVaActive());
+        if (base.isProcedureVaActive()) {
+            body.put("procedureVaCourseTrueDeg", base.getProcedureVaCourseTrueDeg());
+            body.put("procedureVaAltitudeFt", base.getProcedureVaAltitudeFt());
+        }
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping(path = "/{callsign}/flightplan", consumes = "application/json")
@@ -462,14 +540,34 @@ public class FlightPlanController {
                 .map(FlightPlanWaypoint::getFixName)
                 .orElse(null);
 
+        List<Map<String, Object>> route = plan.getWaypoints().stream()
+                .skip(base.getCurrentWaypointIndex())
+                .map(wp -> {
+                    Map<String, Object> point = new HashMap<>();
+                    point.put("fix", wp.getFixName());
+                    point.put("latitude", wp.getPosition().latitude.toDouble());
+                    point.put("longitude", wp.getPosition().longitude.toDouble());
+                    if (wp.getTargetAltitude() != null) {
+                        point.put("altitude", (int) wp.getTargetAltitude().toDouble());
+                    }
+                    if (wp.getAltitudeConstraint() != null) {
+                        point.put("constraint", wp.getAltitudeConstraint().name());
+                    }
+                    return point;
+                })
+                .collect(Collectors.toList());
+
         Map<String, Object> body = new HashMap<>();
         body.put("callsign", callsign);
         body.put("navigationMode", base.getNavigationMode().name());
         body.put("currentWaypointIndex", base.getCurrentWaypointIndex());
         body.put("currentWaypoint", currentWaypoint);
         body.put("remainingWaypoints", remainingWaypoints);
+        body.put("route", route);
         body.put("departureAirport", plan.getDepartureAirport());
         body.put("arrivalAirport", plan.getArrivalAirport());
+        body.put("hasFlightPlan", true);
+        body.put("procedureVaActive", base.isProcedureVaActive());
         return ResponseEntity.ok(body);
     }
 

@@ -7,6 +7,13 @@ export type AtcClearanceVector = {
   altitude: number;
 };
 
+/** Remaining assigned flight-plan fixes for radar polyline (SID/STAR). */
+export type FlightPlanRoutePoint = {
+  fix: string;
+  latitude: number;
+  longitude: number;
+};
+
 /** Motion vector from location poll; `track` may be absent on older backends. */
 export type AircraftMotionVector = {
   heading: number;
@@ -71,6 +78,7 @@ export const AIRCRAFT_FIELD_PARTITION = {
   towerHandoff: "polled",
   msawAlert: "polled",
   holding: "polled",
+  flightPlanRoute: "polled",
 } as const satisfies Record<AircraftDataKey, AircraftFieldKind>;
 
 type AircraftPartitionKey = keyof typeof AIRCRAFT_FIELD_PARTITION;
@@ -123,6 +131,7 @@ export const POLLED_AIRCRAFT_SERVER_FIELD_KEYS = {
   towerHandoff: true,
   msawAlert: true,
   holding: true,
+  flightPlanRoute: true,
 } as const satisfies Record<keyof PolledAircraftServerFields, true>;
 
 export class Aircraft {
@@ -170,6 +179,8 @@ export class Aircraft {
    * Cleared automatically when Backend omits `holding` after resume/replace.
    */
   holding: HoldingPatternDto | null;
+  /** Remaining flight-plan route points for radar; null when none. */
+  flightPlanRoute: FlightPlanRoutePoint[] | null;
   positionHistory: PositionHistoryPoint[];
 
   constructor(
@@ -201,6 +212,7 @@ export class Aircraft {
     towerHandoff: boolean = false,
     msawAlert: MsawAlertDto | null = null,
     holding: HoldingPatternDto | null = null,
+    flightPlanRoute: FlightPlanRoutePoint[] | null = null,
     labelPinned: boolean = false
   ) {
     this.callsign = callsign;
@@ -227,6 +239,7 @@ export class Aircraft {
     this.towerHandoff = towerHandoff;
     this.msawAlert = msawAlert;
     this.holding = holding;
+    this.flightPlanRoute = flightPlanRoute;
     this.positionHistory = [];
   }
 
@@ -269,6 +282,7 @@ export class Aircraft {
       towerHandoff: source.towerHandoff,
       msawAlert: source.msawAlert,
       holding: source.holding,
+      flightPlanRoute: source.flightPlanRoute,
     } satisfies PolledAircraftServerFields;
     const _keysMatchChecklist: Record<keyof typeof next, true> =
       POLLED_AIRCRAFT_SERVER_FIELD_KEYS;
