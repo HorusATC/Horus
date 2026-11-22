@@ -3,46 +3,27 @@ import path from "node:path";
 const repoRoot = process.cwd();
 
 /**
- * lint-staged runs task strings without a shell by default, so use bash -lc
- * whenever the command needs cd / &&.
- * @param {string} command
- * @returns {string}
- */
-function sh(command) {
-  return `bash -lc ${JSON.stringify(command)}`;
-}
-
-/**
- * @param {string[]} filenames
- * @returns {string}
- */
-function prettierWrite(filenames) {
-  const files = filenames.map((f) => JSON.stringify(f)).join(" ");
-  return sh(`npx prettier --write ${files}`);
-}
-
-/**
  * @param {string[]} filenames
  * @returns {string}
  */
 function eslintFix(filenames) {
-  const rel = filenames
-    .map((f) => JSON.stringify(path.relative(path.join(repoRoot, "Frontend"), f)))
-    .join(" ");
-  return sh(`cd Frontend && npx eslint --fix ${rel}`);
+  const files = filenames.map((f) => JSON.stringify(f)).join(" ");
+  const pluginsRoot = JSON.stringify(path.join(repoRoot, "Frontend"));
+  // Absolute paths + resolve-plugins-relative-to avoids needing a shell `cd`
+  return `npm exec --prefix Frontend -- eslint --fix --resolve-plugins-relative-to ${pluginsRoot} ${files}`;
 }
 
 /**
- * Module-level apply when any Backend .java is staged (fast enough; avoids
- * fragile -PspotlessFiles regex over absolute paths).
+ * Module-level apply when any Backend .java is staged.
  * @returns {string}
  */
 function spotlessApply() {
-  return sh("cd Backend && ./gradlew spotlessApply --no-daemon");
+  return "./Backend/gradlew -p Backend spotlessApply --no-daemon";
 }
 
 export default {
-  "Frontend/**/*.{ts,tsx,js,jsx,json,css,md}": prettierWrite,
+  // lint-staged appends staged file paths to this command
+  "Frontend/**/*.{ts,tsx,js,jsx,json,css,md}": "prettier --write",
   "Frontend/**/*.{ts,tsx}": eslintFix,
   "Backend/**/*.java": spotlessApply,
 };
