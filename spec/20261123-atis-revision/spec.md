@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-23
 - **関連**: 外部レビューおよび検証（PR #117–#139）の PR-B（①、⑩a、⑩b、決定事項 4）、[spec/20261122-atis-runway-in-use/spec.md](../20261122-atis-runway-in-use/spec.md)、[spec/20261122-uniform-wind/spec.md](../20261122-uniform-wind/spec.md)、[spec/20261122-atis-qnh/spec.md](../20261122-atis-qnh/spec.md)、[spec/20261123-star-quickstart-scenario/spec.md](../20261123-star-quickstart-scenario/spec.md)、[spec/20261123-hold-handoff-wind/spec.md](../20261123-hold-handoff-wind/spec.md)（PR-A / #141）
@@ -157,12 +157,12 @@ main `c739fb1`（#140 の STAR 既定サンプル、#141 の Hold / ハンドオ
 
 ## 検証
 
-- [ ] Frontend の型検査（または既定の静的検査）と Frontend ビルドが通る。Backend がコンパイルできる。
-- [ ] 反転した `atisPanel.repro` 4 件と、反転した `AtisStaleRunwayReproTest`、`expectedRevision` 無しの退行テストが通る。
-- [ ] 下書き → サーバ風が変わったポーリング → Apply → 再ポーリングの組み合わせテストが通る。
-- [ ] 既存の ATIS / シナリオ / #141 関連テストを、本機能用の期待値追加以外で緩めずに通す。
-- [ ] Controller で風を 3 秒以上かけて入力しても、ポーリングで消えない。
-- [ ] CI 4 ジョブがマージ SHA で合格する。
+- [x] Frontend の型検査（または既定の静的検査）と Frontend ビルドが通る。Backend がコンパイルできる。
+- [x] 反転した `atisPanel.repro` 4 件と、反転した `AtisStaleRunwayReproTest`、`expectedRevision` 無しの退行テストが通る。
+- [x] 下書き → サーバ風が変わったポーリング → Apply → 再ポーリングの組み合わせテストが通る。
+- [x] 既存の ATIS / シナリオ / #141 関連テストを、本機能用の期待値追加以外で緩めずに通す。
+- [x] Controller で風を 3 秒以上かけて入力しても、ポーリングで消えない。
+- [x] CI 4 ジョブがマージ SHA で合格する。
 
 再現テストの置き場所（検証 README どおり、恒久化するときはバグ断言を逆にする）:
 
