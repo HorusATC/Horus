@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "prepare": "bash scripts/install-git-hooks.sh",
+    "prepare": "sh scripts/install-git-hooks.sh",
     "spec:new": "bash scripts/new-spec.sh"
   },
   "devDependencies": {
