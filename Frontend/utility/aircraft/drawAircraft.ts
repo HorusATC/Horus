@@ -26,6 +26,16 @@ import {
   type MsawAlertDto,
   type MsawAlertType,
 } from "./msawAlert";
+import {
+  findThresholdDistance,
+  formatThresholdReadout,
+  timeToDistanceSeconds,
+  type RunwayApproachGeometry,
+} from "@/utility/measure/rangeBearing";
+
+const DATA_BLOCK_LINE_HEIGHT_PX = 15;
+const DATA_BLOCK_HIT_TOP_PAD_PX = 20;
+const DATA_BLOCK_HIT_WIDTH_PX = 70;
 
 /**
  * Class to draw aircraft on the canvas
@@ -61,7 +71,8 @@ class DrawAircraft {
     durationMinutes = 1,
     nowMs = performance.now(),
     squawkHighlight: string | null = null,
-    simulationSpeedMultiplier = 1
+    simulationSpeedMultiplier = 1,
+    runways: readonly RunwayApproachGeometry[] = []
   ) {
     const riskDisplayFloor = this.computeRiskDisplayFloor(aircraft);
     ctx.save();
@@ -106,11 +117,119 @@ class DrawAircraft {
         riskDisplayFloor,
         isSquawkMatched,
         emergencySquawk,
-        msawAlert
+        msawAlert,
+        runways
       );
     } finally {
       ctx.restore();
     }
+  }
+
+  /** Hit-test extent below the first label baseline; grows with optional rows + threshold readout. */
+  public static labelHitBottomOffsetPx(
+    aircraft: Aircraft,
+    setting: DataBlockDisplaySetting,
+    useControllerClearanceAltitudeRow: boolean,
+    runways: readonly RunwayApproachGeometry[]
+  ): number {
+    return (
+      this.countDataBlockLines(
+        aircraft,
+        setting,
+        useControllerClearanceAltitudeRow,
+        runways
+      ) *
+        DATA_BLOCK_LINE_HEIGHT_PX +
+      5
+    );
+  }
+
+  public static labelHitTopPadPx(): number {
+    return DATA_BLOCK_HIT_TOP_PAD_PX;
+  }
+
+  public static labelHitWidthPx(): number {
+    return DATA_BLOCK_HIT_WIDTH_PX;
+  }
+
+  public static thresholdReadoutLine(
+    aircraft: Aircraft,
+    runways: readonly RunwayApproachGeometry[]
+  ): string | null {
+    if (runways.length === 0) {
+      return null;
+    }
+    const result = findThresholdDistance(aircraft.geoPosition, runways);
+    if (result == null) {
+      return null;
+    }
+    const timeSec = timeToDistanceSeconds(
+      result.alongTrackNm,
+      aircraft.vector.groundSpeed
+    );
+    return formatThresholdReadout(
+      result.designator,
+      result.alongTrackNm,
+      timeSec
+    );
+  }
+
+  private static countDataBlockLines(
+    aircraft: Aircraft,
+    setting: DataBlockDisplaySetting,
+    useControllerClearanceAltitudeRow: boolean,
+    runways: readonly RunwayApproachGeometry[]
+  ): number {
+    let lines = 3;
+    if (this.thresholdReadoutLine(aircraft, runways) != null) {
+      lines += 1;
+    }
+    const clearance = aircraft.atcClearance;
+    const useClearanceAltitudePrimaryRow =
+      useControllerClearanceAltitudeRow &&
+      clearance != null &&
+      isAltitudeClearanceRecorded(clearance);
+    if (setting.atcClearanceMemo) {
+      const memoLine = formatAtcClearanceMemoLine(
+        aircraft.atcClearance,
+        {
+          altitudeFt: aircraft.position.altitude,
+          heading: aircraft.vector.heading,
+          groundSpeed: aircraft.vector.groundSpeed,
+        },
+        { omitAltitude: useClearanceAltitudePrimaryRow }
+      );
+      if (memoLine) {
+        lines += 1;
+      }
+    }
+    lines += 1;
+    if (aircraft.navigationMode === "HOLDING") {
+      lines += 1;
+    }
+    if (aircraft.goAround) {
+      lines += 1;
+    }
+    if (aircraft.towerHandoff) {
+      lines += 1;
+    }
+    if (setting.aircraftType && aircraft.model) {
+      lines += 1;
+    }
+    if (setting.eta && aircraft.eta && formatEtaToUtcHhMm(aircraft.eta)) {
+      lines += 1;
+    }
+    const emergencySquawk = this.getEmergencySquawk(aircraft.squawk);
+    if (emergencySquawk !== null) {
+      lines += 1;
+    }
+    if (aircraft.msawAlert !== null) {
+      lines += 1;
+    }
+    if (setting.squawk && !emergencySquawk) {
+      lines += 1;
+    }
+    return lines;
   }
 
   private static drawTrack(
@@ -237,7 +356,8 @@ class DrawAircraft {
     riskDisplayFloor: number,
     isSquawkMatched: boolean,
     emergencySquawk: EmergencySquawkCode | null,
-    msawAlert: MsawAlertDto | null
+    msawAlert: MsawAlertDto | null,
+    runways: readonly RunwayApproachGeometry[]
   ) {
     const airplanePosition = aircraft.position;
     const instructedVector = aircraft.instructedVector;
@@ -306,6 +426,14 @@ class DrawAircraft {
       lineY
     );
     lineY += lineHeight;
+
+    const thresholdLine = this.thresholdReadoutLine(aircraft, runways);
+    if (thresholdLine != null) {
+      ctx.fillStyle = "#a5f3fc";
+      ctx.fillText(thresholdLine, labelX, lineY);
+      lineY += lineHeight;
+      ctx.fillStyle = "white";
+    }
 
     if (setting.atcClearanceMemo) {
       const memoLine = formatAtcClearanceMemoLine(

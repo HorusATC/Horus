@@ -181,6 +181,8 @@ Frontend/
 - 航空機の位置表示
 - **履歴ドット**: 位置更新のたびに直前の緯度・経度・高度（WGS-84）をクライアント側に蓄積（最大 **120** 点）。**描画はシミュレーション時間で 10s / 20s / 30s 前**に相当するサンプルを各 1 点ずつ選ぶ（`GET /api/simulation/speed` の倍率で壁時計の遡り幅を補正。例: 10× なら約 1s / 2s / 3s 前の受信サンプル）。`CoordinateManager.calculateCanvasCoordinates` でキャンバス座標へ変換する（パン・中心座標・表示範囲の変更後も軌跡がずれない）。点の半径は `TRACK_DISPLAY_DOT_RADIUS_PX`（既定 **2px**、機体マーカー 5px より小さく）。
 - **速度ベクトル線**（針路方向の白線）の長さは、地速に対し **速度ベクトル予測時間（分）** に比例。`レーダー表示` パネルのスライダーで **0.5～10 分・0.5 分刻み**（既定 1 分）。表示のみでシミュレーション計算は変更しない（[spec/20260404-velocity-vector-line-duration/spec.md](../spec/20260404-velocity-vector-line-duration/spec.md)）。値は `localStorage` に保存し、Controller / Operator で共有。
+- **進入端までの距離・時間**: カタログ滑走路の進入廊（進入端から外側 0 NM 超〜 10 NM、左右 1.0 NM）内の機体について、データブロックの対地速度／目的地行の次に `16R 8.2NM 3:00` 形式で表示。距離は進入端までの**沿コース投影**（接地点そのものではない）。時間は現在対地速度の単純割り（1 kt 未満または 60 分以上は省略）。計算・書式の定義源は `utility/measure/rangeBearing.ts`。
+- **測距線（RBL）**: `レーダー表示` パネルのレンジリング設定の近くでツールをオンにし、2 クリックで始点・終点を取る（機体シンボル半径 30 px 内ならスナップ、そうでなければ緯度経度固定）。線ラベルは水平距離（小数 1 桁 + `NM`）と始点→終点の**真方位**（3 桁 + `T`）。両端が機体のときだけ水平 CPA 時間を付ける。同時表示は 1 本。解除ボタンまたは Escape で取り消し。ツールオン中はラベルドラッグを開始しない（オフ時は従来どおり）。
 - 経路情報の表示
 - マウスインタラクション
 - ズーム/パン機能
@@ -289,6 +291,7 @@ React Context APIを使用して、以下の状態を管理しています：
 6. **Fix選択モード** (SelectFixModeContext)
 7. **速度ベクトル予測時間** (VelocityVectorLookaheadContext) — レーダー上の速度ベクトル線の長さに対応する時間（分）。Controller / Operator 共通、`localStorage` 永続化
 8. **選択航空機** (SelectedAircraftContext) — callsign と `instructedVector`（パイロット操縦目標: altitude, groundSpeed, heading）
+9. **RBL ツール** (RblToolContext) — 測距線のオン／オフ、取り途中の始点、確定済み 1 本。Controller / Operator 共通（キャンバス状態、永続化なし）
 
 ## API通信
 
