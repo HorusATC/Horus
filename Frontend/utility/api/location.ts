@@ -1,5 +1,9 @@
 import { Coordinate } from "@/context/centerCoordinateContext";
-import { Aircraft } from "../aircraft/aircraftClass";
+import {
+  Aircraft,
+  type AircraftIdentityKey,
+  type PolledAircraftServerFields,
+} from "../aircraft/aircraftClass";
 import { CoordinateManager } from "../coordinateManager/CoordinateManager";
 import { DisplayRange } from "@/context/displayRangeContext";
 import { parseMsawAlert, type MsawAlertDto } from "../aircraft/msawAlert";
@@ -37,6 +41,121 @@ export interface AircraftLocationDto {
   /** Absent or null means no MSAW alert (tolerant of older backends). */
   msawAlert?: MsawAlertDto | null;
 }
+
+/**
+ * DTO-side ownership relative to {@link Aircraft}.
+ * - `identity`: set at Aircraft construction; not overwritten by polling
+ * - `polledMapped`: feeds {@link PolledAircraftServerFields} (directly or derived)
+ */
+export type AircraftLocationDtoFieldKind = "identity" | "polledMapped";
+
+/**
+ * Exhaustive partition of every {@link AircraftLocationDto} key.
+ * Adding a DTO field without an entry (or an entry without a DTO field) is a tsc error.
+ */
+export const AIRCRAFT_LOCATION_DTO_FIELD_PARTITION = {
+  callsign: "identity",
+  type: "identity",
+  model: "identity",
+  originIata: "identity",
+  originIcao: "identity",
+  destinationIata: "identity",
+  destinationIcao: "identity",
+  position: "polledMapped",
+  vector: "polledMapped",
+  instructedVector: "polledMapped",
+  atcClearance: "polledMapped",
+  eta: "polledMapped",
+  squawk: "polledMapped",
+  navigationMode: "polledMapped",
+  goAround: "polledMapped",
+  towerHandoff: "polledMapped",
+  riskLevel: "polledMapped",
+  msawAlert: "polledMapped",
+} as const satisfies Record<
+  keyof AircraftLocationDto,
+  AircraftLocationDtoFieldKind
+>;
+
+type DtoPartitionKey = keyof typeof AIRCRAFT_LOCATION_DTO_FIELD_PARTITION;
+type _DtoPartitionCoversInterface =
+  keyof AircraftLocationDto extends DtoPartitionKey ? true : never;
+type _DtoPartitionNoExtras = DtoPartitionKey extends keyof AircraftLocationDto
+  ? true
+  : never;
+const _dtoPartitionBidirectional: _DtoPartitionCoversInterface &
+  _DtoPartitionNoExtras = true;
+void _dtoPartitionBidirectional;
+
+type DtoIdentityKey = {
+  [K in DtoPartitionKey]: (typeof AIRCRAFT_LOCATION_DTO_FIELD_PARTITION)[K] extends "identity"
+    ? K
+    : never;
+}[DtoPartitionKey];
+
+type DtoPolledMappedKey = {
+  [K in DtoPartitionKey]: (typeof AIRCRAFT_LOCATION_DTO_FIELD_PARTITION)[K] extends "polledMapped"
+    ? K
+    : never;
+}[DtoPartitionKey];
+
+/**
+ * Each Aircraft identity key is supplied by the same-named DTO identity key
+ * at construction time only (not by polling).
+ */
+export const AIRCRAFT_IDENTITY_DTO_SOURCE = {
+  callsign: "callsign",
+  type: "type",
+  model: "model",
+  originIata: "originIata",
+  originIcao: "originIcao",
+  destinationIata: "destinationIata",
+  destinationIcao: "destinationIcao",
+} as const satisfies Record<AircraftIdentityKey, DtoIdentityKey>;
+
+/**
+ * Each polled Aircraft field is fed by a DTO polledMapped key.
+ * `geoPosition` comes from DTO `position`; `indicatedAirspeedKnots` from
+ * `instructedVector.indicatedAirspeed`.
+ */
+export const POLLED_AIRCRAFT_DTO_SOURCE = {
+  position: "position",
+  geoPosition: "position",
+  vector: "vector",
+  instructedVector: "instructedVector",
+  indicatedAirspeedKnots: "instructedVector",
+  atcClearance: "atcClearance",
+  squawk: "squawk",
+  eta: "eta",
+  navigationMode: "navigationMode",
+  riskLevel: "riskLevel",
+  goAround: "goAround",
+  towerHandoff: "towerHandoff",
+  msawAlert: "msawAlert",
+} as const satisfies Record<
+  keyof PolledAircraftServerFields,
+  DtoPolledMappedKey
+>;
+
+type MappedDtoPolledKeys =
+  (typeof POLLED_AIRCRAFT_DTO_SOURCE)[keyof typeof POLLED_AIRCRAFT_DTO_SOURCE];
+type _EveryDtoPolledKeyIsMapped = DtoPolledMappedKey extends MappedDtoPolledKeys
+  ? true
+  : never;
+type _NoExtraMappedDtoKeys = MappedDtoPolledKeys extends DtoPolledMappedKey
+  ? true
+  : never;
+const _dtoPolledMappingBidirectional: _EveryDtoPolledKeyIsMapped &
+  _NoExtraMappedDtoKeys = true;
+void _dtoPolledMappingBidirectional;
+
+type _IdentityKeysAlign = AircraftIdentityKey extends DtoIdentityKey
+  ? DtoIdentityKey extends AircraftIdentityKey
+    ? true
+    : never
+  : never;
+const _identityKeysAlign: _IdentityKeysAlign = true;
+void _identityKeysAlign;
 
 export const fetchAircraftLocation = async (
   controllingAircrafts: Aircraft[],

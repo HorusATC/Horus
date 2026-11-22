@@ -36,6 +36,12 @@ class ApiContractTest {
     private static final Path BACKEND_TEST_DIR =
             Paths.get("src/test/java").toAbsolutePath().normalize();
 
+    /** Expected raw IntegrationTest call sites on main (b295454) sources. */
+    private static final int EXPECTED_BACKEND_RAW_CALLS = 41;
+
+    /** Expected unique keys after normalizing callsigns to Spring path variables. */
+    private static final int EXPECTED_BACKEND_NORMALIZED_UNIQUE_KEYS = 14;
+
     @Test
     void allFrontendBffCallsShouldMatchActualSpringMappings() throws IOException {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
@@ -76,7 +82,7 @@ class ApiContractTest {
 
         assertThat(frontendCalls.size())
                 .as("Number of extracted backend calls (" + frontendCalls.size()
-                    + ") should match exported handlers (" + totalExportedHandlers + ")")
+                        + ") should match exported handlers (" + totalExportedHandlers + ")")
                 .isEqualTo(totalExportedHandlers);
 
         List<String> missingEndpoints = new ArrayList<>();
@@ -98,24 +104,28 @@ class ApiContractTest {
     @Test
     void allBackendTestCallsShouldMatchActualSpringMappings() throws IOException {
         Map<String, RequestMappingInfo> actualMappings = getActualSpringMappings();
-        Map<String, String> backendTestCalls = extractBackendTestCalls();
+        List<RawBackendCall> rawCalls = extractBackendTestCallsRaw();
         int integrationTestFileCount = countIntegrationTestFiles();
 
         assertThat(integrationTestFileCount)
                 .as("Should find ≥5 IntegrationTest.java files (found " + integrationTestFileCount + ")")
                 .isGreaterThanOrEqualTo(5);
 
-        assertThat(backendTestCalls)
-                .as("Backend test extraction should find ≥20 endpoints (found " + backendTestCalls.size() + ")")
-                .hasSizeGreaterThanOrEqualTo(20);
+        assertThat(rawCalls)
+                .as("Backend test extraction should find exactly " + EXPECTED_BACKEND_RAW_CALLS
+                        + " raw call sites (found " + rawCalls.size() + ")")
+                .hasSize(EXPECTED_BACKEND_RAW_CALLS);
 
+        Map<String, String> normalizedUnique = new LinkedHashMap<>();
         List<String> missingEndpoints = new ArrayList<>();
-        for (Map.Entry<String, String> entry : backendTestCalls.entrySet()) {
-            String endpoint = entry.getKey();
-            String sourceFile = entry.getValue();
 
-            if (!matchesAnyMapping(endpoint, actualMappings)) {
-                missingEndpoints.add(String.format("%s (from %s)", endpoint, sourceFile));
+        for (RawBackendCall call : rawCalls) {
+            String rawEndpoint = call.method() + " " + call.path();
+            String normalized = normalizeToSpringMappingKey(rawEndpoint, actualMappings);
+            if (normalized == null) {
+                missingEndpoints.add(String.format("%s (from %s)", rawEndpoint, call.sourceFile()));
+            } else {
+                normalizedUnique.put(normalized, call.sourceFile());
             }
         }
 
@@ -123,6 +133,13 @@ class ApiContractTest {
             fail("Backend integration tests call non-existent endpoints:\n"
                     + String.join("\n", missingEndpoints));
         }
+
+        assertThat(normalizedUnique)
+                .as("Backend test paths should normalize to exactly "
+                        + EXPECTED_BACKEND_NORMALIZED_UNIQUE_KEYS
+                        + " unique Spring mapping keys (found " + normalizedUnique.size()
+                        + ": " + normalizedUnique.keySet() + ")")
+                .hasSize(EXPECTED_BACKEND_NORMALIZED_UNIQUE_KEYS);
     }
 
     private Map<String, List<String>> extractFrontendBffCallsByFile() throws IOException {
@@ -159,7 +176,7 @@ class ApiContractTest {
 
                     while (proxyMatcher.find()) {
                         String path = proxyMatcher.group(2);
-                        path = normalizePath(path);
+                        path = normalizeFrontendPath(path);
                         fileCalls.add(method + " " + path);
                     }
 
@@ -169,7 +186,7 @@ class ApiContractTest {
 
                     while (fetchMatcher.find()) {
                         String path = fetchMatcher.group(1);
-                        path = normalizePath(path);
+                        path = normalizeFrontendPath(path);
                         fileCalls.add(method + " " + path);
                     }
                 }
@@ -208,7 +225,7 @@ class ApiContractTest {
         return count;
     }
 
-    private String normalizePath(String path) {
+    private String normalizeFrontendPath(String path) {
         path = path.replaceAll("\\?.*$", "");
         path = path.replaceAll("\\$\\{encodeURIComponent\\([^)]+\\)\\}", "{callsign}");
         path = path.replaceAll("\\$\\{callsign\\}", "{callsign}");
@@ -217,8 +234,13 @@ class ApiContractTest {
         return path;
     }
 
-    private Map<String, String> extractBackendTestCalls() throws IOException {
-        Map<String, String> calls = new LinkedHashMap<>();
+    /**
+     * Every IntegrationTest {@code baseUrl() + "..."} call site, without collapsing
+     * duplicate method+path keys. Callsign literals stay as written until
+     * {@link #normalizeToSpringMappingKey} maps them onto Spring patterns.
+     */
+    private List<RawBackendCall> extractBackendTestCallsRaw() throws IOException {
+        List<RawBackendCall> calls = new ArrayList<>();
 
         if (!Files.exists(BACKEND_TEST_DIR)) {
             return calls;
@@ -249,8 +271,8 @@ class ApiContractTest {
                     else if (before.contains("patchForEntity")) method = "PATCH";
 
                     if (!method.isEmpty() && path.startsWith("/")) {
-                        path = normalizePath(path);
-                        calls.put(method + " " + path, fileName);
+                        path = path.replaceAll("\\?.*$", "");
+                        calls.add(new RawBackendCall(method, path, fileName));
                     }
                 }
             }
@@ -269,14 +291,20 @@ class ApiContractTest {
         }
     }
 
-    private boolean matchesAnyMapping(String endpoint, Map<String, RequestMappingInfo> mappings) {
+    /**
+     * Map a concrete test endpoint onto the Spring mapping key it matches
+     * (e.g. {@code POST /api/aircraft/JAL123/squawk} → {@code POST /api/aircraft/{callsign}/squawk}).
+     * Returns null when no mapping matches so the test fails on wrong paths.
+     */
+    private String normalizeToSpringMappingKey(
+            String endpoint, Map<String, RequestMappingInfo> mappings) {
         if (mappings.containsKey(endpoint)) {
-            return true;
+            return endpoint;
         }
 
         String[] parts = endpoint.split(" ", 2);
         if (parts.length != 2) {
-            return false;
+            return null;
         }
         String method = parts[0];
         String path = parts[1];
@@ -289,11 +317,15 @@ class ApiContractTest {
             String mappingPath = mappingParts[1];
 
             if (method.equals(mappingMethod) && pathsMatch(path, mappingPath)) {
-                return true;
+                return mappingMethod + " " + mappingPath;
             }
         }
 
-        return false;
+        return null;
+    }
+
+    private boolean matchesAnyMapping(String endpoint, Map<String, RequestMappingInfo> mappings) {
+        return normalizeToSpringMappingKey(endpoint, mappings) != null;
     }
 
     private boolean pathsMatch(String requestPath, String mappingPath) {
@@ -339,4 +371,6 @@ class ApiContractTest {
 
         return result;
     }
+
+    private record RawBackendCall(String method, String path, String sourceFile) {}
 }

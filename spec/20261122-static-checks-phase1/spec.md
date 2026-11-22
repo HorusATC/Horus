@@ -84,7 +84,7 @@
   - `npm run test`（Jest: 31 suites, 168 tests）
   - `npm run build`（Frontend）
   - `./gradlew test`（Java 21、Backend: 184 tests）
-- [x] 契約チェックが存在し、誤った API パスを検出することが示されている（ApiContractTest: 29 Frontend BFF paths, 30+ Backend paths extracted and verified）
+- [x] 契約チェックが存在し、誤った API パスを検出することが示されている（ApiContractTest: Frontend 29 unique BFF paths、Backend 14 unique normalized Spring mapping keys；生抽出件数は Phase 2 で 41 としてアサート）
 - [x] API 動作に変更なし（squawk route fixed but API contract unchanged）
 - [x] 実測値を報告（Frontend: 31 suites/168 tests including 4 new route handler tests, Backend: 184 tests pass）
 

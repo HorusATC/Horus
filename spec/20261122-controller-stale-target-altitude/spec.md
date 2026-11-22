@@ -57,7 +57,7 @@ Operator が高度指示を送ったあと、Controller レーダーのデータ
 ### 決定方針（Decision）
 
 1. Operator / Controller の二重メソッドを廃止し、`Aircraft.applyPolledFields` に統一する（ラベル位置・軌跡履歴はクライアント所有のまま）
-2. サーバ所有フィールドを `PolledAircraftServerFields` + `POLLED_AIRCRAFT_SERVER_FIELD_KEYS satisfies Record<keyof …, true>` で型チェックし、DTO/型にフィールド追加しても取りこぼせないようにする
+2. サーバ所有フィールドを `PolledAircraftServerFields` + `POLLED_AIRCRAFT_SERVER_FIELD_KEYS satisfies Record<keyof …, true>` で型チェックする。**#123 時点ではこの Pick と `applyPolledFields` の代入の間だけ**を守っており、Aircraft クラスだけ／`AircraftLocationDto` だけにフィールドを足しても `tsc` は通った。クラスと DTO まで閉じた分割は [spec/20261122-static-checks-phase2/spec.md](../20261122-static-checks-phase2/spec.md)（Phase 2A）で行う
 3. 回帰テストで poll 後の `instructedVector`（altitude / heading / groundSpeed）更新を固定する
 4. API・DTO・Backend ロジックは変更しない
 
@@ -69,7 +69,7 @@ Operator が高度指示を送ったあと、Controller レーダーのデータ
 
 ### トレードオフ（Trade-offs）
 
-- **メリット**: stale を防ぎ、サーバ所有フィールドの同期漏れを tsc で検知できる
+- **メリット**: stale を防ぎ、#123 時点では `PolledAircraftServerFields` と `applyPolledFields` の間の同期漏れを tsc で検知できる（クラス／DTO 全体の閉じた分割は Phase 2A）
 - **デメリット / 受容する制約**: 旧コメント／旧 spec（「Controller で instructedVector を上書きしない」）は本修正で改める。管制クリアランス行の優先表示自体は維持する
 
 ---
