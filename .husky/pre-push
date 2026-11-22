@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+set -e
+cd "$(dirname "$0")/.." || exit 1
+
+# Compare against upstream if set; otherwise origin/main; otherwise all commits on HEAD.
+if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+  BASE="$(git merge-base HEAD @{u})"
+elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+  BASE="$(git merge-base HEAD origin/main)"
+else
+  BASE="$(git hash-object -t tree /dev/null)"
+fi
+
+CHANGED="$(git diff --name-only "$BASE" HEAD)"
+# Also include uncommitted staged/unstaged so a dirty push attempt is still gated
+CHANGED="${CHANGED}
+$(git diff --name-only)
+$(git diff --name-only --cached)"
+
+frontend_changed=0
+backend_changed=0
+printf '%s\n' "$CHANGED" | grep -q '^Frontend/' && frontend_changed=1 || true
+printf '%s\n' "$CHANGED" | grep -q '^Backend/' && backend_changed=1 || true
+
+if [ "$frontend_changed" -eq 1 ]; then
+  echo "pre-push: Frontend changes detected — running tsc and format:check"
+  (cd Frontend && npx tsc --noEmit && npm run format:check)
+fi
+
+if [ "$backend_changed" -eq 1 ]; then
+  echo "pre-push: Backend changes detected — running spotlessCheck"
+  (cd Backend && ./gradlew spotlessCheck --no-daemon)
+fi
+
+exit 0

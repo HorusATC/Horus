@@ -1,3 +1,4 @@
-#!/bin/sh
-# Run lint-staged: Backend (Spotless), Frontend (ESLint --fix, Prettier)
+#!/usr/bin/env sh
+set -e
+cd "$(dirname "$0")/.." || exit 1
 npx lint-staged

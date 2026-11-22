@@ -76,8 +76,11 @@ cd Horus/Frontend
 2. 依存関係のインストール
 
 ```bash
-npm install
+npm ci
+# または npm install
 ```
+
+`prepare` によりリポジトリルートの Git hooks（`.husky`）が自動で有効になる。pre-commit は staged の Frontend ファイルに Prettier / ESLint `--fix` を適用する。`--no-verify` は使わない。
 
 3. 環境変数の設定
 
@@ -330,7 +333,6 @@ npm start
 ### よくある問題と解決方法
 
 1. **Tailwindクラスが適用されない**
-
    - `tailwind.config.ts`の設定を確認
    - CSSのビルドとキャッシュクリア
 

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prepare": "bash ../scripts/install-git-hooks.sh",
     "dev": "next dev -p 3333",
     "dev:clean": "rm -rf .next && next dev -p 3333",
     "build": "next build",
