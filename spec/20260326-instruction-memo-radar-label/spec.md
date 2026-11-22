@@ -94,7 +94,7 @@
    - **オプション（後続）**: メモと `instructedVector` の不一致を別色で示し「読み違い／未入力」を訓練表示する（必須ではない）。
 
 4. **Controller の位置ポーリング方針**
-   - `updateAircraftLocationInfo` もポーリング DTO の `instructedVector`（パイロット操縦目標）を同期する（目標高度の stale 防止。詳細は [20261122-controller-stale-target-altitude](../20261122-controller-stale-target-altitude/spec.md)）。管制メモは **API の clearance フィールド**から読む。
+   - 位置ポーリングは `Aircraft.applyPolledFields` でサーバ所有フィールド（`instructedVector` 含む）を同期する（目標高度の stale 防止。詳細は [20261122-controller-stale-target-altitude](../20261122-controller-stale-target-altitude/spec.md)）。管制メモは **API の clearance フィールド**から読む。
 
 ### 検討した他案（Alternatives Considered）
 

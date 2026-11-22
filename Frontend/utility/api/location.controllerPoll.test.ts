@@ -3,8 +3,8 @@ import type { DisplayRange } from "@/context/displayRangeContext";
 import { fetchAircraftLocation } from "@/utility/api/location";
 
 /**
- * Regression: Controller pathname must refresh instructedVector from each poll.
- * Fails on main where updateAircraftLocationInfo skipped instructedVector.
+ * Regression: location poll must refresh instructedVector (was skipped on the
+ * old Controller-only updateAircraftLocationInfo path).
  */
 describe("Controller location poll instructedVector", () => {
   const center = { latitude: 35.0, longitude: 139.0 };
@@ -36,7 +36,7 @@ describe("Controller location poll instructedVector", () => {
     jest.restoreAllMocks();
   });
 
-  it("updates instructedVector.altitude on /controller after Operator-style control payload in poll", async () => {
+  it("updates instructedVector altitude/heading/groundSpeed after Operator-style control payload in poll", async () => {
     const existing = [seedAircraft(19000)];
 
     const dto = {
@@ -44,8 +44,8 @@ describe("Controller location poll instructedVector", () => {
       position: { latitude: 35.1, longitude: 139.3, altitude: 19100 },
       vector: { heading: 270, groundSpeed: 290, verticalSpeed: 500 },
       instructedVector: {
-        heading: 270,
-        groundSpeed: 290,
+        heading: 180,
+        groundSpeed: 310,
         altitude: 25000,
         indicatedAirspeed: null,
       },
@@ -70,15 +70,12 @@ describe("Controller location poll instructedVector", () => {
       json: async () => [dto],
     }) as unknown as typeof fetch;
 
-    const updated = await fetchAircraftLocation(
-      existing,
-      center,
-      range,
-      "/controller"
-    );
+    const updated = await fetchAircraftLocation(existing, center, range);
 
     expect(updated).toHaveLength(1);
     expect(updated[0].instructedVector.altitude).toBe(25000);
+    expect(updated[0].instructedVector.heading).toBe(180);
+    expect(updated[0].instructedVector.groundSpeed).toBe(310);
     expect(updated[0].position.altitude).toBe(19100);
   });
 });

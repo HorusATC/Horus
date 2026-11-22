@@ -2,10 +2,10 @@
 
 ## メタデータ
 
-- **Status**: In Progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-22
-- **関連**: PR #119 既知問題（Controller で古い目標高度が表示される）、main でも再現
+- **関連**: PR #119 既知問題（Controller で古い目標高度が表示される）、main でも再現 / PR #123
 
 ## 概要
 
@@ -56,19 +56,20 @@ Operator が高度指示を送ったあと、Controller レーダーのデータ
 
 ### 決定方針（Decision）
 
-1. `updateAircraftLocationInfo` でもポーリング結果の `instructedVector` をコピーし、Controller / Operator ともパイロット目標の情報源を DTO に揃える
-2. 回帰テストで「Controller パスの poll 後に `instructedVector.altitude` が更新される」ことを固定する（未修正 main では失敗することを確認済み）
-3. API・DTO・Backend ロジックは変更しない
+1. Operator / Controller の二重メソッドを廃止し、`Aircraft.applyPolledFields` に統一する（ラベル位置・軌跡履歴はクライアント所有のまま）
+2. サーバ所有フィールドを `PolledAircraftServerFields` + `POLLED_AIRCRAFT_SERVER_FIELD_KEYS satisfies Record<keyof …, true>` で型チェックし、DTO/型にフィールド追加しても取りこぼせないようにする
+3. 回帰テストで poll 後の `instructedVector`（altitude / heading / groundSpeed）更新を固定する
+4. API・DTO・Backend ロジックは変更しない
 
 ### 検討した他案（Alternatives Considered）
 
-- **案 A**: Controller でも常に `updateAircraftInfo` を呼ぶ。採用しなかった理由: 挙動は同等だが、メソッド分離の意図（履歴・ラベル保持）を崩す変更が広い
+- **案 A**: Controller でも旧 `updateAircraftInfo` を呼ぶだけ。採用しなかった理由: 二重メソッドが残ると再び乖離しうる
 - **案 B**: 描画時だけ毎回 DTO を参照する別キャッシュ。採用しなかった理由: 二重情報源が増え、ストリップ／選択状態との不整合が残る
 - **案 C**: Backend 変更や新フィールド。却下: 不要。既存 `instructedVector` で足りる
 
 ### トレードオフ（Trade-offs）
 
-- **メリット**: 最小差分で stale を防ぎ、データブロックと API が一致する
+- **メリット**: stale を防ぎ、サーバ所有フィールドの同期漏れを tsc で検知できる
 - **デメリット / 受容する制約**: 旧コメント／旧 spec（「Controller で instructedVector を上書きしない」）は本修正で改める。管制クリアランス行の優先表示自体は維持する
 
 ---
@@ -86,9 +87,9 @@ Operator が高度指示を送ったあと、Controller レーダーのデータ
 
 ## 影響範囲
 
-- **Frontend `Aircraft.updateAircraftLocationInfo`**: `instructedVector` をポーリング結果から同期
+- **Frontend `Aircraft.applyPolledFields`**: サーバ所有フィールドをポーリング結果から同期（`instructedVector` 含む）
 - **Frontend テスト**: `aircraftClass.test.ts`、`location.controllerPoll.test.ts`
-- **ドキュメント**: 本 spec、`spec/spec.md` へのリンク。README は実装済み挙動の説明が変わる場合のみ更新
+- **ドキュメント**: 本 spec、`spec/spec.md`、Frontend README
 - **Backend / BFF API**: 変更なし
 
 ---
@@ -98,8 +99,8 @@ Operator が高度指示を送ったあと、Controller レーダーのデータ
 ### Phase 1
 
 1. 未修正コードで回帰テストを失敗させて証拠を残す
-2. `updateAircraftLocationInfo` に `instructedVector` 同期を追加
-3. Controller ポーリング経路のテストを追加
+2. `instructedVector` 同期を含む poll merge を修正
+3. `applyPolledFields` に統一し、サーバ所有フィールドを型で網羅チェック
 4. 静的チェック・Playwright 検証・PR
 
 ---
@@ -109,7 +110,7 @@ Operator が高度指示を送ったあと、Controller レーダーのデータ
 - [x] 未修正での失敗ログを保存
 - [x] 修正後の Frontend / Backend チェック
 - [x] Playwright before/after
-- [ ] CI 4/4 green
+- [x] CI 4/4 green
 
 ---
 
