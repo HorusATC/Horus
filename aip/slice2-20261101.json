@@ -1,0 +1,2262 @@
+{
+  "sourceNotice": "Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.",
+  "package": {
+    "airports": [
+      {
+        "airportIcao": "RJTT",
+        "airportName": "TOKYO INTL"
+      },
+      {
+        "airportIcao": "RJAA",
+        "airportName": "NARITA INTL"
+      }
+    ],
+    "airacEffectiveDate": "2026-11-01",
+    "authority": "Civil Aviation Bureau, Japan",
+    "viewerInForceBase": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/",
+    "sourceKind": "Official AIP Japan AD-2 texts, SID/STAR chart plates in aip/20261101/, and the AIRAC 1 Nov 2026 eAIP AD-2 chart index (filename-to-title). This file is a slice-2 inventory plus the in-hand VAMOS departure scope. Fully coded path legs remain in aip/rjtt-sid-star-20261101.json; this file does not invent legs or coordinates.",
+    "headingNote": "Coding tables (when present on a plate) publish magnetic and true courses. Horus headings are a geodetic/true frame; do not apply magnetic variation to simulator headings.",
+    "existingCatalog": "aip/rjtt-sid-star-20261101.json",
+    "chartIndexSource": "eAIP AD-2 HTML for RJTT and RJAA, AIRAC 1 Nov 2026 issue (viewer path .../20261101/JP-AD-2-RJTT-en-JP.html and JP-AD-2-RJAA-en-JP.html). Plate numbers are taken from those official hrefs, not inferred from list order."
+  },
+  "uncertain": [
+    {
+      "id": "visip-not-fully-codeable",
+      "items": "VISIP ONE",
+      "reason": "Downloaded plate JP-AD-2.24.88-RJTT-en-JP.pdf has no coding table and no VISIP lat/lon. TTE navaid is absent from the Horus navaid and waypoint catalogs. Conventional HDG/radial/DME legs are outside the current IF/TF/VA/DF engine."
+    },
+    {
+      "id": "pending-variant-ids",
+      "items": "Uncoded SID/STAR families listed only by chart title",
+      "reason": "Without the plate, the exact coded variant identifiers (e.g. LAXAS FOUR vs numbered suffixes, runway splits) are not printed in the AD-2 text. IDs are not invented."
+    },
+    {
+      "id": "rjaa-spid-initial-fixes",
+      "items": "RJAA SPID Table 1 initial fixes ARIES (ASTRA for PEDLA), BOXER, BEAMS, ASPEN",
+      "reason": "Named in RJAA AD 2.22 and already present as names in waypoints.json, but runway-to-procedure mapping for every RNAV SID, intermediate legs, and constraints are on the missing RJAA SID plates."
+    }
+  ],
+  "waypoints": [],
+  "procedures": [],
+  "inHandScope": {
+    "description": "No additional procedure can be fully coded from the downloaded PDFs. The user-visible slice that can be completed with data in hand is a loadable RJTT VAMOS FOUR departure sample using procedures already coded in slice 1, without changing the default arrival START WITH SAMPLE, plus a schema/inventory file and a conflict/MSAW guard for that sample.",
+    "flyableProcedureIds": [
+      "VAMOS4.RWY16R",
+      "VAMOS4.RWY16L",
+      "VAMOS4.RWY34L_34R",
+      "VAMOS4.RWY04",
+      "VAMOS4.RWY05",
+      "VAMOS4.RWY22",
+      "VAMOS4.TATEYAMA",
+      "VAMOS4.DRAKY"
+    ],
+    "procedures": [
+      {
+        "id": "VAMOS4.RWY16R",
+        "type": "SID",
+        "name": "VAMOS FOUR DEPARTURE",
+        "variant": "RWY16R",
+        "airportIcao": "RJTT",
+        "applicableRunways": [
+          "16R"
+        ],
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      },
+      {
+        "id": "VAMOS4.RWY16L",
+        "type": "SID",
+        "name": "VAMOS FOUR DEPARTURE",
+        "variant": "RWY16L",
+        "airportIcao": "RJTT",
+        "applicableRunways": [
+          "16L"
+        ],
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      },
+      {
+        "id": "VAMOS4.RWY34L_34R",
+        "type": "SID",
+        "name": "VAMOS FOUR DEPARTURE",
+        "variant": "RWY34L_34R",
+        "airportIcao": "RJTT",
+        "applicableRunways": [
+          "34L",
+          "34R"
+        ],
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      },
+      {
+        "id": "VAMOS4.RWY04",
+        "type": "SID",
+        "name": "VAMOS FOUR DEPARTURE",
+        "variant": "RWY04",
+        "airportIcao": "RJTT",
+        "applicableRunways": [
+          "04"
+        ],
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      },
+      {
+        "id": "VAMOS4.RWY05",
+        "type": "SID",
+        "name": "VAMOS FOUR DEPARTURE",
+        "variant": "RWY05",
+        "airportIcao": "RJTT",
+        "applicableRunways": [
+          "05"
+        ],
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      },
+      {
+        "id": "VAMOS4.RWY22",
+        "type": "SID",
+        "name": "VAMOS FOUR DEPARTURE",
+        "variant": "RWY22",
+        "airportIcao": "RJTT",
+        "applicableRunways": [
+          "22"
+        ],
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      },
+      {
+        "id": "VAMOS4.TATEYAMA",
+        "type": "SID_TRANSITION",
+        "name": "TATEYAMA TRANSITION",
+        "airportIcao": "RJTT",
+        "connectsAt": "VAMOS",
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      },
+      {
+        "id": "VAMOS4.DRAKY",
+        "type": "SID_TRANSITION",
+        "name": "DRAKY TRANSITION",
+        "airportIcao": "RJTT",
+        "connectsAt": "VAMOS",
+        "chartPdf": "JP-AD-2.24.12-RJTT-en-JP.pdf"
+      }
+    ],
+    "defaultArrivalSampleUnchanged": true,
+    "proposedDepartureSample": {
+      "file": "Frontend/data/quickstart-departure-sample.json",
+      "airportIcao": "RJTT",
+      "procedureFamily": "VAMOS FOUR",
+      "note": "Choose a conflict-safe subset of runway variants and TATEYAMA/DRAKY transitions. Parallel 16L/16R or 34L/34R both rejoin at VAMOS and may STCA; if a guard test shows a conflict, reduce to a single departure (and optional already-enroute transition traffic that stays clear). Do not mix into the five-arrival default sample."
+    }
+  },
+  "chartIndex": [
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.1-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.1",
+      "title": "Aerodrome Chart-1",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.1-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.2-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.2",
+      "title": "Aerodrome Chart-2",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.2-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.3-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.3",
+      "title": "Aircraft Parking/Docking Chart",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.3-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.4-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.4",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY16R/34L)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.4-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.5-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.5",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY22)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.5-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.6-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.6",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY04)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.6-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.7-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.7",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY34R)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.7-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.8-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.8",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY16L)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.8-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.9-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.9",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY05/23)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.9-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.10-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.10",
+      "title": "Aerodrome Obstacle Chart-ICAO type B",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.10-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.11-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.11",
+      "title": "Precision Approach Terrain Chart (RWY34R)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.11-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.19-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.19",
+      "title": "Standard Departure Chart - Instrument (SEKIYADO)",
+      "kind": "SID",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.19-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.88-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.88",
+      "title": "Standard Departure Chart - Instrument (VISIP)",
+      "kind": "SID",
+      "rnav": false,
+      "codingStatus": "downloaded-not-fully-codeable",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.88-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.21-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.21",
+      "title": "Standard Departure Chart - Instrument (OPPAR)",
+      "kind": "SID",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.21-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.24-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.24",
+      "title": "Standard Departure Chart - Instrument (ISOGO)",
+      "kind": "SID",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.24-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.12-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.12",
+      "title": "Standard Departure Chart - Instrument (VAMOS-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "fully-coded-in-slice1",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.12-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.13-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.13",
+      "title": "Standard Departure Chart - Instrument (LAXAS-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.13-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.14-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.14",
+      "title": "Standard Departure Chart - Instrument (NINOX-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.14-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.15-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.15",
+      "title": "Standard Departure Chart - Instrument (TIARA-A/B/C-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.15-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.16-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.16",
+      "title": "Standard Departure Chart - Instrument (BEKLA-A/B/C-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.16-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.17-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.17",
+      "title": "Standard Departure Chart - Instrument (ROVER-A/B/C-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.17-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.18-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.18",
+      "title": "Standard Departure Chart - Instrument (RUTAS-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.18-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.87-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.87",
+      "title": "Standard Departure Chart - Instrument (GUSRO-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.87-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.89-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.89",
+      "title": "Standard Arrival Chart - Instrument (SULPU-1S/1D, OLRAT-1A/1B)",
+      "kind": "STAR",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.89-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.26-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.26",
+      "title": "Standard Arrival Chart - Instrument (OSHIMA-1A/1K/2C-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "fully-coded-in-slice1",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.26-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.27-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.27",
+      "title": "Standard Arrival Chart - Instrument (AKSEL-1A/1K/2C-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "fully-coded-in-slice1",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.27-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.53-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.53",
+      "title": "Standard Arrival Chart - Instrument (AROSA-1A/1K/2C-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "fully-coded-in-slice1",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.53-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.71-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.71",
+      "title": "Standard Arrival Chart - Instrument (GODIN -2A/2K/1C-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "fully-coded-in-slice1",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.71-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.32-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.32",
+      "title": "Standard Arrival Chart - Instrument (POLIX-2A/2K/1C-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "fully-coded-in-slice1",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.32-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.28-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.28",
+      "title": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA-2H-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.28-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.29-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.29",
+      "title": "Standard Arrival Chart - Instrument (GODIN, POLIX-1H-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.29-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.61-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.61",
+      "title": "Standard Arrival Chart - Instrument (OSHIMA-1N/2N-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.61-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.30-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.30",
+      "title": "Standard Arrival Chart - Instrument (OSHIMA-1B/2B-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.30-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.31-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.31",
+      "title": "Standard Arrival Chart - Instrument (AKSEL-1N/2N-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.31-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.72-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.72",
+      "title": "Standard Arrival Chart - Instrument (AKSEL-1B/2B-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.72-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.22-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.22",
+      "title": "Standard Arrival Chart - Instrument (AROSA-1N/2N-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.22-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.25-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.25",
+      "title": "Standard Arrival Chart - Instrument (AROSA-1B/2B-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.25-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.73-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.73",
+      "title": "Standard Arrival Chart - Instrument (GODIN-1S/1D-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.73-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.74-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.74",
+      "title": "Standard Arrival Chart - Instrument (POLIX-1S/1D-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.74-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.78-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.78",
+      "title": "Standard Arrival Chart - Instrument (OSHIMA-L/R-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.78-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.79-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.79",
+      "title": "Standard Arrival Chart - Instrument (AKSEL-L/R-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.79-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.80-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.80",
+      "title": "Standard Arrival Chart - Instrument (AROSA-L/R-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.80-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.81-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.81",
+      "title": "Standard Arrival Chart - Instrument (GODIN-L/R-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.81-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.82-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.82",
+      "title": "Standard Arrival Chart - Instrument (POLIX-L/R-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.82-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.75-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.75",
+      "title": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA, MESSE-NIGHT-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.75-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.76-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.76",
+      "title": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA, MESSE-V-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.76-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.34-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.34",
+      "title": "Instrument Approach Chart (ILS Z RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.34-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.35-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.35",
+      "title": "Instrument Approach Chart (LOC Z RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.35-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.36-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.36",
+      "title": "Instrument Approach Chart (ILS Y RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.36-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.37-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.37",
+      "title": "Instrument Approach Chart (LOC Y RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.37-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.67-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.67",
+      "title": "Instrument Approach Chart (ILS X RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.67-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.68-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.68",
+      "title": "Instrument Approach Chart (LOC X RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.68-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.51-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.51",
+      "title": "Instrument Approach Chart (VOR RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.51-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.23-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.23",
+      "title": "Instrument Approach Chart (GLS RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.23-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.38-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.38",
+      "title": "Instrument Approach Chart (ILS Z RWY34R(CAT II &amp; III))",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.38-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.39-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.39",
+      "title": "Instrument Approach Chart (LOC Z RWY34R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.39-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.40-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.40",
+      "title": "Instrument Approach Chart (ILS Y RWY34R(CAT II &amp; III))",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.40-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.41-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.41",
+      "title": "Instrument Approach Chart (LOC Y RWY34R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.41-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.64-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.64",
+      "title": "Instrument Approach Chart (GLS RWY34R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.64-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.42-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.42",
+      "title": "Instrument Approach Chart (ILS RWY22)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.42-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.43-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.43",
+      "title": "Instrument Approach Chart (LOC RWY22)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.43-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.44-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.44",
+      "title": "Instrument Approach Chart (LDA Z RWY22)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.44-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.45-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.45",
+      "title": "Instrument Approach Chart (LDA Y RWY22)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.45-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.65-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.65",
+      "title": "Instrument Approach Chart (LDA X RWY22)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.65-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.60-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.60",
+      "title": "Instrument Approach Chart (LDA W RWY22)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.60-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.46-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.46",
+      "title": "Instrument Approach Chart (ILS Z RWY23)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.46-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.47-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.47",
+      "title": "Instrument Approach Chart (LOC Z RWY23)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.47-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.48-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.48",
+      "title": "Instrument Approach Chart (ILS Y or LOC Y RWY23)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.48-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.49-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.49",
+      "title": "Instrument Approach Chart (LDA Z RWY23)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.49-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.50-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.50",
+      "title": "Instrument Approach Chart (LDA Y RWY23)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.50-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.66-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.66",
+      "title": "Instrument Approach Chart (LDA X RWY23)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.66-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.63-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.63",
+      "title": "Instrument Approach Chart (LDA W RWY23)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.63-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.59-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.59",
+      "title": "Instrument Approach Chart (RNP RWY23 (AR))",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.59-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.83-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.83",
+      "title": "Instrument Approach Chart (ILS or LOC RWY16R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.83-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.84-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.84",
+      "title": "Instrument Approach Chart (RNP RWY16R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.84-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.85-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.85",
+      "title": "Instrument Approach Chart (ILS or LOC RWY16L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.85-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.86-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.86",
+      "title": "Instrument Approach Chart (RNP RWY16L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.86-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.52-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.52",
+      "title": "Instrument Approach Chart (VOR A)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.52-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.54-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.54",
+      "title": "Other Chart (HIGHWAY VISUAL RWY34R)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.54-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.55-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.55",
+      "title": "Other Chart (HOLDING PATTERN)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.55-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.77-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.77",
+      "title": "Other Chart (HOLDING PATTERN-RNAV)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.77-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.56-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.56",
+      "title": "Other Chart (Visual REP)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.56-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.62-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.62",
+      "title": "Other Chart (MVA CHART)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.62-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.57-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.57",
+      "title": "Other Chart (LDG CHART)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.57-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJTT",
+      "pdfFile": "JP-AD-2.24.58-RJTT-en-JP.pdf",
+      "aipReference": "RJTT AD 2.24.58",
+      "title": "Other Chart (Kawasaki Petrochemical Complex(ATTACHMENT-1))",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.58-RJTT-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.1-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.1",
+      "title": "Aerodrome Chart-1",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.1-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.2-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.2",
+      "title": "Aerodrome Chart-2",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.2-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.3-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.3",
+      "title": "Aerodrome Ground Movement Chart",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.3-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.4-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.4",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY16R/34L)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.4-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.5-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.5",
+      "title": "Aerodrome Obstacle Chart-ICAO type A (RWY16L/34R)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.5-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.8-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.8",
+      "title": "Aerodrome Obstacle Chart-ICAO type B",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.8-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.9-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.9",
+      "title": "Precision Approach Terrain Chart",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.9-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.17-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.17",
+      "title": "Standard Departure Chart - Instrument (SAKURA)",
+      "kind": "SID",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.17-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.20-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.20",
+      "title": "Standard Departure Chart - Instrument (AKAGI)",
+      "kind": "SID",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.20-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.22-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.22",
+      "title": "Standard Departure Chart - Instrument (SUNNS)",
+      "kind": "SID",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.22-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.10-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.10",
+      "title": "Standard Departure Chart - Instrument (TETRA-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.10-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.11-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.11",
+      "title": "Standard Departure Chart - Instrument (REDEK-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.11-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.12-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.12",
+      "title": "Standard Departure Chart - Instrument (PIGOK-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.12-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.13-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.13",
+      "title": "Standard Departure Chart - Instrument (GULBO-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.13-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.14-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.14",
+      "title": "Standard Departure Chart - Instrument (BORLO-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.14-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.16-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.16",
+      "title": "Standard Departure Chart - Instrument (PEDLA-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.16-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.18-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.18",
+      "title": "Standard Departure Chart - Instrument (OLVAN-RNAV)",
+      "kind": "SID",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.18-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.27-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.27",
+      "title": "Standard Arrival Chart - Instrument (SOUTH)",
+      "kind": "STAR",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.27-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.28-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.28",
+      "title": "Standard Arrival Chart - Instrument (NORTH)",
+      "kind": "STAR",
+      "rnav": false,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.28-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.25-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.25",
+      "title": "Standard Arrival Chart - Instrument (RUTAS E/T-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.25-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.26-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.26",
+      "title": "Standard Arrival Chart - Instrument (SWAMP E/T-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.26-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.30-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.30",
+      "title": "Standard Arrival Chart - Instrument (SUPOK E/T-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.30-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.45-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.45",
+      "title": "Standard Arrival Chart - Instrument (LUBLA E/T-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.45-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.46-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.46",
+      "title": "Standard Arrival Chart - Instrument (RUTAS G/N-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.46-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.47-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.47",
+      "title": "Standard Arrival Chart - Instrument (SWAMP G/N-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.47-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.48-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.48",
+      "title": "Standard Arrival Chart - Instrument (SUPOK G/N-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.48-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.49-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.49",
+      "title": "Standard Arrival Chart - Instrument (LUBLA G/N-RNAV)",
+      "kind": "STAR",
+      "rnav": true,
+      "codingStatus": "missing-plate",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.49-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.29-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.29",
+      "title": "Instrument Approach Chart (ILS RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.29-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.31-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.31",
+      "title": "Instrument Approach Chart (LOC RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.31-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.32-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.32",
+      "title": "Instrument Approach Chart (VOR RWY34L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.32-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.33-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.33",
+      "title": "Instrument Approach Chart (ILS Z RWY34R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.33-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.34-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.34",
+      "title": "Instrument Approach Chart (ILS Y or LOC RWY34R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.34-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.35-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.35",
+      "title": "Instrument Approach Chart (RNP RWY34R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.35-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.15-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.15",
+      "title": "Instrument Approach Chart (ILS Z RWY16R(CAT II &amp; III))",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.15-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.36-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.36",
+      "title": "Instrument Approach Chart (ILS Y or LOC RWY16R(CAT II &amp; III))",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.36-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.37-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.37",
+      "title": "Instrument Approach Chart (VOR RWY16R)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.37-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.21-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.21",
+      "title": "Instrument Approach Chart (ILS Z RWY16L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.21-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.38-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.38",
+      "title": "Instrument Approach Chart (ILS Y or LOC Y RWY16L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.38-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.39-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.39",
+      "title": "Instrument Approach Chart (ILS X or LOC X RWY16L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.39-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.60-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.60",
+      "title": "Instrument Approach Chart (RNP RWY16L)",
+      "kind": "IAP",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.60-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.40-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.40",
+      "title": "Other Chart (HOLDING PATTERN)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.40-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.50-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.50",
+      "title": "Other Chart (HOLDING PATTERN-RNAV)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.50-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.41-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.41",
+      "title": "Other Chart (Visual REP)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.41-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.42-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.42",
+      "title": "Other Chart (LDG CHART)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.42-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.43-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.43",
+      "title": "Other Chart (LDG CHART / Trees)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.43-RJAA-en-JP.pdf"
+    },
+    {
+      "airportIcao": "RJAA",
+      "pdfFile": "JP-AD-2.24.44-RJAA-en-JP.pdf",
+      "aipReference": "RJAA AD 2.24.44",
+      "title": "Other Chart (MVA CHART)",
+      "kind": "OTHER",
+      "rnav": null,
+      "codingStatus": "out-of-scope-this-slice",
+      "downloadUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/JP-AD-2.24.44-RJAA-en-JP.pdf"
+    }
+  ],
+  "pendingProcedures": [
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (SEKIYADO)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.19",
+        "title": "Standard Departure Chart - Instrument (SEKIYADO)",
+        "pdfFile": "JP-AD-2.24.19-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "id": "VISIP1",
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "VISIP ONE DEPARTURE",
+      "rnav": false,
+      "conventional": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.88",
+        "title": "VISIP ONE DEPARTURE",
+        "pdfFile": "JP-AD-2.24.88-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01",
+        "pageFooterEffectiveDate": "2025-10-02"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "Plate is downloaded, but the chart has no ARINC-style coding table and no VISIP latitude/longitude (only D28.1 TTE). TTE is not in Horus radio_navigation_aids.json or waypoints.json. Narrative uses runway heading, HDG, and TTE radials/DME, which the current engine (IF/TF/VA/DF/HOLD) does not fly. Coordinates are not invented."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (OPPAR)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.21",
+        "title": "Standard Departure Chart - Instrument (OPPAR)",
+        "pdfFile": "JP-AD-2.24.21-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (ISOGO)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.24",
+        "title": "Standard Departure Chart - Instrument (ISOGO)",
+        "pdfFile": "JP-AD-2.24.24-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (LAXAS-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.13",
+        "title": "Standard Departure Chart - Instrument (LAXAS-RNAV)",
+        "pdfFile": "JP-AD-2.24.13-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (NINOX-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.14",
+        "title": "Standard Departure Chart - Instrument (NINOX-RNAV)",
+        "pdfFile": "JP-AD-2.24.14-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (TIARA-A/B/C-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.15",
+        "title": "Standard Departure Chart - Instrument (TIARA-A/B/C-RNAV)",
+        "pdfFile": "JP-AD-2.24.15-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (BEKLA-A/B/C-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.16",
+        "title": "Standard Departure Chart - Instrument (BEKLA-A/B/C-RNAV)",
+        "pdfFile": "JP-AD-2.24.16-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (ROVER-A/B/C-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.17",
+        "title": "Standard Departure Chart - Instrument (ROVER-A/B/C-RNAV)",
+        "pdfFile": "JP-AD-2.24.17-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (RUTAS-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.18",
+        "title": "Standard Departure Chart - Instrument (RUTAS-RNAV)",
+        "pdfFile": "JP-AD-2.24.18-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (GUSRO-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.87",
+        "title": "Standard Departure Chart - Instrument (GUSRO-RNAV)",
+        "pdfFile": "JP-AD-2.24.87-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (SULPU-1S/1D, OLRAT-1A/1B)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.89",
+        "title": "Standard Arrival Chart - Instrument (SULPU-1S/1D, OLRAT-1A/1B)",
+        "pdfFile": "JP-AD-2.24.89-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA-2H-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.28",
+        "title": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA-2H-RNAV)",
+        "pdfFile": "JP-AD-2.24.28-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (GODIN, POLIX-1H-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.29",
+        "title": "Standard Arrival Chart - Instrument (GODIN, POLIX-1H-RNAV)",
+        "pdfFile": "JP-AD-2.24.29-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (OSHIMA-1N/2N-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.61",
+        "title": "Standard Arrival Chart - Instrument (OSHIMA-1N/2N-RNAV)",
+        "pdfFile": "JP-AD-2.24.61-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (OSHIMA-1B/2B-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.30",
+        "title": "Standard Arrival Chart - Instrument (OSHIMA-1B/2B-RNAV)",
+        "pdfFile": "JP-AD-2.24.30-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (AKSEL-1N/2N-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.31",
+        "title": "Standard Arrival Chart - Instrument (AKSEL-1N/2N-RNAV)",
+        "pdfFile": "JP-AD-2.24.31-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (AKSEL-1B/2B-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.72",
+        "title": "Standard Arrival Chart - Instrument (AKSEL-1B/2B-RNAV)",
+        "pdfFile": "JP-AD-2.24.72-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (AROSA-1N/2N-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.22",
+        "title": "Standard Arrival Chart - Instrument (AROSA-1N/2N-RNAV)",
+        "pdfFile": "JP-AD-2.24.22-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (AROSA-1B/2B-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.25",
+        "title": "Standard Arrival Chart - Instrument (AROSA-1B/2B-RNAV)",
+        "pdfFile": "JP-AD-2.24.25-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (GODIN-1S/1D-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.73",
+        "title": "Standard Arrival Chart - Instrument (GODIN-1S/1D-RNAV)",
+        "pdfFile": "JP-AD-2.24.73-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (POLIX-1S/1D-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.74",
+        "title": "Standard Arrival Chart - Instrument (POLIX-1S/1D-RNAV)",
+        "pdfFile": "JP-AD-2.24.74-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (OSHIMA-L/R-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.78",
+        "title": "Standard Arrival Chart - Instrument (OSHIMA-L/R-RNAV)",
+        "pdfFile": "JP-AD-2.24.78-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (AKSEL-L/R-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.79",
+        "title": "Standard Arrival Chart - Instrument (AKSEL-L/R-RNAV)",
+        "pdfFile": "JP-AD-2.24.79-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (AROSA-L/R-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.80",
+        "title": "Standard Arrival Chart - Instrument (AROSA-L/R-RNAV)",
+        "pdfFile": "JP-AD-2.24.80-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (GODIN-L/R-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.81",
+        "title": "Standard Arrival Chart - Instrument (GODIN-L/R-RNAV)",
+        "pdfFile": "JP-AD-2.24.81-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (POLIX-L/R-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.82",
+        "title": "Standard Arrival Chart - Instrument (POLIX-L/R-RNAV)",
+        "pdfFile": "JP-AD-2.24.82-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA, MESSE-NIGHT-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.75",
+        "title": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA, MESSE-NIGHT-RNAV)",
+        "pdfFile": "JP-AD-2.24.75-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJTT",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA, MESSE-V-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJTT AD 2.24.76",
+        "title": "Standard Arrival Chart - Instrument (OSHIMA, AKSEL, AROSA, MESSE-V-RNAV)",
+        "pdfFile": "JP-AD-2.24.76-RJTT-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (SAKURA)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.17",
+        "title": "Standard Departure Chart - Instrument (SAKURA)",
+        "pdfFile": "JP-AD-2.24.17-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (AKAGI)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.20",
+        "title": "Standard Departure Chart - Instrument (AKAGI)",
+        "pdfFile": "JP-AD-2.24.20-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (SUNNS)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.22",
+        "title": "Standard Departure Chart - Instrument (SUNNS)",
+        "pdfFile": "JP-AD-2.24.22-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (TETRA-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.10",
+        "title": "Standard Departure Chart - Instrument (TETRA-RNAV)",
+        "pdfFile": "JP-AD-2.24.10-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (REDEK-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.11",
+        "title": "Standard Departure Chart - Instrument (REDEK-RNAV)",
+        "pdfFile": "JP-AD-2.24.11-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (PIGOK-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.12",
+        "title": "Standard Departure Chart - Instrument (PIGOK-RNAV)",
+        "pdfFile": "JP-AD-2.24.12-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (GULBO-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.13",
+        "title": "Standard Departure Chart - Instrument (GULBO-RNAV)",
+        "pdfFile": "JP-AD-2.24.13-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (BORLO-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.14",
+        "title": "Standard Departure Chart - Instrument (BORLO-RNAV)",
+        "pdfFile": "JP-AD-2.24.14-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (PEDLA-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.16",
+        "title": "Standard Departure Chart - Instrument (PEDLA-RNAV)",
+        "pdfFile": "JP-AD-2.24.16-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "SID",
+      "name": "Standard Departure Chart - Instrument (OLVAN-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.18",
+        "title": "Standard Departure Chart - Instrument (OLVAN-RNAV)",
+        "pdfFile": "JP-AD-2.24.18-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (SOUTH)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.27",
+        "title": "Standard Arrival Chart - Instrument (SOUTH)",
+        "pdfFile": "JP-AD-2.24.27-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (NORTH)",
+      "rnav": false,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.28",
+        "title": "Standard Arrival Chart - Instrument (NORTH)",
+        "pdfFile": "JP-AD-2.24.28-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (RUTAS E/T-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.25",
+        "title": "Standard Arrival Chart - Instrument (RUTAS E/T-RNAV)",
+        "pdfFile": "JP-AD-2.24.25-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (SWAMP E/T-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.26",
+        "title": "Standard Arrival Chart - Instrument (SWAMP E/T-RNAV)",
+        "pdfFile": "JP-AD-2.24.26-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (SUPOK E/T-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.30",
+        "title": "Standard Arrival Chart - Instrument (SUPOK E/T-RNAV)",
+        "pdfFile": "JP-AD-2.24.30-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (LUBLA E/T-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.45",
+        "title": "Standard Arrival Chart - Instrument (LUBLA E/T-RNAV)",
+        "pdfFile": "JP-AD-2.24.45-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (RUTAS G/N-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.46",
+        "title": "Standard Arrival Chart - Instrument (RUTAS G/N-RNAV)",
+        "pdfFile": "JP-AD-2.24.46-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (SWAMP G/N-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.47",
+        "title": "Standard Arrival Chart - Instrument (SWAMP G/N-RNAV)",
+        "pdfFile": "JP-AD-2.24.47-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (SUPOK G/N-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.48",
+        "title": "Standard Arrival Chart - Instrument (SUPOK G/N-RNAV)",
+        "pdfFile": "JP-AD-2.24.48-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    },
+    {
+      "airportIcao": "RJAA",
+      "type": "STAR",
+      "name": "Standard Arrival Chart - Instrument (LUBLA G/N-RNAV)",
+      "rnav": true,
+      "chart": {
+        "aipReference": "RJAA AD 2.24.49",
+        "title": "Standard Arrival Chart - Instrument (LUBLA G/N-RNAV)",
+        "pdfFile": "JP-AD-2.24.49-RJAA-en-JP.pdf",
+        "packageAiracEffectiveDate": "2026-11-01"
+      },
+      "codingTable": false,
+      "waypointCoordinateTable": false,
+      "reasonNotCoded": "The official coding table and waypoint coordinate table are on this chart plate, which is not in the downloaded set. Intermediate fixes, path descriptors, and altitude/speed constraints are not invented. Some enroute fix names already exist in Horus waypoints.json, which is not sufficient to code the procedure."
+    }
+  ],
+  "missingPlates": {
+    "baseUrl": "https://web.swim.mlit.go.jp/f2eapr/AIP/html/20261029/eAIP/20261101/pdf/",
+    "sidStarOnly": [
+      "JP-AD-2.24.19-RJTT-en-JP.pdf",
+      "JP-AD-2.24.21-RJTT-en-JP.pdf",
+      "JP-AD-2.24.24-RJTT-en-JP.pdf",
+      "JP-AD-2.24.13-RJTT-en-JP.pdf",
+      "JP-AD-2.24.14-RJTT-en-JP.pdf",
+      "JP-AD-2.24.15-RJTT-en-JP.pdf",
+      "JP-AD-2.24.16-RJTT-en-JP.pdf",
+      "JP-AD-2.24.17-RJTT-en-JP.pdf",
+      "JP-AD-2.24.18-RJTT-en-JP.pdf",
+      "JP-AD-2.24.87-RJTT-en-JP.pdf",
+      "JP-AD-2.24.89-RJTT-en-JP.pdf",
+      "JP-AD-2.24.28-RJTT-en-JP.pdf",
+      "JP-AD-2.24.29-RJTT-en-JP.pdf",
+      "JP-AD-2.24.61-RJTT-en-JP.pdf",
+      "JP-AD-2.24.30-RJTT-en-JP.pdf",
+      "JP-AD-2.24.31-RJTT-en-JP.pdf",
+      "JP-AD-2.24.72-RJTT-en-JP.pdf",
+      "JP-AD-2.24.22-RJTT-en-JP.pdf",
+      "JP-AD-2.24.25-RJTT-en-JP.pdf",
+      "JP-AD-2.24.73-RJTT-en-JP.pdf",
+      "JP-AD-2.24.74-RJTT-en-JP.pdf",
+      "JP-AD-2.24.78-RJTT-en-JP.pdf",
+      "JP-AD-2.24.79-RJTT-en-JP.pdf",
+      "JP-AD-2.24.80-RJTT-en-JP.pdf",
+      "JP-AD-2.24.81-RJTT-en-JP.pdf",
+      "JP-AD-2.24.82-RJTT-en-JP.pdf",
+      "JP-AD-2.24.75-RJTT-en-JP.pdf",
+      "JP-AD-2.24.76-RJTT-en-JP.pdf",
+      "JP-AD-2.24.17-RJAA-en-JP.pdf",
+      "JP-AD-2.24.20-RJAA-en-JP.pdf",
+      "JP-AD-2.24.22-RJAA-en-JP.pdf",
+      "JP-AD-2.24.10-RJAA-en-JP.pdf",
+      "JP-AD-2.24.11-RJAA-en-JP.pdf",
+      "JP-AD-2.24.12-RJAA-en-JP.pdf",
+      "JP-AD-2.24.13-RJAA-en-JP.pdf",
+      "JP-AD-2.24.14-RJAA-en-JP.pdf",
+      "JP-AD-2.24.16-RJAA-en-JP.pdf",
+      "JP-AD-2.24.18-RJAA-en-JP.pdf",
+      "JP-AD-2.24.27-RJAA-en-JP.pdf",
+      "JP-AD-2.24.28-RJAA-en-JP.pdf",
+      "JP-AD-2.24.25-RJAA-en-JP.pdf",
+      "JP-AD-2.24.26-RJAA-en-JP.pdf",
+      "JP-AD-2.24.30-RJAA-en-JP.pdf",
+      "JP-AD-2.24.45-RJAA-en-JP.pdf",
+      "JP-AD-2.24.46-RJAA-en-JP.pdf",
+      "JP-AD-2.24.47-RJAA-en-JP.pdf",
+      "JP-AD-2.24.48-RJAA-en-JP.pdf",
+      "JP-AD-2.24.49-RJAA-en-JP.pdf"
+    ],
+    "counts": {
+      "rjttSidMissing": 10,
+      "rjttStarMissing": 18,
+      "rjaaSidMissing": 10,
+      "rjaaStarMissing": 10
+    },
+    "notRequiredForThisSlice": "IAP, aerodrome, obstacle, visual, holding-pattern, MVA, and LDG charts are listed in chartIndex with codingStatus out-of-scope-this-slice and are not required to code SID/STAR."
+  },
+  "crossCheck": {
+    "ad2TextTitlesMatchIndex": true,
+    "note": "RJTT AD 2.24 and RJAA AD 2.24 title lists in the full AD-2 PDFs match the eAIP HTML index titles. Filename numbers do not follow list order (e.g. VISIP is 2.24.88, GUSRO is 2.24.87, VAMOS is 2.24.12)."
+  }
+}

@@ -8,6 +8,7 @@ import {
   parseScenarioJson,
 } from "@/utility/api/scenario";
 import quickstartSample from "@/data/quickstart-arrival-sample.json";
+import quickstartDepartureSample from "@/data/quickstart-departure-sample.json";
 import type { ScenarioJson } from "@/types/scenario";
 
 export default function Home() {
@@ -15,13 +16,11 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStartWithSample = async () => {
+  const startScenario = async (scenario: ScenarioJson) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await loadScenarioAndStart(
-        quickstartSample as ScenarioJson
-      );
+      const result = await loadScenarioAndStart(scenario);
       if (!result.ok) {
         setError(result.message);
         setLoading(false);
@@ -40,6 +39,14 @@ export default function Home() {
       setError(String(e));
       setLoading(false);
     }
+  };
+
+  const handleStartWithSample = async () => {
+    await startScenario(quickstartSample as ScenarioJson);
+  };
+
+  const handleStartWithDepartureSample = async () => {
+    await startScenario(quickstartDepartureSample as ScenarioJson);
   };
 
   const handleFileUpload = async (
@@ -99,6 +106,21 @@ export default function Home() {
                        disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "LOADING..." : "START WITH SAMPLE (サンプルで始める)"}
+          </button>
+
+          <button
+            onClick={() => {
+              void handleStartWithDepartureSample();
+            }}
+            disabled={loading}
+            className="w-full rounded-lg p-4 bg-atc-surface border border-atc-border text-atc-text font-mono font-bold tracking-wider
+                       transition-colors duration-200
+                       hover:border-atc-accent focus:outline-none focus:ring-2 focus:ring-atc-accent focus:ring-offset-2 focus:ring-offset-atc-bg
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading
+              ? "LOADING..."
+              : "START VAMOS DEPARTURE SAMPLE (VAMOS出発サンプル)"}
           </button>
 
           <div className="relative">
