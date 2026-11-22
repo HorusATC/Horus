@@ -117,25 +117,25 @@
 
 ## 完了条件（Success Criteria）
 
-- [ ] `spec/20261122-runway-distance-rbl/spec.md` がリポジトリにあり、実装完了後に Status が Done になっている
-- [ ] 位置 API の既存フィールドと既存エンドポイントの動きが変わっていない（本スライスで DTO を足さない）
-- [ ] `Frontend/utility/measure/rangeBearing.ts`（パスは同等なら可）が距離・方位・時間・書式の単一定義源であり、描画コードはそれを import する
-- [ ] Frontend の Jest が製品コードを import し、次の独立計算値と照合する（期待値表だけをテストへコピーして照合しない）。地球半径 6378.1 km、1 NM = 1.852 km の球面 Haversine と前方方位。Python 3.13 で同じ式を独立に計算した値。WGS84（geographiclib `Geodesic.WGS84`）との差は参考であり、テストの期待値には使わない（8 NM の例で約 0.023 NM / 0.07°、RJTT–RJAA で約 0.015 NM / 0.09°）。許容差は距離 0.001 NM、方位 0.01°、時間 0.05 s。
+- [x] `spec/20261122-runway-distance-rbl/spec.md` がリポジトリにあり、実装完了後に Status が Done になっている
+- [x] 位置 API の既存フィールドと既存エンドポイントの動きが変わっていない（本スライスで DTO を足さない）
+- [x] `Frontend/utility/measure/rangeBearing.ts`（パスは同等なら可）が距離・方位・時間・書式の単一定義源であり、描画コードはそれを import する
+- [x] Frontend の Jest が製品コードを import し、次の独立計算値と照合する（期待値表だけをテストへコピーして照合しない）。地球半径 6378.1 km、1 NM = 1.852 km の球面 Haversine と前方方位。Python 3.13 で同じ式を独立に計算した値。WGS84（geographiclib `Geodesic.WGS84`）との差は参考であり、テストの期待値には使わない（8 NM の例で約 0.023 NM / 0.07°、RJTT–RJAA で約 0.015 NM / 0.09°）。許容差は距離 0.001 NM、方位 0.01°、時間 0.05 s。
   - **距離・方位 1**: RJTT 16R 進入端 (35.5530, 139.7810) から真方位 343°、8 NM の点は (35.6802700700, 139.7330940835)。往路距離 8.0000000000 NM、前方方位 343.000000°。復路の前方方位は 162.972102°（子午収束のため 163 ちょうどにはならない）。
   - **距離・方位 2**: 同進入端から RJAA 16R 進入端 (35.7647, 140.3864) まで 32.1880525766 NM、前方方位 66.537584°。逆方向 246.890510°。
   - **到達時間**: 8.0 NM / 160 kt = 180.000000 s（表示 `3:00`）。5.0 NM / 180 kt = 100.000000 s（`1:40`）。10.0 NM / 240 kt = 150.000000 s（`2:30`）。1.0 NM / 140 kt = 25.714286 s（`0:26`）。対地速度 0 または 60 分以上は時間なし。
   - **廊判定**: 進入端から沿コース 8 NM・横断 0 の点は表示対象。沿コース 8 NM・横断 2.0 NM の点、および進入端より内側（出発側）の点は対象外。沿コース 10.0 NM ちょうどは対象、10.0 NM 超は対象外。横断 1.0 NM ちょうどは対象。
   - **CPA（両機 RBL）**: 機 A を進入端、針路 090、180 kt。機 B を A から真方位 090°・10 NM の点 (35.5528273730, 139.9854901850)、針路 270、180 kt。距離 10.000 NM、A→B 前方方位 090.000°、水平 CPA は 100 s（0.05 s 以内）。同じ位置で両方 090 なら離反または CPA なし。
-- [ ] 書式: 距離は小数 1 桁 + `NM`、真方位は 3 桁ゼロ埋め + `T`、時間は `m:ss`。進入端行は `16R 8.2NM 3:00` の形。RBL は `12.4NM 087T`、両機で CPA があるときだけ時間を後ろに付ける
-- [ ] RBL ツールがオンのとき、ラベルドラッグが始まらない。オフのとき、従来どおりラベルをドラッグでき、機体シンボルの選択もできる
-- [ ] スナップした端は機体に追従し、任意点の端は緯度経度で固定される。解除ボタンと Escape で、取り途中または確定済みの線を消せる。同時表示は 1 本
-- [ ] ラベル行追加後も、新しい行を含む矩形でドラッグできる
-- [ ] Backend のテストが全件合格する（本スライスで Backend を変えないなら、既存の合格を維持する）
-- [ ] Frontend のテストとビルドが全件合格する
-- [ ] CI の 4 ジョブ（変更検出、Backend、Frontend、Docker Compose）が、マージするコミットの SHA で全部合格する
-- [ ] ルート README に変更があれば同じ PR に含める。Frontend README は残距離行・RBL 操作・進入端が接地点そのものではないこと・真方位であることを書く。Backend を変えない場合、Backend README の更新は不要
-- [ ] `spec/spec.md` と `spec/20261017-terminal-radar-gaps/spec.md` の「測距線と滑走路までの距離・時間」が、実装後の状態に更新されている
-- [ ] ブラウザでの手動検証が完了している（PdM またはテックリードが、対象コミットで次を確認する）:
+- [x] 書式: 距離は小数 1 桁 + `NM`、真方位は 3 桁ゼロ埋め + `T`、時間は `m:ss`。進入端行は `16R 8.2NM 3:00` の形。RBL は `12.4NM 087T`、両機で CPA があるときだけ時間を後ろに付ける
+- [ ] RBL ツールがオンのとき、ラベルドラッグが始まらない。オフのとき、従来どおりラベルをドラッグでき、機体シンボルの選択もできる — Tool-off label drag verified in Playwright; tool-on drag suppression not separately exercised in browser.
+- [ ] スナップした端は機体に追従し、任意点の端は緯度経度で固定される。解除ボタンと Escape で、取り途中または確定済みの線を消せる。同時表示は 1 本 — Clear button and one-line RBL verified; Escape and live aircraft-follow snap not separately browser-checked.
+- [ ] ラベル行追加後も、新しい行を含む矩形でドラッグできる — Label drag worked with the extra row present; dedicated hit-test of the new threshold line was not isolated.
+- [x] Backend のテストが全件合格する（本スライスで Backend を変えないなら、既存の合格を維持する）
+- [x] Frontend のテストとビルドが全件合格する
+- [x] CI の 4 ジョブ（変更検出、Backend、Frontend、Docker Compose）が、マージするコミットの SHA で全部合格する
+- [x] ルート README に変更があれば同じ PR に含める。Frontend README は残距離行・RBL 操作・進入端が接地点そのものではないこと・真方位であることを書く。Backend を変えない場合、Backend README の更新は不要
+- [x] `spec/spec.md` と `spec/20261017-terminal-radar-gaps/spec.md` の「測距線と滑走路までの距離・時間」が、実装後の状態に更新されている
+- [ ] ブラウザでの手動検証が完了している（PdM またはテックリードが、対象コミットで次を確認する）: Playwright covered (a)(b)(d RBL)/(e clear+tool-off drag); (c) off-corridor hide, (d) tool-on no-drag, (f) on-screen CPA, (g) STCA/MSAW/EMRG not separately checked.
   - (a) トップの START WITH SAMPLE から開始する
   - (b) 到着機（例: ANA101）を RJTT 16R の最終進入延長へ載せ、データブロックに `16R` と海里・時間が現れ、進入端に近づくにつれて距離が減る
   - (c) 同じ機をコースから明らかに外す（横断が 1 NM を超える）か進入端を通過させると、残距離行が消える
@@ -177,11 +177,11 @@
 
 ## 検証
 
-- [ ] Frontend のユニットテストが、上表の数値を製品コードに対して満たす
-- [ ] `npx jest --listTests` に新規テストが含まれ、未実装では失敗し、実装後は成功する
-- [ ] `npm test` と `npm run build`（およびリポジトリが定める Frontend 静的チェック）が通る
-- [ ] Backend テストは、コードを変えないなら既存の合格を維持する
-- [ ] 完了条件のブラウザ手順 (a)–(g) を、マージするコミットで確認する
+- [x] Frontend のユニットテストが、上表の数値を製品コードに対して満たす
+- [x] `npx jest --listTests` に新規テストが含まれ、未実装では失敗し、実装後は成功する
+- [x] `npm test` と `npm run build`（およびリポジトリが定める Frontend 静的チェック）が通る
+- [x] Backend テストは、コードを変えないなら既存の合格を維持する
+- [ ] 完了条件のブラウザ手順 (a)–(g) を、マージするコミットで確認する — Same partial Playwright coverage as the Success Criteria browser item above; (c)(f)(g) and tool-on no-drag not fully checked.
 
 ---
 
