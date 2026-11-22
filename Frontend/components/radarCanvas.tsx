@@ -157,8 +157,11 @@ const RadarCanvas: React.FC = () => {
       }
     });
 
-    GLOBAL_SETTINGS.canvasWidth = canvasRefs[0].current!.width;
-    GLOBAL_SETTINGS.canvasHeight = canvasRefs[0].current!.height;
+    const primaryCanvas = canvasRefs[0]?.current;
+    if (primaryCanvas) {
+      GLOBAL_SETTINGS.canvasWidth = primaryCanvas.width;
+      GLOBAL_SETTINGS.canvasHeight = primaryCanvas.height;
+    }
 
     // Load ATS route data and initialize event listeners
     initializeAtsRouteData();
@@ -436,8 +439,8 @@ const RadarCanvas: React.FC = () => {
 
   const toggleCanvasDisplay = () => {
     const idx = bgRef.current;
-    const back = canvasRefs[1 - idx].current;
-    const front = canvasRefs[idx].current;
+    const back = canvasRefs[1 - idx]?.current;
+    const front = canvasRefs[idx]?.current;
     if (back) back.style.display = "none";
     if (front) front.style.display = "block";
     const next = 1 - idx;
@@ -506,6 +509,7 @@ const RadarCanvas: React.FC = () => {
 
     for (let index = 0; index < currentControllingAircrafts.length; index++) {
       const aircraft = currentControllingAircrafts[index];
+      if (!aircraft) continue;
       const { position, label, callsign } = aircraft;
       const labelX = position.x + label.x;
       const labelY = position.y - label.y;
@@ -572,6 +576,7 @@ const RadarCanvas: React.FC = () => {
 
     const aircraft =
       controllingAircraftsRef.current[draggingLabelIndexRef.current];
+    if (!aircraft) return;
     const label = aircraft.label;
     const aircraftPosition = aircraft.position;
 

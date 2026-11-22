@@ -19,10 +19,12 @@ export function drawPublishedRoutes(
   for (const route of routes) {
     const pts = route.points;
     if (pts.length < 2) continue;
+    const first = pts.at(0);
+    if (!first) continue;
     ctx.beginPath();
     const p0 = toCanvas(
-      pts[0].latitude,
-      pts[0].longitude,
+      first.latitude,
+      first.longitude,
       center,
       range,
       dispW,
@@ -30,9 +32,11 @@ export function drawPublishedRoutes(
     );
     ctx.moveTo(p0.x, p0.y);
     for (let i = 1; i < pts.length; i++) {
+      const pt = pts.at(i);
+      if (!pt) continue;
       const pi = toCanvas(
-        pts[i].latitude,
-        pts[i].longitude,
+        pt.latitude,
+        pt.longitude,
         center,
         range,
         dispW,

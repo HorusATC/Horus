@@ -231,14 +231,10 @@ function drawRoute(
 
   // Draw lines between consecutive points
   for (let i = 0; i < points.length - 1; i++) {
-    drawLineBetweenPoints(
-      ctx,
-      points[i],
-      points[i + 1],
-      color,
-      centerCoordinate,
-      displayRange
-    );
+    const from = points[i];
+    const to = points[i + 1];
+    if (!from || !to) continue;
+    drawLineBetweenPoints(ctx, from, to, color, centerCoordinate, displayRange);
   }
 }
 

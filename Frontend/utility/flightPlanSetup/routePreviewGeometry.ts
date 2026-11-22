@@ -57,13 +57,14 @@ export function computeBounds(
   center: { latitude: number; longitude: number };
   range: number;
 } {
-  if (points.length === 0) {
+  const first = points.at(0);
+  if (!first) {
     return { center: DEFAULT_CENTER, range: DEFAULT_RANGE };
   }
-  let minLat = points[0].latitude;
-  let maxLat = points[0].latitude;
-  let minLon = points[0].longitude;
-  let maxLon = points[0].longitude;
+  let minLat = first.latitude;
+  let maxLat = first.latitude;
+  let minLon = first.longitude;
+  let maxLon = first.longitude;
   for (const p of points) {
     minLat = Math.min(minLat, p.latitude);
     maxLat = Math.max(maxLat, p.latitude);
@@ -109,7 +110,8 @@ export function pickHitTarget(
   targets: RoutePreviewPickTarget[]
 ): string | null {
   for (let i = targets.length - 1; i >= 0; i--) {
-    const p = targets[i];
+    const p = targets.at(i);
+    if (!p) continue;
     const dx = px - p.x;
     const dy = py - p.y;
     if (dx * dx + dy * dy <= MARKER_HIT_PX * MARKER_HIT_PX) {

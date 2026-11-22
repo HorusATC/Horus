@@ -35,7 +35,12 @@ describe("AddAircraftForm", () => {
     expect(screen.queryByPlaceholderText(/lat/i)).not.toBeInTheDocument();
     await user.type(screen.getByPlaceholderText("JAL101"), "jal101");
 
-    const [origin, destination] = screen.getAllByRole("combobox");
+    const comboboxes = screen.getAllByRole("combobox");
+    const origin = comboboxes[0];
+    const destination = comboboxes[1];
+    if (!origin || !destination) {
+      throw new Error("expected origin and destination comboboxes");
+    }
     await user.click(origin);
     await user.type(origin, "nari{Enter}");
     await user.click(destination);

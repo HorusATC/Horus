@@ -250,8 +250,10 @@ export function AircraftRouteEditor({
             if (event.key !== "Enter" || fixSearchMatches.length === 0) {
               return;
             }
+            const firstMatch = fixSearchMatches[0];
+            if (!firstMatch) return;
             event.preventDefault();
-            appendFixFromCatalog(fixSearchMatches[0]);
+            appendFixFromCatalog(firstMatch);
             setFixSearch("");
           }}
           placeholder="KOI, then Enter"

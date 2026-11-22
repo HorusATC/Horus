@@ -13,7 +13,11 @@ export function moveItem<T>(
     return [...items];
   }
   const next = [...items];
-  const [item] = next.splice(from, 1);
+  const removed = next.splice(from, 1);
+  const item = removed.at(0);
+  if (item === undefined) {
+    return [...items];
+  }
   next.splice(to, 0, item);
   return next;
 }

@@ -19,7 +19,10 @@ export function groupByOd(aircraft: ScenarioAircraft[]): {
     byKey.set(key, list);
   }
   return Array.from(byKey.entries()).map(([key, ac]) => {
-    const [origin, destination] = key.split("→");
+    const arrow = "→";
+    const sep = key.indexOf(arrow);
+    const origin = sep >= 0 ? key.slice(0, sep) : key;
+    const destination = sep >= 0 ? key.slice(sep + arrow.length) : "";
     return { origin, destination, aircraft: ac };
   });
 }

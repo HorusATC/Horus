@@ -131,9 +131,15 @@ export function RoutePreviewMap({
       ctx.globalAlpha = 0.6;
       for (const ring of japanOutline) {
         const pts = ring.map(([la, lo]) => toCanvas(la, lo, c, r, w, h));
+        const first = pts[0];
+        if (!first) continue;
         ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.moveTo(first.x, first.y);
+        for (let i = 1; i < pts.length; i++) {
+          const pt = pts[i];
+          if (!pt) continue;
+          ctx.lineTo(pt.x, pt.y);
+        }
         ctx.closePath();
         ctx.stroke();
       }
@@ -266,22 +272,30 @@ export function RoutePreviewMap({
 
     segmentPickRef.current = [];
     for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i];
+      const b = points[i + 1];
+      if (!a || !b) continue;
       segmentPickRef.current.push({
-        ax: points[i].x,
-        ay: points[i].y,
-        bx: points[i + 1].x,
-        by: points[i + 1].y,
+        ax: a.x,
+        ay: a.y,
+        bx: b.x,
+        by: b.y,
         insertIndex: i,
       });
     }
+
+    const firstPoint = points[0];
+    if (!firstPoint) return;
 
     ctx.strokeStyle = "#22c55e";
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.9;
     ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
+    ctx.moveTo(firstPoint.x, firstPoint.y);
     for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
+      const pt = points[i];
+      if (!pt) continue;
+      ctx.lineTo(pt.x, pt.y);
     }
     ctx.stroke();
     ctx.globalAlpha = 1;

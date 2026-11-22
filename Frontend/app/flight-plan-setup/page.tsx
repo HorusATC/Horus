@@ -43,12 +43,13 @@ export default function FlightPlanSetupPage() {
   const router = useRouter();
   const [scenario, setScenario] = useState<ScenarioJson>({ aircraft: [] });
   const [selectedCallsign, setSelectedCallsign] = useState<string | null>(null);
-  const selectedAircraft = useMemo(() => {
+  const selectedAircraft = useMemo((): ScenarioAircraft | null => {
     const list = scenario.aircraft;
-    if (list.length === 0) return null;
-    if (selectedCallsign == null) return list[0];
+    const first = list[0];
+    if (!first) return null;
+    if (selectedCallsign == null) return first;
     return (
-      list.find((a) => a.flightPlan.callsign === selectedCallsign) ?? list[0]
+      list.find((a) => a.flightPlan.callsign === selectedCallsign) ?? first
     );
   }, [scenario.aircraft, selectedCallsign]);
   const [status, setStatus] = useState<string | null>(null);
@@ -140,9 +141,11 @@ export default function FlightPlanSetupPage() {
       return;
     }
     setSelectedCallsign((prev) => {
-      if (prev == null) return list[0].flightPlan.callsign;
+      const first = list[0];
+      if (!first) return prev;
+      if (prev == null) return first.flightPlan.callsign;
       if (list.some((a) => a.flightPlan.callsign === prev)) return prev;
-      return list[0].flightPlan.callsign;
+      return first.flightPlan.callsign;
     });
   }, [scenario.aircraft]);
 
@@ -176,6 +179,10 @@ export default function FlightPlanSetupPage() {
     odPairs.forEach((p, i) => {
       const key = `${p.origin}→${p.destination}`;
       const r = results[i];
+      if (!r) {
+        failedPairs.push(key);
+        return;
+      }
       const ok = "waypoints" in r && r.waypoints.length > 0;
       if (ok) routeByKey.set(key, r.waypoints);
       else failedPairs.push(key);
