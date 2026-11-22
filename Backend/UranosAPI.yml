@@ -261,6 +261,52 @@ paths:
         "200":
           description: Resume navigation applied
 
+  "/api/aircraft/{callsign}/hold":
+    post:
+      tags: ["aircraft"]
+      summary: "Hold at fix"
+      description: >
+        Instructs the aircraft to proceed to the fix and fly a racetrack hold.
+        Omitting optional fields preserves historical behaviour: RIGHT turns, 4.0 NM outbound leg,
+        and a fix-name-hash inbound course (not an operational course). Operator clients should
+        always send inboundCourseDeg.
+      parameters:
+        - name: callsign
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HoldRequest"
+            examples:
+              compatibleDefault:
+                value:
+                  fixName: ABENO
+                  turnDirection: RIGHT
+              leftTimed:
+                value:
+                  fixName: ABENO
+                  inboundCourseDeg: 209
+                  legMinutes: 1.5
+                  turnDirection: LEFT
+              distanceLeg:
+                value:
+                  fixName: ABENO
+                  inboundCourseDeg: 90
+                  legNm: 7
+                  turnDirection: RIGHT
+      responses:
+        "200":
+          description: Hold instruction applied
+        "400":
+          description: >
+            Invalid turnDirection, inboundCourseDeg outside [0, 360), both legMinutes and legNm,
+            non-positive or out-of-bound leg, or timed leg with ground speed below 1 kt
+
   "/api/scenario/load":
     post:
       tags: ["scenario"]
@@ -487,6 +533,33 @@ paths:
 
 components:
   schemas:
+    HoldRequest:
+      type: object
+      required: [fixName]
+      properties:
+        fixName:
+          type: string
+          description: Holding fix name
+        turnDirection:
+          type: string
+          enum: [LEFT, RIGHT]
+          default: RIGHT
+          description: Racetrack turn direction (RIGHT when omitted)
+        inboundCourseDeg:
+          type: number
+          minimum: 0
+          exclusiveMaximum: 360
+          description: Instructed inbound course in degrees [0, 360). When omitted, uses the historical fix-name hash.
+        legMinutes:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 30
+          description: Timed outbound leg in minutes. Mutually exclusive with legNm. Distance = groundSpeedKt × (minutes / 60).
+        legNm:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 100
+          description: Outbound leg distance in NM. Mutually exclusive with legMinutes. Default 4.0 when both omitted.
     AircraftLocation:
       type: object
       properties:

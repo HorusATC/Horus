@@ -109,10 +109,12 @@ const RadarCanvas: React.FC = () => {
     };
   }, [pathname, dataBlockDisplaySetting]);
   const dataBlockDisplaySettingRef = useRef(dataBlockRadarSetting);
-  const { isSelectFixMode, setSelectedFixName } = useSelectFixMode();
+  const { isSelectFixMode, setSelectedFixName, setSelectedFixGeo } =
+    useSelectFixMode();
   const {
     setCallsign,
     setInstructedVector,
+    setSelectedGeo,
     setSpeedAsIndicatedAirspeed,
     registerApplyInstructedVectorHandler,
   } = useSelectedAircraft();
@@ -478,6 +480,16 @@ const RadarCanvas: React.FC = () => {
       );
       if (fixName) {
         setSelectedFixName(fixName);
+        const allFixes = [
+          ...atsRouteData.waypoints,
+          ...atsRouteData.radioNavigationAids,
+        ];
+        const match = allFixes.find((f) => f.name === fixName);
+        setSelectedFixGeo(
+          match
+            ? { latitude: match.latitude, longitude: match.longitude }
+            : null
+        );
       }
       return;
     }
@@ -603,6 +615,11 @@ const RadarCanvas: React.FC = () => {
       altitude: Math.round(aircraft.instructedVector.altitude),
       groundSpeed: speedForPanel,
       heading: Math.round(aircraft.instructedVector.heading),
+    });
+    setSelectedGeo({
+      latitude: aircraft.geoPosition.latitude,
+      longitude: aircraft.geoPosition.longitude,
+      altitude: aircraft.position.altitude,
     });
   };
 
