@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Start Backend (bootRun) and Frontend (npm run dev) for local quickstart.
 # Requires Java 21 and Node.js 18+. Ctrl-C stops both processes.
+# Works on macOS and Linux (setsid when available; otherwise job-control / PID trees).
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -9,6 +10,8 @@ BACKEND_LOG="${LOG_DIR}/backend.log"
 FRONTEND_LOG="${LOG_DIR}/frontend.log"
 BACKEND_PID=""
 FRONTEND_PID=""
+# 1 when children were started with setsid (process-group kill is safe).
+USE_SETSID=0
 
 die() {
   printf '%s\n' "$*" >&2
@@ -25,10 +28,8 @@ java_major_version() {
     java_bin="$(command -v java 2>/dev/null || true)"
   fi
   [ -x "$java_bin" ] || return 1
-  # Prefer -version (always prints to stderr). Avoid picking 22/24.
   local ver_line
   ver_line="$("$java_bin" -version 2>&1 | head -n 1)" || return 1
-  # Match "21" as the major (21, 21.0.x). Reject 22 and 24 explicitly via pattern.
   if printf '%s' "$ver_line" | grep -Eq 'version "21([.\"]|$)'; then
     printf '%s\n' "21"
     return 0
@@ -38,7 +39,12 @@ java_major_version() {
 
 is_java21_home() {
   local home="$1"
-  [ -n "$home" ] && [ -x "${home}/bin/java" ] || return 1
+  if [ -z "$home" ]; then
+    return 1
+  fi
+  if [ ! -x "${home}/bin/java" ]; then
+    return 1
+  fi
   java_major_version "$home" >/dev/null 2>&1
 }
 
@@ -90,13 +96,11 @@ resolve_java21() {
 
   # 6) java on PATH if it is 21
   if java_major_version >/dev/null 2>&1; then
-    # Prefer JAVA_HOME reported by the binary when available.
     candidate="$(dirname "$(dirname "$(command -v java)")")"
     if is_java21_home "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
     fi
-    # Fall back: export a synthetic home from the binary path.
     printf '%s\n' "$candidate"
     return 0
   fi
@@ -133,20 +137,65 @@ ensure_node() {
   fi
 }
 
+# Spec Decision: npm ci only when node_modules is missing or older than package-lock.json.
 needs_npm_ci() {
   local fe="${ROOT_DIR}/Frontend"
   if [ ! -d "${fe}/node_modules" ]; then
     return 0
   fi
-  # Stale when lockfile is newer than node_modules (or npm's recorded lock).
   if [ "${fe}/package-lock.json" -nt "${fe}/node_modules" ]; then
     return 0
   fi
-  if [ -f "${fe}/node_modules/.package-lock.json" ] \
-    && ! cmp -s "${fe}/package-lock.json" "${fe}/node_modules/.package-lock.json" 2>/dev/null; then
-    return 0
+  return 1
+}
+
+port_in_use() {
+  local port="$1"
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -tiTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+    return $?
+  fi
+  if command -v ss >/dev/null 2>&1; then
+    ss -ltn 2>/dev/null | grep -qE ":${port}\\s"
+    return $?
+  fi
+  # Fallback: try binding briefly via python (rare environments without lsof/ss).
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$port" <<'PY'
+import socket, sys
+port = int(sys.argv[1])
+s = socket.socket()
+try:
+    s.bind(("127.0.0.1", port))
+except OSError:
+    sys.exit(0)  # in use
+s.close()
+sys.exit(1)  # free
+PY
+    return $?
   fi
   return 1
+}
+
+describe_port_holder() {
+  local port="$1"
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -iTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+  elif command -v ss >/dev/null 2>&1; then
+    ss -ltnp 2>/dev/null | grep -E ":${port}\\s" || true
+  fi
+}
+
+assert_ports_free() {
+  local port
+  for port in 8080 3333; do
+    if port_in_use "$port"; then
+      printf 'Port %s is already in use. Stop the other process before running ./scripts/dev-up.sh.\n' "$port" >&2
+      printf 'Find it with: lsof -iTCP:%s -sTCP:LISTEN\n' "$port" >&2
+      describe_port_holder "$port" >&2
+      exit 1
+    fi
+  done
 }
 
 wait_for_url() {
@@ -165,6 +214,7 @@ wait_for_url() {
   printf '%s is ready.\n' "$name"
 }
 
+# Kill a PID and all of its descendants (pkill -P recursion). Never touches unrelated listeners.
 kill_tree() {
   local pid="$1"
   local sig="${2:-TERM}"
@@ -178,19 +228,38 @@ kill_tree() {
   kill "-${sig}" "$pid" 2>/dev/null || true
 }
 
-free_port() {
-  local port="$1"
-  local p
-  if command -v lsof >/dev/null 2>&1; then
-    for p in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
-      kill_tree "$p" TERM
-    done
-    sleep 0.3
-    for p in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
-      kill -9 "$p" 2>/dev/null || true
-    done
-  elif command -v fuser >/dev/null 2>&1; then
-    fuser -k "${port}/tcp" 2>/dev/null || true
+start_backend() {
+  if command -v setsid >/dev/null 2>&1; then
+    USE_SETSID=1
+    setsid bash -c "cd \"${ROOT_DIR}/Backend\" && exec ./gradlew bootRun --no-daemon" \
+      >"$BACKEND_LOG" 2>&1 &
+    BACKEND_PID=$!
+  else
+    USE_SETSID=0
+    # macOS / no setsid: enable monitor mode so the background job gets its own process group.
+    set -m
+    (
+      cd "${ROOT_DIR}/Backend"
+      exec ./gradlew bootRun --no-daemon
+    ) >"$BACKEND_LOG" 2>&1 &
+    BACKEND_PID=$!
+  fi
+}
+
+start_frontend() {
+  if command -v setsid >/dev/null 2>&1; then
+    USE_SETSID=1
+    setsid bash -c "cd \"${ROOT_DIR}/Frontend\" && exec npm run dev" \
+      >"$FRONTEND_LOG" 2>&1 &
+    FRONTEND_PID=$!
+  else
+    USE_SETSID=0
+    set -m
+    (
+      cd "${ROOT_DIR}/Frontend"
+      exec npm run dev
+    ) >"$FRONTEND_LOG" 2>&1 &
+    FRONTEND_PID=$!
   fi
 }
 
@@ -199,20 +268,28 @@ cleanup() {
   trap - EXIT INT TERM HUP
   if [ -n "${BACKEND_PID:-}" ] || [ -n "${FRONTEND_PID:-}" ]; then
     printf '\nStopping Backend and Frontend...\n' >&2
-    # setsid leaders: negative PID signals the whole process group.
-    [ -n "${FRONTEND_PID:-}" ] && kill -TERM -"${FRONTEND_PID}" 2>/dev/null || true
-    [ -n "${BACKEND_PID:-}" ] && kill -TERM -"${BACKEND_PID}" 2>/dev/null || true
+    # Only signal process groups / PID trees we started — never lsof-kill arbitrary port holders.
+    if [ "$USE_SETSID" -eq 1 ]; then
+      if [ -n "${FRONTEND_PID:-}" ]; then
+        kill -TERM -"${FRONTEND_PID}" 2>/dev/null || true
+      fi
+      if [ -n "${BACKEND_PID:-}" ]; then
+        kill -TERM -"${BACKEND_PID}" 2>/dev/null || true
+      fi
+    fi
     kill_tree "${FRONTEND_PID:-}" TERM
     kill_tree "${BACKEND_PID:-}" TERM
-    # bootRun may hand the JVM to a Gradle daemon outside our PID tree; free ports.
-    free_port 8080
-    free_port 3333
-    [ -n "${FRONTEND_PID:-}" ] && kill -KILL -"${FRONTEND_PID}" 2>/dev/null || true
-    [ -n "${BACKEND_PID:-}" ] && kill -KILL -"${BACKEND_PID}" 2>/dev/null || true
+    sleep 0.5
+    if [ "$USE_SETSID" -eq 1 ]; then
+      if [ -n "${FRONTEND_PID:-}" ]; then
+        kill -KILL -"${FRONTEND_PID}" 2>/dev/null || true
+      fi
+      if [ -n "${BACKEND_PID:-}" ]; then
+        kill -KILL -"${BACKEND_PID}" 2>/dev/null || true
+      fi
+    fi
     kill_tree "${FRONTEND_PID:-}" KILL
     kill_tree "${BACKEND_PID:-}" KILL
-    free_port 8080
-    free_port 3333
   fi
   exit "$ec"
 }
@@ -220,6 +297,9 @@ cleanup() {
 trap cleanup EXIT INT TERM HUP
 
 mkdir -p "$LOG_DIR"
+
+# Refuse to start if ports are already taken (do not steal foreign processes).
+assert_ports_free
 
 resolved_home="$(resolve_java21)" || {
   print_java_install_help
@@ -245,15 +325,14 @@ else
 fi
 
 printf 'Starting Backend (./gradlew bootRun)...\n'
-# New session/process group so Ctrl-C / trap can signal the whole tree.
-setsid bash -c "cd \"${ROOT_DIR}/Backend\" && exec ./gradlew bootRun --no-daemon" \
-  >"$BACKEND_LOG" 2>&1 &
-BACKEND_PID=$!
-
+start_backend
 printf 'Starting Frontend (npm run dev)...\n'
-setsid bash -c "cd \"${ROOT_DIR}/Frontend\" && exec npm run dev" \
-  >"$FRONTEND_LOG" 2>&1 &
-FRONTEND_PID=$!
+start_frontend
+if [ "$USE_SETSID" -eq 1 ]; then
+  printf 'Process launcher: setsid\n'
+else
+  printf 'Process launcher: job-control fallback (no setsid)\n'
+fi
 
 wait_for_url "http://localhost:8080/docs.html" "Backend" 180
 wait_for_url "http://localhost:3333/" "Frontend" 120
@@ -270,8 +349,6 @@ Press Ctrl-C to stop Backend and Frontend.
 
 EOF
 
-# Stay alive until a child dies or a signal runs the trap.
-# A sleep loop is reliably interrupted by INT/TERM (unlike some wait cases).
 while kill -0 "${BACKEND_PID}" 2>/dev/null && kill -0 "${FRONTEND_PID}" 2>/dev/null; do
   sleep 1
 done

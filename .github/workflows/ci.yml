@@ -35,6 +35,7 @@ jobs:
               - 'Frontend/.dockerignore'
               - 'Backend/**'
               - 'Frontend/**'
+              - 'scripts/**'
             workflow:
               - '.github/**'
             repo_wide:
@@ -62,6 +63,8 @@ jobs:
           run_d=false
           if [ "$b" = "true" ] || [ "$w" = "true" ] || [ "$r" = "true" ]; then run_b=true; fi
           if [ "$f" = "true" ] || [ "$w" = "true" ] || [ "$r" = "true" ]; then run_f=true; fi
+          # scripts/** is also in the docker filter so verify-quickstart live checks run
+          # when quickstart scripts change (repo_wide alone would skip Docker).
           if [ "$d" = "true" ] || [ "$w" = "true" ]; then run_d=true; fi
           echo "run_backend=$run_b" >> "$GITHUB_OUTPUT"
           echo "run_frontend=$run_f" >> "$GITHUB_OUTPUT"

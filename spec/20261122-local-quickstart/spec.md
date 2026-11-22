@@ -44,8 +44,9 @@
 1. **Docker は残す。ただし README の第一経路を、Docker なしでも完走できる手順にする。** Docker がある人向けの `docker compose up --build` は第二経路として残す。
 2. **リポジトリルートにローカル起動スクリプトを置く**（`scripts/dev-up.sh`）。スクリプトは次だけを行う。
    - Java 21 を探す。優先順は、(1) 既に設定された `JAVA_HOME` が 21 のとき、(2) macOS の `/usr/libexec/java_home -v 21`、(3) SDKMAN の candidates、(4) `/usr/lib/jvm/*21*`、(5) `~/jdk21`、(6) PATH 上の `java` が 21 のとき。22 と 24 は使わない。見つからなければ Temurin 21 のインストール案内を出して非 0 で終了する。
-   - Frontend で `node_modules` が無い、または `package-lock.json` より古いときに `npm ci`。`.env.local` が無ければ `.env.sample` をコピーする（中身が `localhost:8080` なら編集させない）。
-   - Backend の `bootRun` と Frontend の `npm run dev` を起動し、ヘルスチェック後に `http://localhost:3333` と「START WITH SAMPLE (サンプルで始める)」を標準出力へ出す。Ctrl-C で両方を止め、孤児プロセスを残さない（trap）。ログは gitignore 対象ディレクトリへ出す。
+   - Frontend で `node_modules` が無い、または `package-lock.json` より古いとき（mtime）だけ `npm ci`（`node_modules/.package-lock.json` との内容比較は使わない）。`.env.local` が無ければ `.env.sample` をコピーする（中身が `localhost:8080` なら編集させない）。
+   - 起動前に 8080 / 3333 が使用中なら、ポート名と `lsof` の案内を出して非 0 で終了する。既に占有しているプロセスは殺さない。
+   - Backend の `bootRun` と Frontend の `npm run dev` を起動し、ヘルスチェック後に `http://localhost:3333` と「START WITH SAMPLE (サンプルで始める)」を標準出力へ出す。Ctrl-C で両方を止め、孤児プロセスを残さない（trap。`setsid` があれば process group、無ければ job control + `pkill -P` 系の PID 木。スクリプトが起動した PID 以外は殺さない）。ログは gitignore 対象ディレクトリへ出す。
 3. **ルート README を第一経路に合わせて書き直す。** 先頭の不完全なクイックスタートをやめ、clone のあとに `scripts/dev-up.sh` と、ブラウザでの 1 クリックを書く。システム概要の Swagger spawn 記述を削除し、サンプルボタンを正とする。Backend / Frontend README の起動節も同じ内容に合わせ、連携確認の「航空機作成」をサンプルボタンへ置き換える。
 4. **API の動きは変えない。** シナリオ読み込み、シミュレーション開始、位置 API の契約は現状のままである。
 5. **初期中心の変更は Must にしない。** 400 km 表示で 5 機は既に入る。東京または RJTT への寄せは、スクリプトと README が通ったあとの Should とする。
