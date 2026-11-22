@@ -1,0 +1,107 @@
+=== Runway catalog cross-check (R=6378.1 km) ===
+JSON: /agent/repos/Horus/Backend/src/main/resources/fix/runways.json
+Source note: unofficial AD 2.12 copies + AirBinder AIRAC 2611; NOT verified against official AIP in force.
+catalogSource.verificationNote: Values are from unofficial AD 2.12 PDF copies and AirBinder AIRAC 2611 tables. They have NOT been checked against the official AIP in force (AIS/SWIM login required). Do not treat these as official surveyed coordinates.
+
+-- RJTT 16R --
+DMS→dec: 353322.47N 1394618.19E → 35.55624167, 139.77171944
+JSON thresholdLatitude: 35.55624167 (table 35.55624167) OK
+JSON thresholdLongitude: 139.77171944 (table 139.77171944) OK
+JSON heading: 149.88 (table 149.88) OK
+displaced distance: 481.101 m (expect 480 ±2.0) OK
+
+-- RJTT 34L --
+DMS→dec: 353211.76N 1394708.41E → 35.53660000, 139.78566944
+JSON thresholdLatitude: 35.5366 (table 35.5366) OK
+JSON thresholdLongitude: 139.78566944 (table 139.78566944) OK
+JSON heading: 329.88 (table 329.88) OK
+
+-- RJTT 16L --
+DMS→dec: 353346.27N 1394719.34E → 35.56285278, 139.78870556
+JSON thresholdLatitude: 35.56285278 (table 35.56285278) OK
+JSON thresholdLongitude: 139.78870556 (table 139.78870556) OK
+JSON heading: 149.88 (table 149.88) OK
+displaced distance: 390.971 m (expect 390 ±2.0) OK
+
+-- RJTT 34R --
+DMS→dec: 353233.02N 1394811.34E → 35.54250556, 139.80315000
+JSON thresholdLatitude: 35.54250556 (table 35.54250556) OK
+JSON thresholdLongitude: 139.80315 (table 139.80315) OK
+JSON heading: 329.88 (table 329.88) OK
+displaced distance: 360.957 m (expect 360 ±2.0) OK
+
+-- RJTT 04 --
+DMS→dec: 353256.47N 1394540.60E → 35.54901944, 139.76127778
+JSON thresholdLatitude: 35.54901944 (table 35.54901944) OK
+JSON thresholdLongitude: 139.76127778 (table 139.76127778) OK
+JSON heading: 35.01 (table 35.01) OK
+
+-- RJTT 22 --
+DMS→dec: 353402.88N 1394637.61E → 35.56746667, 139.77711389
+JSON thresholdLatitude: 35.56746667 (table 35.56746667) OK
+JSON thresholdLongitude: 139.77711389 (table 139.77711389) OK
+JSON heading: 215.01 (table 215.01) OK
+
+-- RJTT 05 --
+DMS→dec: 353126.41N 1394812.47E → 35.52400278, 139.80346389
+JSON thresholdLatitude: 35.52400278 (table 35.52400278) OK
+JSON thresholdLongitude: 139.80346389 (table 139.80346389) OK
+JSON heading: 42.56 (table 42.56) OK
+
+-- RJTT 23 --
+DMS→dec: 353226.15N 1394919.61E → 35.54059722, 139.82211389
+JSON thresholdLatitude: 35.54059722 (table 35.54059722) OK
+JSON thresholdLongitude: 139.82211389 (table 139.82211389) OK
+JSON heading: 222.56 (table 222.56) OK
+
+-- RJAA 16R --
+DMS→dec: 354627.80N 1402205.85E → 35.77438889, 140.36829167
+JSON thresholdLatitude: 35.77438889 (table 35.77438889) OK
+JSON thresholdLongitude: 140.36829167 (table 140.36829167) OK
+JSON heading: 149.5 (table 149.5) OK
+
+-- RJAA 34L --
+DMS→dec: 354435.96N 1402326.66E → 35.74332222, 140.39073889
+JSON thresholdLatitude: 35.74332222 (table 35.74332222) OK
+JSON thresholdLongitude: 140.39073889 (table 140.39073889) OK
+JSON heading: 329.51 (table 329.51) OK
+
+-- RJAA 16L --
+DMS→dec: 354818.72N 1402241.19E → 35.80520000, 140.37810833
+JSON thresholdLatitude: 35.8052 (table 35.8052) OK
+JSON thresholdLongitude: 140.37810833 (table 140.37810833) OK
+JSON heading: 149.5 (table 149.5) OK
+
+-- RJAA 34R --
+DMS→dec: 354708.82N 1402331.72E → 35.78578333, 140.39214444
+JSON thresholdLatitude: 35.78578333 (table 35.78578333) OK
+JSON thresholdLongitude: 140.39214444 (table 140.39214444) OK
+JSON heading: 329.51 (table 329.51) OK
+
+=== Opposite-end lengths / reciprocal headings / parallels ===
+16R↔34L pavement 3006.409 m (expect 3000 ±15.0) OK
+16R LDA-ish landing→opp phys 2525.308 m (expect 2520 ±15.0) OK
+16R/34L heading delta 180.0000° (expect ~180 ±0.02) OK
+16L↔34R pavement 3367.594 m (expect 3360 ±15.0) OK
+16L LDA-ish landing→opp phys 2976.623 m (expect 2970 ±15.0) OK
+16L/34R heading delta 180.0000° (expect ~180 ±0.02) OK
+04↔22 pavement 2504.733 m (expect 2500 ±15.0) OK
+04 LDA-ish landing→opp phys 2504.733 m (expect 2500 ±15.0) OK
+04/22 heading delta 180.0000° (expect ~180 ±0.02) OK
+05↔23 pavement 2503.366 m (expect 2500 ±15.0) OK
+05/23 heading delta 180.0000° (expect ~180 ±0.02) OK
+16R↔34L pavement 4008.938 m (expect 4000 ±15.0) OK
+16R LDA-ish landing→opp phys 4008.938 m (expect 4000 ±15.0) OK
+16R/34L heading delta 179.9900° (expect ~180 ±0.02) OK
+16L↔34R pavement 2505.592 m (expect 2500 ±15.0) OK
+16L LDA-ish landing→opp phys 2505.592 m (expect 2500 ±15.0) OK
+16L/34R heading delta 179.9900° (expect ~180 ±0.02) OK
+parallel 16R/16L: headings [149.88, 149.88] spread 0.0000° OK
+parallel 34L/34R: headings [329.88, 329.88] spread 0.0000° OK
+parallel 16R/16L: headings [149.5, 149.5] spread 0.0000° OK
+parallel 34L/34R: headings [329.51, 329.51] spread 0.0000° OK
+
+Old 16R-derived 34L drift vs survey: 1496.1 m (must be >> 15 m)
+
+=== Result ===
+PASS: all 12 ends cross-checked

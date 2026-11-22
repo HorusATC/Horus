@@ -83,6 +83,8 @@ export interface RunwayMapGeometry {
   departureEndLongitude: number;
   extensionEndLatitude: number;
   extensionEndLongitude: number;
+  /** When false (e.g. RJTT 05), still drawn but not used for JOIN FINAL / threshold distance. */
+  usableForLanding?: boolean;
 }
 
 export function drawRunways(

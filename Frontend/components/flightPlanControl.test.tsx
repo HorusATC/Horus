@@ -33,7 +33,7 @@ describe("FlightPlanControl", () => {
         runwayInUse: "16R",
         informationIdent: "A",
         text: "ATIS",
-        availableRunways: ["16R", "34L"],
+        availableRunways: ["16R", "34L", "16L", "34R", "04", "22", "05", "23"],
       },
     ]);
   });

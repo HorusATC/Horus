@@ -313,7 +313,8 @@ paths:
       summary: "Get ATIS / runway-in-use state"
       description: >
         Returns session ATIS state for each airport that has runway catalog entries.
-        Defaults are 16R / information A. Wind and live weather are not modelled;
+        Defaults are 16R / information A. availableRunways lists surveyed catalog
+        ends (RJTT A/B/C/D and RJAA A/B). Wind and live weather are not modelled;
         the composed text states that wind and weather are not available.
         Scenario load resets state to defaults.
       responses:
@@ -616,7 +617,7 @@ components:
           type: array
           items:
             type: string
-          example: ["16R", "34L"]
+          example: ["16R", "34L", "16L", "34R", "04", "22", "05", "23"]
     UpdateAtisRequest:
       type: object
       required: [runwayInUse]

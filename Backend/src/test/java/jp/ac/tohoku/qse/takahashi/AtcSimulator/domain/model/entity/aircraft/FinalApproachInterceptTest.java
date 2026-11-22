@@ -31,7 +31,7 @@ class FinalApproachInterceptTest {
         aircraft.joinFinalApproachIntercept(
                 new FixPosition(new Latitude(35.1), new Longitude(139.1)),
                 "RJTT/16R-FA",
-                163);
+                149.88);
         assertTrue(pendingFlag(aircraft));
 
         aircraft.setDirectTo(new FixPosition(new Latitude(35.2), new Longitude(139.2)), "OTHER", false);
@@ -45,13 +45,13 @@ class FinalApproachInterceptTest {
         aircraft.joinFinalApproachIntercept(
                 new FixPosition(new Latitude(35.1), new Longitude(139.1)),
                 "RJTT/16R-FA",
-                163);
+                149.88);
 
         invokeOnDirectToTargetReached(aircraft);
 
         assertEquals(NavigationMode.HEADING, aircraft.getNavigationMode());
         assertFalse(pendingFlag(aircraft));
-        assertEquals(163, aircraft.getInstructedVector().instructedHeading.toDouble(), 0.01);
+        assertEquals(149.88, aircraft.getInstructedVector().instructedHeading.toDouble(), 0.01);
     }
 
     private static void invokeOnDirectToTargetReached(AircraftBase aircraft) throws Exception {

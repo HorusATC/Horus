@@ -171,7 +171,7 @@ Frontend/
 
 **STCA（コンフリクト）BFF**: `app/api/conflict/*` が Java `ConflictAlertController` の `/api/conflict/all`・`filtered`・`critical`・`violations`・`statistics`・`health`・`aircraft/{callsign}` へプロキシする。クライアント型・取得ヘルパーは `utility/api/conflict.ts`。
 
-**ATIS / 使用滑走路 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替可）と Operator（読取専用）に現行 ATIS 本文と使用滑走路を表示する。風・気象の造値は出さない。`JOIN FINAL`／復行／タワー移管の送信契約は従来どおり明示フィールドのまま（Operator 入力の初期表示に使用滑走路を反映するだけ）。
+**ATIS / 使用滑走路 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替可）と Operator（読取専用）に現行 ATIS 本文と使用滑走路を表示する。風・気象の造値は出さない。選択可能滑走路は Backend カタログの調査値末端（RJTT 8・RJAA 4）。既定は各空港 16R / A。`JOIN FINAL`／復行／タワー移管の送信契約は従来どおり明示フィールドのまま（Operator 入力の初期表示に使用滑走路を反映するだけ）。RJTT 05 は着陸不可のため `JOIN FINAL` は Backend が 400 を返す。
 
 **STCA 距離の単位（UI と一致）**: バックエンド `RiskAssessment` に合わせ、**水平隔離 `closestHorizontalDistance` は海里（NM）**、**鉛直隔離 `closestVerticalDistance` はフィート（ft）**、**最接近までの時間 `timeToClosest` は秒**。選択機のペア一覧は `selectedAircraftConflictsPanel.tsx`（`fetchAircraftConflicts`、位置更新と同じ 1s 間隔）。API は `pairId` 文字列ではなく `callsignA` / `callsignB` を返すため、相手機表示は構造化データで解決できる。**違反・高リスクの強通知**は `separationViolationAlerts.tsx` が `/api/conflict/all` の差分から新規ペアを検知してレーダー下にバナーを出す（約 10s で自動消去）。同一ペアは **30s クールダウン**で連打を抑制。Controller / Operator でそれぞれマウントするため通知は画面ごとに独立。
 
@@ -197,7 +197,8 @@ Frontend/
 - 航空機の位置表示
 - **履歴ドット**: 位置更新のたびに直前の緯度・経度・高度（WGS-84）をクライアント側に蓄積（最大 **120** 点）。**描画はシミュレーション時間で 10s / 20s / 30s 前**に相当するサンプルを各 1 点ずつ選ぶ（`GET /api/simulation/speed` の倍率で壁時計の遡り幅を補正。例: 10× なら約 1s / 2s / 3s 前の受信サンプル）。`CoordinateManager.calculateCanvasCoordinates` でキャンバス座標へ変換する（パン・中心座標・表示範囲の変更後も軌跡がずれない）。点の半径は `TRACK_DISPLAY_DOT_RADIUS_PX`（既定 **2px**、機体マーカー 5px より小さく）。
 - **速度ベクトル線**（針路方向の白線）の長さは、地速に対し **速度ベクトル予測時間（分）** に比例。`レーダー表示` パネルのスライダーで **0.5～10 分・0.5 分刻み**（既定 1 分）。表示のみでシミュレーション計算は変更しない（[spec/20260404-velocity-vector-line-duration/spec.md](../spec/20260404-velocity-vector-line-duration/spec.md)）。値は `localStorage` に保存し、Controller / Operator で共有。
-- **進入端までの距離・時間**: カタログ滑走路の進入廊（進入端から外側 0 NM 超〜 10 NM、左右 1.0 NM）内の機体について、データブロックの対地速度／目的地行の次に `16R 8.2NM 3:00` 形式で表示。距離は進入端までの**沿コース投影**（接地点そのものではない）。時間は現在対地速度の単純割り（1 kt 未満または 60 分以上は省略）。計算・書式の定義源は `utility/measure/rangeBearing.ts`。
+- **滑走路描画**: `GET /api/ats/runways`（BFF → Backend `/ats/runways`）の 12 末端（羽田 A/B/C/D・成田 A/B）を地図に描画。真方位・変位進入端・長さは Backend カタログに従う（値は非公式 AD 2.12 写し／AirBinder AIRAC 2611 由来で、公式 AIP in force 未照合。詳細は Backend README と [spec/20261122-runway-catalog](../spec/20261122-runway-catalog/spec.md)）。
+- **進入端までの距離・時間**: 着陸可能末端の進入廊（進入端から外側 0 NM 超〜 10 NM、左右 1.0 NM）内の機体について、データブロックの対地速度／目的地行の次に `16R 8.2NM 3:00` 形式で表示（`usableForLanding: false` の RJTT 05 は対象外）。距離は進入端までの**沿コース投影**（接地点そのものではない）。時間は現在対地速度の単純割り（1 kt 未満または 60 分以上は省略）。計算・書式の定義源は `utility/measure/rangeBearing.ts`。16R の進入端・真方位は調査値へ訂正済み（旧 163°／35.553/139.781 依存のテストも更新）。
 - **測距線（RBL）**: `レーダー表示` パネルのレンジリング設定の近くでツールをオンにし、2 クリックで始点・終点を取る（機体シンボル半径 30 px 内ならスナップ、そうでなければ緯度経度固定）。線ラベルは水平距離（小数 1 桁 + `NM`）と始点→終点の**真方位**（3 桁 + `T`）。両端が機体のときだけ水平 CPA 時間を付ける。同時表示は 1 本。解除ボタンまたは Escape で取り消し。ツールオン中はラベルドラッグを開始しない（オフ時は従来どおり）。
 - **データブロック／リーダー線の自動配置**: 新規表示時に 8 方位（N〜NW、基準長 50 px）から重なりの少ないオフセットを割り当てる（定義源 `utility/aircraft/labelPlacement.ts`）。未固定ラベルだけが他ラベル・他機シンボル・画面外と重なったときに再配置する。手動ドラッグしたラベルは `labelPinned`（`client` 所有）で固定し、以後の自動配置では動かない。ラベルのダブルクリック、またはレーダー左上の **Reset label offsets** で固定解除して再配置する。位置 API／DTO は変更しない（[spec/20261122-leader-line-auto-placement](../spec/20261122-leader-line-auto-placement/spec.md)）。
 - 経路情報の表示

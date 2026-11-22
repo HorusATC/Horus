@@ -41,6 +41,8 @@ export type RunwayApproachGeometry = {
   thresholdLongitude: number;
   /** Inbound approach course (degrees true / simulator heading). */
   approachCourseHeading: number;
+  /** When false (e.g. RJTT 05), skip threshold-distance / approach corridor. */
+  usableForLanding?: boolean;
 };
 
 function toRadians(deg: number): number {
@@ -149,6 +151,9 @@ export function findThresholdDistance(
 ): ThresholdDistanceResult | null {
   let best: ThresholdDistanceResult | null = null;
   for (const rwy of runways) {
+    if (rwy.usableForLanding === false) {
+      continue;
+    }
     const projection = projectOntoApproachCorridor(
       point,
       {

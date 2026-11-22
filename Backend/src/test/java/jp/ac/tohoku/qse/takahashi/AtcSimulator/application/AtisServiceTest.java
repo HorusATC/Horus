@@ -33,7 +33,19 @@ class AtisServiceTest {
         assertEquals("16R", rjtt.get("runwayInUse"));
         assertEquals("A", rjtt.get("informationIdent"));
         assertTrue(((String) rjtt.get("text")).contains("RUNWAY 16R"));
-        assertTrue(((List<?>) rjtt.get("availableRunways")).contains("34L"));
+        List<?> available = (List<?>) rjtt.get("availableRunways");
+        assertTrue(available.contains("34L"));
+        assertTrue(available.contains("22"));
+        assertTrue(available.contains("05"));
+        assertEquals(8, available.size());
+    }
+
+    @Test
+    void runwayChangeToCrossRunwayAdvancesIdent() {
+        Map<String, Object> updated = atisService.updateAtis("RJTT", "22", null);
+        assertEquals("22", updated.get("runwayInUse"));
+        assertEquals("B", updated.get("informationIdent"));
+        assertTrue(((String) updated.get("text")).contains("RUNWAY 22"));
     }
 
     @Test

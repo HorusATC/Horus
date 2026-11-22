@@ -14,7 +14,7 @@ const sample: atisApi.AtisState = {
   runwayInUse: "16R",
   informationIdent: "A",
   text: "Tokyo International Airport (RJTT) INFORMATION ALPHA.\nLANDING AND DEPARTURE RUNWAY 16R.\nWIND AND WEATHER NOT AVAILABLE.\nADVISE YOU HAVE INFORMATION ALPHA.",
-  availableRunways: ["16R", "34L"],
+  availableRunways: ["16R", "34L", "16L", "34R", "04", "22", "05", "23"],
 };
 
 describe("AtisPanel", () => {

@@ -50,7 +50,7 @@ class TowerHandoffTest {
                 new InstructedVector(new Heading(143), new Altitude(3000), new GroundSpeed(180)));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> aircraft.beginTowerHandoff(35.5530, 139.7810));
+                () -> aircraft.beginTowerHandoff(35.55624167, 139.77171944));
         assertTrue(ex.getMessage().contains("does not reach"));
         assertFalse(aircraft.isTowerHandoffActive());
     }

@@ -27,9 +27,9 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.GeodeticUtils;
 @DisplayName("MSAW Detector Tests")
 class MsawDetectorTest {
 
-    private static final double RJTT_THRESHOLD_LAT = 35.5530;
-    private static final double RJTT_THRESHOLD_LON = 139.7810;
-    private static final double RJTT_APPROACH_HEADING = 163.0;
+    private static final double RJTT_THRESHOLD_LAT = 35.55624167;
+    private static final double RJTT_THRESHOLD_LON = 139.77171944;
+    private static final double RJTT_APPROACH_HEADING = 149.88;
     private static final double RJTT_ELEVATION_FT = 20.0;
     private static final double FLOOR_GRADIENT_FT_PER_NM = 300.0;
 
@@ -227,9 +227,10 @@ class MsawDetectorTest {
         }
 
         @Test
-        @DisplayName("Aircraft at 1.1 NM from threshold below floor triggers LOW")
-        void testJustOutsideSuppressionZoneAtOnePointOneNm() {
-            double distanceNm = 1.1;
+        @DisplayName("Aircraft at 2.0 NM on 16R final below floor triggers LOW (outside all threshold suppressions)")
+        void testOutsideAllSuppressionZonesOnFinal() {
+            // With 12 catalog ends, 1.1 NM on 16R final is still inside RWY 22's 1 NM suppression.
+            double distanceNm = 2.0;
             double floorFt = RJTT_ELEVATION_FT + FLOOR_GRADIENT_FT_PER_NM * distanceNm;
             double[] point = pointOnFinalNm(distanceNm);
             Aircraft aircraft = createAircraft("TEST_SUPP_OUT",
@@ -238,7 +239,7 @@ class MsawDetectorTest {
 
             MsawAlert alert = msawDetector.detectAlert(aircraft);
 
-            assertNotNull(alert, "Just outside 1.0 NM suppression must still alert when below floor");
+            assertNotNull(alert, "Outside every 1.0 NM threshold suppression must alert when below floor");
             assertEquals(MsawAlertType.LOW, alert.type());
             assertEquals(MsawTrigger.CURRENT, alert.trigger());
         }

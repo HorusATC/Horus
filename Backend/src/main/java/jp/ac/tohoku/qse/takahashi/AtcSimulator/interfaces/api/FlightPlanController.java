@@ -280,8 +280,19 @@ public class FlightPlanController {
         if (!aircraftRepository.isAircraftExist(new Callsign(callsign))) {
             throw new AircraftNotFoundException(callsign);
         }
-        var runway = runwayCatalog.findRunway(request.airportIcao(), request.runwayDesignator())
-                .flatMap(runwayCatalog::buildFinalApproachGeometry);
+        var runwayDef = runwayCatalog.findRunway(request.airportIcao(), request.runwayDesignator());
+        if (runwayDef.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Runway not found: " + request.airportIcao() + " " + request.runwayDesignator()));
+        }
+        if (!runwayDef.get().usableForLanding()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message",
+                    "Runway not usable for landing: " + request.airportIcao() + " " + request.runwayDesignator()));
+        }
+        var runway = runwayCatalog.buildFinalApproachGeometry(runwayDef.get());
         if (runway.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,

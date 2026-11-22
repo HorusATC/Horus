@@ -118,12 +118,12 @@ class ScenarioServiceFlightPlanTest {
     @DisplayName("goAround climbs on runway heading and a later heading instruction clears it")
     void goAround_setsHeadingClimbThenClearsOnInstruct() {
         Aircraft aircraft = aircraftRepository.findByCallsign(new Callsign("FP01"));
-        scenarioService.goAround(new Callsign("FP01"), 35.553, 139.781, 163, 6000);
+        scenarioService.goAround(new Callsign("FP01"), 35.55624167, 139.77171944, 149.88, 6000);
 
         AircraftBase base = (AircraftBase) aircraft;
         assertThat(base.isGoAroundActive()).isTrue();
         assertThat(base.getNavigationMode()).isEqualTo(NavigationMode.HEADING);
-        assertThat(base.getInstructedVector().instructedHeading.toDouble()).isEqualTo(163);
+        assertThat(base.getInstructedVector().instructedHeading.toDouble()).isEqualTo(149.88);
         assertThat(base.getInstructedVector().instructedAltitude.toDouble()).isEqualTo(6000);
 
         scenarioService.instructAircraft(new Callsign("FP01"),
@@ -134,7 +134,7 @@ class ScenarioServiceFlightPlanTest {
     @Test
     @DisplayName("goAround rejects aircraft farther than 120 NM from the threshold")
     void goAround_rejectsWhenTooFar() {
-        assertThatThrownBy(() -> scenarioService.goAround(new Callsign("FP01"), 0, 0, 163, 6000))
+        assertThatThrownBy(() -> scenarioService.goAround(new Callsign("FP01"), 0, 0, 149.88, 6000))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
