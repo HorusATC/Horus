@@ -22,7 +22,10 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Airc
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.types.commercial.CommercialAircraft;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlan;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlanWaypoint;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldInstruction;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldLeg;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldTurnDirection;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldingPatternGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.AtsRouteFixPositionRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
@@ -185,9 +188,29 @@ public class FlightPlanController {
         return ResponseEntity.ok(body);
     }
 
+    @Operation(
+            summary = "Hold at fix",
+            description = "Instructs the aircraft to hold at the specified fix. Optional inboundCourseDeg (0 ≤ deg < 360), legMinutes or legNm (mutually exclusive; default 4.0 NM), and turnDirection LEFT/RIGHT (default RIGHT). Omitting the new fields preserves historical RIGHT / 4.0 NM / fix-name-hash inbound."
+    )
     @PostMapping(path = "/{callsign}/hold", consumes = "application/json")
     public ResponseEntity<Map<String, Object>> holdAtFix(
             @PathVariable String callsign,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "CompatibleDefault",
+                                            value = "{\"fixName\":\"ABENO\",\"turnDirection\":\"RIGHT\"}"),
+                                    @ExampleObject(
+                                            name = "LeftTimed",
+                                            value = "{\"fixName\":\"ABENO\",\"inboundCourseDeg\":209,\"legMinutes\":1.5,\"turnDirection\":\"LEFT\"}"),
+                                    @ExampleObject(
+                                            name = "DistanceLeg",
+                                            value = "{\"fixName\":\"ABENO\",\"inboundCourseDeg\":90,\"legNm\":7,\"turnDirection\":\"RIGHT\"}")
+                            }
+                    )
+            )
             @Valid @RequestBody HoldRequestDto request) {
         if (!aircraftRepository.isAircraftExist(new Callsign(callsign))) {
             throw new AircraftNotFoundException(callsign);
@@ -198,24 +221,56 @@ public class FlightPlanController {
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", "turnDirection must be RIGHT"
+                    "message", "turnDirection must be LEFT or RIGHT"
             ));
         }
-        if (turnDirection != HoldTurnDirection.RIGHT) {
+        var fieldError = request.validationMessage();
+        if (fieldError.isPresent()) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
-                    "message", "turnDirection must be RIGHT"
+                    "message", fieldError.get()
             ));
         }
-        scenarioService.holdAtFix(new Callsign(callsign), request.fixName(), turnDirection);
-        logger.info("Hold at {} for {} (turnDirection={})", request.fixName(), callsign, turnDirection);
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "callsign", callsign,
-                "targetFix", request.fixName(),
-                "navigationMode", "HOLDING",
-                "turnDirection", turnDirection.name()
-        ));
+        var instruction = new HoldInstruction(
+                request.fixName(),
+                turnDirection,
+                request.inboundCourseDeg(),
+                request.resolvedLeg()
+        );
+        Aircraft aircraft = aircraftRepository.findByCallsign(new Callsign(callsign));
+        double groundSpeedKt = aircraft.getAircraftVector().groundSpeed.toDouble();
+        if (instruction.leg() instanceof HoldLeg.TimedMinutes
+                && groundSpeedKt < HoldingPatternGeometry.MIN_GROUND_SPEED_KT_FOR_TIMED_LEG) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "legMinutes requires ground speed ≥ 1 kt"
+            ));
+        }
+        scenarioService.holdAtFix(new Callsign(callsign), instruction);
+        logger.info(
+                "Hold at {} for {} (turnDirection={}, inboundCourseDeg={}, legMinutes={}, legNm={})",
+                request.fixName(),
+                callsign,
+                turnDirection,
+                request.inboundCourseDeg(),
+                request.legMinutes(),
+                request.legNm());
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", true);
+        body.put("callsign", callsign);
+        body.put("targetFix", request.fixName());
+        body.put("navigationMode", "HOLDING");
+        body.put("turnDirection", turnDirection.name());
+        if (request.inboundCourseDeg() != null) {
+            body.put("inboundCourseDeg", request.inboundCourseDeg());
+        }
+        if (request.legMinutes() != null) {
+            body.put("legMinutes", request.legMinutes());
+        }
+        if (request.legNm() != null) {
+            body.put("legNm", request.legNm());
+        }
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping(path = "/{callsign}/final-approach", consumes = "application/json")

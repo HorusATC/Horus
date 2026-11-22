@@ -1,7 +1,7 @@
 package jp.ac.tohoku.qse.takahashi.AtcSimulator.application;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Aircraft;
-import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldTurnDirection;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldInstruction;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.InstructedVector;
 
@@ -27,7 +27,7 @@ public interface ScenarioService {
 
     void directToFix(Callsign callsign, String fixName, boolean resumeFlightPlan);
 
-    void holdAtFix(Callsign callsign, String fixName, HoldTurnDirection turnDirection);
+    void holdAtFix(Callsign callsign, HoldInstruction instruction);
 
     void resumeNavigation(Callsign callsign);
 }

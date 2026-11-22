@@ -254,7 +254,7 @@ Controller 専用。レーダーで航空機を選択すると、入力欄に当
 
 ### 4. Fix選択モード (SelectFixMode)
 
-Operator 専用。航空機の指示先 Fix をレーダー上で選択し、`Direct To` または `Hold` を選んで実行する。
+Operator 専用。航空機の指示先 Fix をレーダー上で選択し、`Direct To` または `Hold` を選んで実行する。Hold では入方向・レグ（分または NM）・旋回方向を指定する。
 
 ### 5. フライトプラン設定ページ (Flight Plan Setup)
 
@@ -262,7 +262,7 @@ Operator 専用。航空機の指示先 Fix をレーダー上で選択し、`Di
 
 ### 6. フライトプラン制御 (FlightPlanControl)
 
-Operator 専用。Direct To（Fix 名入力）、Hold At Fix（初期版: 右旋回固定のレーストラック）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、その針路のまま末端に入る機体）、Resume Navigation をバックエンドへ送信。復行中の機体はレーダーラベルに `GA`、移管後は `TWR` を出す。
+Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、その針路のまま末端に入る機体）、Resume Navigation をバックエンドへ送信。復行中の機体はレーダーラベルに `GA`、移管後は `TWR` を出す。
 
 ### 7. 経路情報表示設定 (RouteInfoDisplaySetting)
 
@@ -319,7 +319,7 @@ React Context APIを使用して、以下の状態を管理しています：
 - `GET /api/aircraft/{callsign}/flightplan` - フライトプラン取得
 - `POST /api/aircraft/{callsign}/flightplan` - フライトプラン割り当て
 - `POST /api/aircraft/{callsign}/direct-to` - 直行指示
-- `POST /api/aircraft/{callsign}/hold` - ホールディング指示（初期版は `turnDirection=RIGHT` のみ）
+- `POST /api/aircraft/{callsign}/hold` - ホールディング指示（任意: `inboundCourseDeg` / `legMinutes`|`legNm` / `turnDirection` LEFT|RIGHT。省略時は右旋回・4.0 NM・Fix名ハッシュ入方向）
 - `POST /api/aircraft/{callsign}/resume-navigation` - ナビゲーション再開
 - `POST /api/simulation/start` - シミュレーション開始
 - `POST /api/simulation/pause` - シミュレーション一時停止

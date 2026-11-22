@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: Draft
+- **Status**: Superseded (指示要素は [20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)。公示パターン等は未実装)
 - **Date**: 2026-05-09
 
 ## 概要

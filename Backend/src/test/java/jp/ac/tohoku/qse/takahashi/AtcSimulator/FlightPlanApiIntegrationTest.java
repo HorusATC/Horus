@@ -77,7 +77,7 @@ class FlightPlanApiIntegrationTest {
     private static Stream<Arguments> holdTurnCases() {
         return Stream.of(
                 Arguments.of("RIGHT", HttpStatus.OK, true, "HOLDING"),
-                Arguments.of("LEFT", HttpStatus.BAD_REQUEST, false, null)
+                Arguments.of("LEFT", HttpStatus.OK, true, "HOLDING")
         );
     }
 
@@ -445,6 +445,90 @@ class FlightPlanApiIntegrationTest {
             assertThat(response.getBody()).containsEntry("navigationMode", expectedNavigationMode);
             assertThat(response.getBody()).containsEntry("turnDirection", turnDirection);
         }
+    }
+
+    @Test
+    @DisplayName("POST /api/aircraft/{callsign}/hold accepts LEFT with inbound course and timed leg")
+    void holdAtFix_acceptsLeftInboundAndTimedLeg() {
+        spawnWithSingleWaypointFlightPlan("FPAPI01", "ABENO");
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/FPAPI01/hold",
+                Map.of(
+                        "fixName", "ABENO",
+                        "turnDirection", "LEFT",
+                        "inboundCourseDeg", 209,
+                        "legMinutes", 1.5
+                ),
+                Map.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsEntry("success", true);
+        assertThat(response.getBody()).containsEntry("navigationMode", "HOLDING");
+        assertThat(response.getBody()).containsEntry("turnDirection", "LEFT");
+        assertThat(response.getBody()).containsEntry("inboundCourseDeg", 209.0);
+        assertThat(response.getBody()).containsEntry("legMinutes", 1.5);
+    }
+
+    @Test
+    @DisplayName("POST /api/aircraft/{callsign}/hold accepts NM leg")
+    void holdAtFix_acceptsNmLeg() {
+        spawnWithSingleWaypointFlightPlan("FPAPI01", "ABENO");
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/FPAPI01/hold",
+                Map.of(
+                        "fixName", "ABENO",
+                        "inboundCourseDeg", 90,
+                        "legNm", 7.0,
+                        "turnDirection", "RIGHT"
+                ),
+                Map.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsEntry("legNm", 7.0);
+    }
+
+    private static Stream<Arguments> holdValidationErrorCases() {
+        return Stream.of(
+                Arguments.of(
+                        Map.of("fixName", "ABENO", "inboundCourseDeg", 360),
+                        "inboundCourseDeg"),
+                Arguments.of(
+                        Map.of("fixName", "ABENO", "inboundCourseDeg", -1),
+                        "inboundCourseDeg"),
+                Arguments.of(
+                        Map.of("fixName", "ABENO", "legMinutes", 1.0, "legNm", 4.0),
+                        "legMinutes"),
+                Arguments.of(
+                        Map.of("fixName", "ABENO", "legMinutes", 0),
+                        "legMinutes"),
+                Arguments.of(
+                        Map.of("fixName", "ABENO", "legNm", -2.0),
+                        "legNm"),
+                Arguments.of(
+                        Map.of("fixName", "ABENO", "legNm", 101.0),
+                        "legNm")
+        );
+    }
+
+    @ParameterizedTest(name = "body contains {1} → 400")
+    @MethodSource("holdValidationErrorCases")
+    @DisplayName("POST /api/aircraft/{callsign}/hold rejects invalid hold parameters")
+    void holdAtFix_rejectsInvalidParameters(Map<String, Object> body, String messageContains) {
+        spawnWithSingleWaypointFlightPlan("FPAPI01", "ABENO");
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                baseUrl() + "/api/aircraft/FPAPI01/hold",
+                body,
+                Map.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).containsEntry("success", false);
+        assertThat(String.valueOf(response.getBody().get("message"))).containsIgnoringCase(messageContains);
     }
 
     @Test

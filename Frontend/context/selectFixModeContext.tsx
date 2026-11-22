@@ -12,11 +12,18 @@ export interface isSelectFixMode {
   selectFixMode: boolean;
 }
 
+export interface SelectedFixGeo {
+  latitude: number;
+  longitude: number;
+}
+
 export interface SelectFixModeContextType {
   isSelectFixMode: isSelectFixMode;
   setIsSelectFixMode: React.Dispatch<React.SetStateAction<isSelectFixMode>>;
   selectedFixName: string;
   setSelectedFixName: (name: string) => void;
+  selectedFixGeo: SelectedFixGeo | null;
+  setSelectedFixGeo: (geo: SelectedFixGeo | null) => void;
 }
 
 export const SelectFixModeContext = createContext<
@@ -32,6 +39,9 @@ export const SelectFixModeProvider: React.FC<{ children: ReactNode }> = ({
     selectFixMode: false,
   });
   const [selectedFixName, setSelectedFixName] = useState(DEFAULT_FIX_NAME);
+  const [selectedFixGeo, setSelectedFixGeo] = useState<SelectedFixGeo | null>(
+    null
+  );
 
   const value = useMemo(
     () => ({
@@ -39,8 +49,10 @@ export const SelectFixModeProvider: React.FC<{ children: ReactNode }> = ({
       setIsSelectFixMode,
       selectedFixName,
       setSelectedFixName,
+      selectedFixGeo,
+      setSelectedFixGeo,
     }),
-    [isSelectFixMode, selectedFixName]
+    [isSelectFixMode, selectedFixName, selectedFixGeo]
   );
 
   return (

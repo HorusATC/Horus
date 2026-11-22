@@ -36,8 +36,8 @@ class ApiContractTest {
     private static final Path BACKEND_TEST_DIR =
             Paths.get("src/test/java").toAbsolutePath().normalize();
 
-    /** Expected raw IntegrationTest call sites on main (b295454) sources. */
-    private static final int EXPECTED_BACKEND_RAW_CALLS = 41;
+    /** Expected raw IntegrationTest call sites (hold validation + LEFT/NM acceptance). */
+    private static final int EXPECTED_BACKEND_RAW_CALLS = 44;
 
     /** Expected unique keys after normalizing callsigns to Spring path variables. */
     private static final int EXPECTED_BACKEND_NORMALIZED_UNIQUE_KEYS = 14;

@@ -22,11 +22,20 @@ export type ApplyInstructedVectorHandler = (
   indicatedAirspeedKnots: number | null
 ) => void;
 
+export interface SelectedAircraftGeo {
+  latitude: number;
+  longitude: number;
+  altitude: number;
+}
+
 export interface SelectedAircraftContextType {
   callsign: string | null;
   setCallsign: (callsign: string | null) => void;
   instructedVector: InstructedVector;
   setInstructedVector: React.Dispatch<React.SetStateAction<InstructedVector>>;
+  /** Last-selected aircraft geographic position (for Hold inbound default). */
+  selectedGeo: SelectedAircraftGeo | null;
+  setSelectedGeo: (geo: SelectedAircraftGeo | null) => void;
   speedAsIndicatedAirspeed: boolean;
   setSpeedAsIndicatedAirspeed: React.Dispatch<React.SetStateAction<boolean>>;
   applyInstructedVectorToRadar: (
@@ -56,6 +65,9 @@ export const SelectedAircraftProvider: React.FC<{ children: ReactNode }> = ({
   const [instructedVector, setInstructedVector] = useState<InstructedVector>(
     DEFAULT_INSTRUCTED_VECTOR
   );
+  const [selectedGeo, setSelectedGeo] = useState<SelectedAircraftGeo | null>(
+    null
+  );
   const [speedAsIndicatedAirspeed, setSpeedAsIndicatedAirspeed] =
     useState(false);
 
@@ -84,6 +96,8 @@ export const SelectedAircraftProvider: React.FC<{ children: ReactNode }> = ({
       setCallsign,
       instructedVector,
       setInstructedVector,
+      selectedGeo,
+      setSelectedGeo,
       speedAsIndicatedAirspeed,
       setSpeedAsIndicatedAirspeed,
       applyInstructedVectorToRadar,
@@ -92,6 +106,7 @@ export const SelectedAircraftProvider: React.FC<{ children: ReactNode }> = ({
     [
       callsign,
       instructedVector,
+      selectedGeo,
       speedAsIndicatedAirspeed,
       applyInstructedVectorToRadar,
       registerApplyInstructedVectorHandler,

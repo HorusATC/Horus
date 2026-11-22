@@ -14,6 +14,8 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.char
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.AltitudeConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlan;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlanWaypoint;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldInstruction;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldLeg;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldTurnDirection;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAction;
@@ -34,6 +36,11 @@ class FlightPlanNavigationTest {
 
     private static FixPosition fixAt(double lat, double lon) {
         return new FixPosition(new Latitude(lat), new Longitude(lon));
+    }
+
+    private static HoldInstruction rightHold(String fixName) {
+        return new HoldInstruction(
+                fixName, HoldTurnDirection.RIGHT, null, new HoldLeg.DistanceNm(HoldLeg.DEFAULT_OUTBOUND_LEG_NM));
     }
 
     private AircraftBase createTestAircraft(double lat, double lon, double alt, double heading, double speed) {
@@ -106,7 +113,7 @@ class FlightPlanNavigationTest {
             aircraft.setInstructedVector(new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.InstructedVector(
                     new Heading(90), new Altitude(7000), new GroundSpeed(230)));
 
-            aircraft.setHoldAtFix(fixAt(35.1, 139.0), "ABENO", HoldTurnDirection.RIGHT);
+            aircraft.setHoldAtFix(fixAt(35.1, 139.0), rightHold("ABENO"));
             aircraft.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
 
             assertEquals(7000, aircraft.getInstructedVector().instructedAltitude.toDouble());
@@ -118,7 +125,7 @@ class FlightPlanNavigationTest {
             var aircraft = createTestAircraft(35.0, 139.0, 5000, 0, 250);
             var holdFix = fixAt(35.0, 138.8);
 
-            aircraft.setHoldAtFix(holdFix, "ABENO", HoldTurnDirection.RIGHT);
+            aircraft.setHoldAtFix(holdFix, rightHold("ABENO"));
             aircraft.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
 
             assertTrue(
@@ -135,7 +142,7 @@ class FlightPlanNavigationTest {
                     new Altitude(35000), new GroundSpeed(450));
             aircraft.setFlightPlan(plan);
 
-            aircraft.setHoldAtFix(fixAt(35.1, 139.0), "ABENO", HoldTurnDirection.RIGHT);
+            aircraft.setHoldAtFix(fixAt(35.1, 139.0), rightHold("ABENO"));
             aircraft.setResumeNavigation();
 
             assertEquals(NavigationMode.FLIGHT_PLAN, aircraft.getNavigationMode());
@@ -151,7 +158,7 @@ class FlightPlanNavigationTest {
                     new Altitude(35000), new GroundSpeed(450));
             aircraft.setFlightPlan(plan);
 
-            aircraft.setHoldAtFix(fixAt(35.2, 139.1), "MAIKO", HoldTurnDirection.RIGHT);
+            aircraft.setHoldAtFix(fixAt(35.2, 139.1), rightHold("MAIKO"));
             aircraft.setResumeNavigation();
 
             assertEquals(NavigationMode.HEADING, aircraft.getNavigationMode());
