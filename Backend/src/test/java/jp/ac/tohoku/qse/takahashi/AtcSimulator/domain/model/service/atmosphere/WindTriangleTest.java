@@ -57,6 +57,45 @@ class WindTriangleTest {
         TAS, WindTriangle.trueAirspeedForGroundSpeed(HEADING, TAS, UniformWind.missing()), 1e-6);
   }
 
+  /**
+   * Proves wind FROM uses blows-toward θ+180 components. Flipping to +sin/+cos makes tailwind 270°/20
+   * on heading 090° behave like headwind (GS 100 kt instead of PHAK 140 kt).
+   */
+  @Test
+  void mutationGuard_windFromDirectionFormulaMatchesPhak() {
+    WindTriangle.GroundVelocity correct =
+        WindTriangle.groundVelocity(HEADING, TAS, UniformWind.measured(270, 20));
+    assertEquals(140.0, correct.groundSpeedKt(), 0.1);
+
+    double fromRad = Math.toRadians(270.0);
+    double windSpeed = 20.0;
+    double headingRad = Math.toRadians(HEADING);
+    double tasEast = TAS * Math.sin(headingRad);
+    double tasNorth = TAS * Math.cos(headingRad);
+  // Wrong mutation: treat FROM as blows-toward-from (omit negation).
+    double mutatedEast = tasEast + windSpeed * Math.sin(fromRad);
+    double mutatedNorth = tasNorth + windSpeed * Math.cos(fromRad);
+    double mutatedGs = Math.hypot(mutatedEast, mutatedNorth);
+    assertEquals(100.0, mutatedGs, 0.1, "flipped wind vector should mimic headwind");
+    assertNotEquals(correct.groundSpeedKt(), mutatedGs, 0.1);
+  }
+
+  @Test
+  void mutationGuard_wcaNonZeroOnFinalApproachCrosswind() {
+    double course = 149.88;
+    double tas = 250.0;
+    double wca = WindTriangle.windCorrectionAngleDeg(course, tas, UniformWind.measured(360, 20));
+    assertTrue(Math.abs(wca) > 0.2, "WCA must crab into crosswind on final, was " + wca);
+    assertEquals(
+        course,
+        WindTriangle.groundVelocity(
+                WindTriangle.headingToMaintainCourseDeg(course, tas, UniformWind.measured(360, 20)),
+                tas,
+                UniformWind.measured(360, 20))
+            .trackDeg(),
+        0.5);
+  }
+
   @Test
   void windMutationsChangeGroundSpeedPredictably() {
     WindTriangle.GroundVelocity baseline =

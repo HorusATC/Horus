@@ -227,13 +227,13 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/flightplan` | 既存機にフライトプランを付与・差し替え |
 | GET | `/api/aircraft/{callsign}/flightplan` | ナビモード・残ウェイポイント等 |
 | POST | `/api/aircraft/{callsign}/direct-to` | Direct To |
-| POST | `/api/aircraft/{callsign}/hold` | Hold At Fix。任意の `inboundCourseDeg`（0以上360未満）、`legMinutes` または `legNm`（同時指定不可。省略時 4.0 NM）、`turnDirection` `LEFT`/`RIGHT`（省略時 RIGHT）。省略時の入方向は Fix 名ハッシュ（運用コースではない）。フィックス到着時の針路で AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）を選び、合流後に無風・標準率（min(3°/s, バンク30°)）のレーストラック。時間レグはアビーム／ロールアウト後に計時。契約フィールドは #129 のまま（本エンドポイントは変更なし） |
-| POST | `/api/aircraft/{callsign}/final-approach` | 最終進入延長線上の会合点へ向かい、到達後に進入コース針路へ移る |
+| POST | `/api/aircraft/{callsign}/hold` | Hold At Fix。任意の `inboundCourseDeg`（0以上360未満）、`legMinutes` または `legNm`（同時指定不可。省略時 4.0 NM）、`turnDirection` `LEFT`/`RIGHT`（省略時 RIGHT）。省略時の入方向は Fix 名ハッシュ（運用コースではない）。フィックス到着時の針路で AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）を選び、合流後に標準率（min(3°/s, バンク30°)）のレーストラック。風欠測時は無風と同一。風ありではインバウンド／アウトバウンド直線レグで一次の WCA を掛け、指示オーバーレイ形状は無風式のまま。時間レグはアビーム／ロールアウト後に計時。契約フィールドは #129 のまま（本エンドポイントは変更なし） |
+| POST | `/api/aircraft/{callsign}/final-approach` | 最終進入延長線上の会合点へ向かい、到達後に進入コース針路へ移る。横風時は会合後の `HEADING` で WCA を掛け、地上トラックを進入コースに沿わせる（`JOIN FINAL` 要求形は不変） |
 | POST | `/api/aircraft/{callsign}/go-around` | 進入復行。滑走路方位のまま上昇（上昇高度は現在高度より 500 ft 以上、末端から 120NM 以内） |
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
 | POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |
-| GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路。既定は各空港 16R / A。風・実気象は無く、本文に `WIND AND WEATHER NOT AVAILABLE.` を明示。シナリオ load で既定に戻る |
-| PUT | `/api/atis/{airportIcao}` | 使用滑走路を更新（`runwayInUse` 必須）。滑走路変更時は情報識別を A→Z→A に 1 つ進める（同一滑走路の再送では進めない）。任意の `informationIdent` で明示設定可。未知の空港・滑走路は 400。JOIN FINAL／復行／タワー移管／Hold／位置 API の契約は変更しない（RJTT 05 への JOIN FINAL のみ着陸不可で 400） |
+| GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路。既定は各空港 16R / A。風は欠測（`windAvailable: false`、本文 `WIND AND WEATHER NOT AVAILABLE.`）。任意で `windDirectionDeg` / `windSpeedKt`（真方位・ノット。磁方位変換なし）。視程・QNH 等は未実装。シナリオ load で風含め既定に戻る |
+| PUT | `/api/atis/{airportIcao}` | 使用滑走路を更新（`runwayInUse` 必須）。任意 `wind`（`{ directionDeg, speedKt }` / CALM `speedKt: 0` / 欠測 `null`）。風の値が変わると両空港の情報識別を 1 つ進める（共有一様風）。滑走路のみ変更時は従来どおり当該空港のみ識別送り。`runwayInUse` のみの既存ボディは風を変えない。不明値は 400。JOIN FINAL／復行／タワー移管／Hold／位置 API の契約は変更しない（RJTT 05 への JOIN FINAL のみ着陸不可で 400） |
 | GET | `/simulation/speed` | シミュレーション時間倍率と実時間ティック間隔（ms） |
 | PUT | `/simulation/speed` | JSON `{"speedMultiplier": …}`（必須。欠落・`null` は 400）。値は離散プリセットのみ（`0.25` / `0.5` / `1` / `2` / `4` / `10`）。他は 400 |
 
@@ -245,7 +245,16 @@ npm run dev
 
 **対向派生**（`deriveReciprocal`）は、JSON に対向 designator が無いときだけのフォールバック。12 末端が揃っている現行カタログでは派生末端は作らない。
 
-**出典と発効日（公式 AIP in force 未照合）**: 定義源は JCAB AIP Japan AD 2.12 / AD 2.13。本リポジトリの値は、ログイン無しで読める AD 2.12 PDF 写し（RJTT 頁フッタ `EFF: 28 NOV 2024`、RJAA 頁フッタ `EFF: 2 OCT 2025`）と [AirBinder RJTT](https://airbinder.jp/airports/rjtt/) / [RJAA](https://airbinder.jp/airports/rjaa/) の AIRAC 2611（本文 2026-10-29、有効 2026-10-29 00:00 JST 〜 2026-11-26 00:00 JST）から採録した。**公式の AIP in force（AIS JAPAN / SWIM）とは照合していない。公式値であると主張しない。** 詳細と Python クロスチェックは [spec/20261122-runway-catalog](../spec/20261122-runway-catalog/spec.md)。風モデル（フェーズ 6-1）は未実装。
+**出典と発効日（公式 AIP in force 未照合）**: 定義源は JCAB AIP Japan AD 2.12 / AD 2.13。本リポジトリの値は、ログイン無しで読める AD 2.12 PDF 写し（RJTT 頁フッタ `EFF: 28 NOV 2024`、RJAA 頁フッタ `EFF: 2 OCT 2025`）と [AirBinder RJTT](https://airbinder.jp/airports/rjtt/) / [RJAA](https://airbinder.jp/airports/rjaa/) の AIRAC 2611（本文 2026-10-29、有効 2026-10-29 00:00 JST 〜 2026-11-26 00:00 JST）から採録した。**公式の AIP in force（AIS JAPAN / SWIM）とは照合していない。公式値であると主張しない。** 詳細と Python クロスチェックは [spec/20261122-runway-catalog](../spec/20261122-runway-catalog/spec.md)。
+
+**一様風と対地速度（フェーズ 6-1）** — [spec/20261122-uniform-wind](../spec/20261122-uniform-wind/spec.md):
+
+- セッション全体で 1 組の水平風（高度差・突風・シアーなし）。既定は **欠測** で、風導入前と同一の位置・針路・GS・待機オーバーレイ・最終進入指示になる。
+- 風向は **吹き来る真方位**（METAR 場外と同趣旨。磁偏差モデルなし・自動滑走路選定なし）。
+- `WindTriangle` が TAS・針路・風から **GS とトラック** を決め、位置はトラック方向へ進む。`vector.groundSpeed` は常に |GS|。IAS／GS 指示は無風時と同じ換算境界に風を足すのみ。
+- **WCA（一次の風向修正角）**: `JOIN FINAL` 会合後の進入コース維持、および待機のインバウンド／アウトバウンド直線レグ（旋回は機首方位の標準率のまま。レグ時間の風補正公式は未実装）。
+- ATIS 本文: 欠測 `WIND AND WEATHER NOT AVAILABLE.`、観測あり `WIND … DEGREES … KNOTS.`、静穏 `WIND CALM.`。位置 API は任意 `vector.track`（無風では `heading` と一致）。
+- PHAK 例の独立対照: `scripts/wind_triangle_reference.py`（Java `WindTriangleTest` と突合）。
 
 統合テスト: `src/test/java/.../FlightPlanApiIntegrationTest.java`、`SimulationSpeedIntegrationTest.java`（`fixtures/scenario-load-minimal.json` は [docs/test-data/scenario-load-minimal.json](docs/test-data/scenario-load-minimal.json) と同一内容）。200 機 `nextStep` 計測は `NextStepTwoHundredAircraftPerformanceTest.java`（1 ティック平均 100ms 超で失敗。多くの環境で 1ms 未満）。200 機 `getAllConflictAlerts` 計測は `ConflictDetectionTwoHundredAircraftPerformanceTest.java`（API と同経路、平均 100ms 超で失敗。README のコンフリクト目安と整合）。
 
@@ -405,7 +414,7 @@ RESTful APIを提供しており、詳細なAPI仕様は`UranosAPI.yml`ファイ
 
 - フィックス到着時の針路で AIM 5-3-8 FIG 5-3-4 の進入セクターを選ぶ（出方向からホールディング側 70°＝ティアドロップ、非ホールディング側 110°＝パラレル、残り＝ダイレクト。境界は決定論的で ±5° の任意選択はしない。左旋回は鏡像）。ダイレクトは到着後すぐ出方向旋回。ティアドロップは出方向±30°を 1.00 分（距離指定なら指示海里）飛んでから入方向へ合流。パラレルは非ホールディング側の出方向を同様に飛び、保護側へ 180° 超旋回して入方向へ戻る。2 回目のフィックス通過からレーストラック開始。
 - レーストラックは AIM 5-3-8 / FAA AIP ENR 1.5 にならい、ω = min(3°/s, バンク 30° の旋回率）で 180° 旋回し、出方向レグは旋回直径ぶんオフセットした平行レグを飛ぶ（無風。戦闘機・ヘリの高い `maxTurnRate` も待機中はこの式に落とす）。
-- 残課題（非目標）: 公示パターン（AS PUBLISHED）、EAT／EFC、風修正。
+- 残課題（非目標）: 公示パターン（AS PUBLISHED）、EAT／EFC、**待機レグ時間の公式風補正**（レグ飛行の WCA は実装済み。オーバーレイ形状は無風式のまま）。
 
 #### MSAW（最低安全高度警報・簡易版）
 

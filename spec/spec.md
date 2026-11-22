@@ -141,7 +141,7 @@
 
 | # | タスク | 優先度 | 難易度 | Issue | 実装方針のフック |
 |---|--------|--------|--------|-------|------------------|
-| 6-1 | 風と対地速度 | 🟡 | ★★☆ | [#69](https://github.com/Futty93/Horus/issues/69) | `FixedWingFlightBehavior`（または相当）への風ベクトル。ATIS／使用滑走路（6-2）とは別スライスで残課題。 |
+| 6-1 | 風と対地速度 | ✅ | ★★☆ | [#69](https://github.com/Futty93/Horus/issues/69) | 一様水平風・GS／トラック・ATIS 風欄・最終進入／待機レグ WCA。[20261122-uniform-wind](20261122-uniform-wind/spec.md)。**残り**: 高度別風・シアー・待機時間公式補正・磁方位表示。 |
 | 6-2 | ATIS 表示 | ✅ | ★☆☆ | [#71](https://github.com/Futty93/Horus/issues/71) | 使用滑走路セッション状態 + ATIS 合成 + レーダー周辺パネル（風なし）。[20261122-atis-runway-in-use](20261122-atis-runway-in-use/spec.md)。 |
 | 6-3 | 気象レーダー | 🟢 | ★★★ | [#70](https://github.com/Futty93/Horus/issues/70) | 外部データ・タイル。 |
 
@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-22 | 一様風・GS／トラック・ATIS 風欄（[20261122-uniform-wind](20261122-uniform-wind/spec.md)）。6-1 を完了扱いに更新。シアー・待機時間公式補正は残課題。 |
 | 2026-11-22 | 滑走路カタログ拡張（羽田 A/B/C/D・成田 A/B）（[20261122-runway-catalog](20261122-runway-catalog/spec.md)）。12 末端調査値、16R 数値訂正、heading double、RJTT 05 着陸拒否。公式 AIP in force 未照合。 |
 | 2026-11-22 | リーダー線・データブロックの自動配置（[20261122-leader-line-auto-placement](20261122-leader-line-auto-placement/spec.md)）。Frontend のみ。8 方位・手動固定。API 変更なし。 |
 | 2026-11-22 | 使用滑走路と ATIS 表示（風なし）（[20261122-atis-runway-in-use](20261122-atis-runway-in-use/spec.md)）。`GET`/`PUT /api/atis`、対向末端派生、レーダーパネル。6-1 風モデルは残課題。 |
