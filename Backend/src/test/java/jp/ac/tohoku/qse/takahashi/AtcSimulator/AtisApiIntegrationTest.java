@@ -156,4 +156,88 @@ class AtisApiIntegrationTest {
                 Map.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
+
+    @Test
+    void getAtisIncludesQnhAvailableFalseByDefault() {
+        ResponseEntity<List> response = restTemplate.getForEntity(baseUrl() + "/api/atis", List.class);
+        assertThat(response.getBody()).isNotNull();
+        Map<?, ?> rjtt = (Map<?, ?>) response.getBody().stream()
+                .filter(m -> "RJTT".equals(((Map<?, ?>) m).get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(rjtt.get("qnhAvailable")).isEqualTo(false);
+        assertThat(rjtt.containsKey("qnhHpa")).isFalse();
+    }
+
+    @Test
+    void putWithQnhUpdatesOnlyTargetAirport() {
+        HttpMethod put = HttpMethod.PUT;
+        ResponseEntity<Map> response = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of("runwayInUse", "16R", "qnhHpa", 1013)),
+                Map.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsEntry("qnhAvailable", true);
+        assertThat(response.getBody()).containsEntry("qnhHpa", 1013);
+        assertThat(response.getBody()).containsEntry("informationIdent", "B");
+        assertThat((String) response.getBody().get("text")).contains("QNH 1013");
+
+        ResponseEntity<List> all = restTemplate.getForEntity(baseUrl() + "/api/atis", List.class);
+        Map<?, ?> rjaa = (Map<?, ?>) all.getBody().stream()
+                .filter(m -> "RJAA".equals(((Map<?, ?>) m).get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(rjaa.get("informationIdent")).isEqualTo("A");
+        assertThat(rjaa.get("qnhAvailable")).isEqualTo(false);
+    }
+
+    @Test
+    void putQnhNullClearsObservation() {
+        HttpMethod put = HttpMethod.PUT;
+        restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of("runwayInUse", "16R", "qnhHpa", 1013)),
+                Map.class);
+        Map<String, Object> clearBody = new HashMap<>();
+        clearBody.put("runwayInUse", "16R");
+        clearBody.put("qnhHpa", null);
+        ResponseEntity<Map> cleared = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(clearBody),
+                Map.class);
+        assertThat(cleared.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(cleared.getBody()).containsEntry("qnhAvailable", false);
+        assertThat(cleared.getBody().containsKey("qnhHpa")).isFalse();
+    }
+
+    @Test
+    void putBadQnhReturns400() {
+        HttpMethod put = HttpMethod.PUT;
+        ResponseEntity<Map> response = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of("runwayInUse", "16R", "qnhHpa", 849)),
+                Map.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void putWithoutQnhKeyLeavesQnhUnchanged() {
+        HttpMethod put = HttpMethod.PUT;
+        restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of("runwayInUse", "16R", "qnhHpa", 1013)),
+                Map.class);
+        ResponseEntity<Map> again = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of("runwayInUse", "16R")),
+                Map.class);
+        assertThat(again.getBody()).containsEntry("qnhHpa", 1013);
+        assertThat(again.getBody()).containsEntry("informationIdent", "B");
+    }
 }

@@ -27,7 +27,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 - 到着機をファイナルへ誘導し、滑走路まで届ける一連の指示が出せない。
 - 速度が地速のため、ターミナルで使う指示対気速度（250／210／180／160 など）を出せない。
 - 水平間隔が 5海里固定で、レーダーサイト近傍の 3海里や後方乱気流間隔がない。到着順序の訓練に使えない。
-- 最低安全高度警報・緊急スクオーク（7500／7600／7700）・滑走路までの距離・時間・使用滑走路と ATIS、一様風による GS／トラック（6-1）は実装済み。残る気象系は高度別風・シアー・待機時間補正等。
+- 最低安全高度警報・緊急スクオーク（7500／7600／7700）・滑走路までの距離・時間・使用滑走路と ATIS（風・QNH 含む、#71）、一様風による GS／トラック（6-1）は実装済み。残る気象系は高度換算（移行高度／FL）、視程・雲、高度別風・シアー・待機時間補正等。
 
 ### なぜ今か（Motivation）
 
@@ -110,7 +110,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 
 レーダー画面の残り。
 
-- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。ATIS・使用滑走路 → Done（[20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md)）。一様風・GS／トラック → Done（[20261122-uniform-wind](../20261122-uniform-wind/spec.md)。シアー・待機時間補正は残る）。滑走路カタログ拡張（羽田 A/B/C/D・成田 A/B）→ Done（[20261122-runway-catalog](../20261122-runway-catalog/spec.md)）。リーダー線の自動配置 → Done（[20261122-leader-line-auto-placement](../20261122-leader-line-auto-placement/spec.md)）。方位目盛、セクター境界（ロードマップ 2-5、Deferred）は残課題。
+- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。ATIS・使用滑走路 → Done（[20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md)）。一様風・GS／トラック → Done（[20261122-uniform-wind](../20261122-uniform-wind/spec.md)。シアー・待機時間補正は残る）。ATIS QNH（空港ごと hPa）→ Done（[20261122-atis-qnh](../20261122-atis-qnh/spec.md)。高度換算・視程は残る）。滑走路カタログ拡張（羽田 A/B/C/D・成田 A/B）→ Done（[20261122-runway-catalog](../20261122-runway-catalog/spec.md)）。リーダー線の自動配置 → Done（[20261122-leader-line-auto-placement](../20261122-leader-line-auto-placement/spec.md)）。方位目盛、セクター境界（ロードマップ 2-5、Deferred）は残課題。
 
 訓練運用の残り。
 

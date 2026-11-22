@@ -1,5 +1,6 @@
 export const WIND_SPEED_KT_LIMITS = { min: 0, max: 99 } as const;
 export const WIND_DIRECTION_DEG_LIMITS = { min: 1, max: 360 } as const;
+export const QNH_HPA_LIMITS = { min: 850, max: 1100 } as const;
 
 export type AtisWindUpdate = {
   directionDeg?: number;
@@ -16,6 +17,8 @@ export interface AtisState {
   windAvailable: boolean;
   windDirectionDeg?: number;
   windSpeedKt?: number;
+  qnhAvailable: boolean;
+  qnhHpa?: number;
 }
 
 export const ATIS_STATE_FIELD_KEYS = {
@@ -28,12 +31,15 @@ export const ATIS_STATE_FIELD_KEYS = {
   windAvailable: true,
   windDirectionDeg: true,
   windSpeedKt: true,
+  qnhAvailable: true,
+  qnhHpa: true,
 } as const satisfies Record<keyof AtisState, true>;
 
 export interface UpdateAtisRequest {
   runwayInUse: string;
   informationIdent?: string;
   wind?: AtisWindUpdate | null;
+  qnhHpa?: number | null;
 }
 
 async function fetchJson<T>(path: string): Promise<T | null> {

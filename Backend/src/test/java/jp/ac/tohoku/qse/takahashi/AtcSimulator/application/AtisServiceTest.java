@@ -34,7 +34,10 @@ class AtisServiceTest {
         assertEquals("16R", rjtt.get("runwayInUse"));
         assertEquals("A", rjtt.get("informationIdent"));
         assertEquals(false, rjtt.get("windAvailable"));
+        assertEquals(false, rjtt.get("qnhAvailable"));
+        assertTrue(!rjtt.containsKey("qnhHpa"));
         assertTrue(((String) rjtt.get("text")).contains("RUNWAY 16R"));
+        assertTrue(((String) rjtt.get("text")).contains("WIND AND WEATHER NOT AVAILABLE"));
         List<?> available = (List<?>) rjtt.get("availableRunways");
         assertTrue(available.contains("34L"));
         assertTrue(available.contains("22"));
@@ -158,5 +161,111 @@ class AtisServiceTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> WindUpdate.set(UniformWind.measured(400, 12)));
+    }
+
+    @Test
+    void qnhSetAdvancesOnlyTargetAirportIdent() {
+        Map<String, Object> rjtt = atisService.updateAtis(
+                "RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.set(1013));
+        assertEquals(true, rjtt.get("qnhAvailable"));
+        assertEquals(1013, rjtt.get("qnhHpa"));
+        assertEquals("B", rjtt.get("informationIdent"));
+        assertTrue(((String) rjtt.get("text")).contains("QNH 1013"));
+        assertTrue(((String) rjtt.get("text")).contains("WIND NOT AVAILABLE"));
+
+        Map<String, Object> rjaa = atisService.getAllAtis().stream()
+                .filter(m -> "RJAA".equals(m.get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertEquals("A", rjaa.get("informationIdent"));
+        assertEquals(false, rjaa.get("qnhAvailable"));
+        assertTrue(((String) rjaa.get("text")).contains("WIND AND WEATHER NOT AVAILABLE"));
+    }
+
+    @Test
+    void omitQnhPreservesObservation() {
+        atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.set(1013));
+        Map<String, Object> again =
+                atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.absent());
+        assertEquals(1013, again.get("qnhHpa"));
+        assertEquals("B", again.get("informationIdent"));
+    }
+
+    @Test
+    void nullQnhClearsToMissing() {
+        atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.set(1013));
+        Map<String, Object> cleared =
+                atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.clear());
+        assertEquals(false, cleared.get("qnhAvailable"));
+        assertTrue(!cleared.containsKey("qnhHpa"));
+        assertTrue(((String) cleared.get("text")).contains("WIND AND WEATHER NOT AVAILABLE"));
+        assertEquals("C", cleared.get("informationIdent"));
+    }
+
+    @Test
+    void sameQnhResendDoesNotAdvanceIdent() {
+        atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.set(1013));
+        Map<String, Object> again =
+                atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.set(1013));
+        assertEquals("B", again.get("informationIdent"));
+    }
+
+    @Test
+    void runwayAndQnhChangeAdvancesTargetOnce() {
+        Map<String, Object> updated = atisService.updateAtis(
+                "RJTT", "34L", null, WindUpdate.absent(), QnhUpdate.set(995));
+        assertEquals("B", updated.get("informationIdent"));
+        assertEquals("34L", updated.get("runwayInUse"));
+        assertEquals(995, updated.get("qnhHpa"));
+    }
+
+    @Test
+    void windAndQnhTogetherAdvancesBothAirportsOnceForWind() {
+        Map<String, Object> rjtt = atisService.updateAtis(
+                "RJTT",
+                "16R",
+                null,
+                WindUpdate.set(UniformWind.measured(160, 12)),
+                QnhUpdate.set(1013));
+        assertEquals("B", rjtt.get("informationIdent"));
+        assertEquals(1013, rjtt.get("qnhHpa"));
+        assertTrue(((String) rjtt.get("text")).contains("WIND 160 DEGREES 12 KNOTS"));
+        assertTrue(((String) rjtt.get("text")).contains("QNH 1013"));
+        assertTrue(!((String) rjtt.get("text")).contains("WEATHER NOT AVAILABLE"));
+
+        Map<String, Object> rjaa = atisService.getAllAtis().stream()
+                .filter(m -> "RJAA".equals(m.get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertEquals("B", rjaa.get("informationIdent"));
+        assertEquals(false, rjaa.get("qnhAvailable"));
+        assertTrue(((String) rjaa.get("text")).contains("WEATHER NOT AVAILABLE"));
+    }
+
+    @Test
+    void resetToDefaultsClearsQnh() {
+        atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.set(1013));
+        atisService.resetToDefaults();
+        Map<String, Object> rjtt = atisService.getAllAtis().stream()
+                .filter(m -> "RJTT".equals(m.get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(false, rjtt.get("qnhAvailable"));
+        assertEquals("A", rjtt.get("informationIdent"));
+    }
+
+    @Test
+    void invalidQnhThrows() {
+        assertThrows(IllegalArgumentException.class, () -> QnhUpdate.set(849));
+        assertThrows(IllegalArgumentException.class, () -> QnhUpdate.set(1101));
+    }
+
+    @Test
+    void qnhDoesNotChangeSessionWind() {
+        atisService.updateAtis(
+                "RJTT", "16R", null, WindUpdate.set(UniformWind.measured(90, 8)), QnhUpdate.absent());
+        atisService.updateAtis("RJTT", "16R", null, WindUpdate.absent(), QnhUpdate.set(1013));
+        assertEquals(90, atisService.getSessionWind().directionDeg().orElseThrow());
+        assertEquals(8, atisService.getSessionWind().speedKt().orElseThrow());
     }
 }

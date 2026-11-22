@@ -37,7 +37,7 @@ class ApiContractTest {
             Paths.get("src/test/java").toAbsolutePath().normalize();
 
     /** Expected raw IntegrationTest call sites (hold validation + location holding.pattern + ATIS + depart). */
-    private static final int EXPECTED_BACKEND_RAW_CALLS = 71;
+    private static final int EXPECTED_BACKEND_RAW_CALLS = 77;
 
     /** Expected unique keys after normalizing callsigns/airport ICAO to Spring path variables. */
     private static final int EXPECTED_BACKEND_NORMALIZED_UNIQUE_KEYS = 19;

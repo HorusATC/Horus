@@ -351,11 +351,13 @@ paths:
       summary: "Get ATIS / runway-in-use state"
       description: >
         Returns session ATIS state for each airport that has runway catalog entries.
-        Defaults are 16R / information A with wind missing (windAvailable false).
-        availableRunways lists surveyed catalog ends (RJTT A/B/C/D and RJAA A/B).
-        Session-wide wind is shared across airports; windDirectionDeg and windSpeedKt
-        appear when wind is observed (calm or measured). QNH and visibility are not modelled.
-        Scenario load resets state to defaults.
+        Defaults are 16R / information A with wind missing (windAvailable false) and
+        QNH missing (qnhAvailable false). availableRunways lists surveyed catalog ends
+        (RJTT A/B/C/D and RJAA A/B). Session-wide wind is shared across airports;
+        windDirectionDeg and windSpeedKt appear when wind is observed (calm or measured).
+        Per-airport QNH (hPa) appears as qnhHpa when set; omitted when missing.
+        QNH does not alter altitude, IAS→TAS, or alert vertical geometry. Visibility
+        and other weather elements are not modelled. Scenario load resets state to defaults.
       responses:
         "200":
           description: ATIS state array
@@ -375,10 +377,13 @@ paths:
         session-wide wind (true degrees from, speed 0–99 kt). Omit wind to leave wind
         unchanged; JSON null clears wind to missing. When wind observation changes,
         information ident advances on all catalog airports once (FAA 2-9-2). Re-sending
-        the same wind does not advance ident. When runwayInUse changes and wind is
+        the same wind does not advance ident. Optional qnhHpa (integer 850–1100) sets
+        per-airport QNH; omit to leave unchanged; JSON null clears to missing. When QNH
+        changes for that airport only, that airport's ident advances once. Re-sending
+        the same QNH does not advance ident. When runwayInUse changes and wind/QNH are
         unchanged and informationIdent is omitted, only that airport's ident advances.
         Optional informationIdent sets the letter explicitly on the target airport.
-        Unknown airport or runway → 400. Invalid wind → 400.
+        Unknown airport or runway → 400. Invalid wind or out-of-range QNH → 400.
       parameters:
         - name: airportIcao
           in: path
@@ -409,6 +414,14 @@ paths:
                 value:
                   runwayInUse: "16R"
                   wind: null
+              setQnh:
+                value:
+                  runwayInUse: "16R"
+                  qnhHpa: 1013
+              clearQnh:
+                value:
+                  runwayInUse: "16R"
+                  qnhHpa: null
       responses:
         "200":
           description: Updated ATIS state
@@ -417,7 +430,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/AtisState"
         "400":
-          description: Unknown airport/runway, or invalid informationIdent
+          description: Unknown airport/runway, invalid informationIdent, wind, or QNH
 
   "/api/scenario/load":
     post:
@@ -648,7 +661,7 @@ components:
     AtisState:
       type: object
       required:
-        [airportIcao, airportName, runwayInUse, informationIdent, text, availableRunways, windAvailable]
+        [airportIcao, airportName, runwayInUse, informationIdent, text, availableRunways, windAvailable, qnhAvailable]
       properties:
         airportIcao:
           type: string
@@ -665,7 +678,12 @@ components:
           example: A
         text:
           type: string
-          description: Composed ATIS text including wind when observed; QNH not invented.
+          description: >
+            Composed ATIS text including wind and/or QNH when observed.
+            Missing wind and QNH → WIND AND WEATHER NOT AVAILABLE.
+            Wind only → wind line + WEATHER NOT AVAILABLE.
+            QNH only → WIND NOT AVAILABLE + QNH NNNN (4-digit).
+            Both → wind line + QNH NNNN.
         windAvailable:
           type: boolean
           description: false when wind is missing; true for calm or measured wind.
@@ -679,6 +697,14 @@ components:
           minimum: 0
           maximum: 99
           description: Wind speed in knots; 0 when calm; omitted when missing.
+        qnhAvailable:
+          type: boolean
+          description: false when QNH is missing; true when qnhHpa is set for this airport.
+        qnhHpa:
+          type: integer
+          minimum: 850
+          maximum: 1100
+          description: Per-airport QNH in hectopascals; omitted when missing.
         availableRunways:
           type: array
           items:
@@ -694,7 +720,7 @@ components:
         informationIdent:
           type: string
           pattern: "^[A-Za-z]$"
-          description: Optional explicit information letter. When omitted, advances only if runwayInUse changes.
+          description: Optional explicit information letter. When omitted, advances only if runwayInUse or QNH changes.
         wind:
           type: object
           nullable: true
@@ -710,6 +736,14 @@ components:
               type: integer
               minimum: 0
               maximum: 99
+        qnhHpa:
+          type: integer
+          nullable: true
+          minimum: 850
+          maximum: 1100
+          description: >
+            Optional per-airport QNH in hPa. Omitted leaves QNH unchanged. null clears to missing.
+            Range 850–1100 inclusive.
     HoldRequest:
       type: object
       required: [fixName]

@@ -5,6 +5,7 @@ import { GLOBAL_CONSTANTS } from "@/utility/globals/constants";
 import {
   fetchAtisAll,
   updateAtis,
+  QNH_HPA_LIMITS,
   WIND_DIRECTION_DEG_LIMITS,
   WIND_SPEED_KT_LIMITS,
   type AtisState,
@@ -32,6 +33,13 @@ function windInputsFromState(state: AtisState): {
       state.windDirectionDeg != null ? String(state.windDirectionDeg) : "",
     speed: state.windSpeedKt != null ? String(state.windSpeedKt) : "",
   };
+}
+
+function qnhInputFromState(state: AtisState): string {
+  if (!state.qnhAvailable || state.qnhHpa == null) {
+    return "";
+  }
+  return String(state.qnhHpa);
 }
 
 function parseWindFromInputs(
@@ -66,6 +74,23 @@ function parseWindFromInputs(
   return { ok: true, wind: { directionDeg: direction, speedKt: speed } };
 }
 
+function parseQnhFromInput(
+  qnhText: string
+): { ok: true; qnhHpa: number } | { ok: false; message: string } {
+  const qnh = Number.parseInt(qnhText.trim(), 10);
+  if (
+    !Number.isInteger(qnh) ||
+    qnh < QNH_HPA_LIMITS.min ||
+    qnh > QNH_HPA_LIMITS.max
+  ) {
+    return {
+      ok: false,
+      message: `QNH must be ${QNH_HPA_LIMITS.min}–${QNH_HPA_LIMITS.max} hPa`,
+    };
+  }
+  return { ok: true, qnhHpa: qnh };
+}
+
 const AtisPanel: React.FC<AtisPanelProps> = ({ editable }) => {
   const [states, setStates] = useState<AtisState[]>([]);
   const [selectedIcao, setSelectedIcao] = useState(DEFAULT_AIRPORT);
@@ -73,6 +98,7 @@ const AtisPanel: React.FC<AtisPanelProps> = ({ editable }) => {
   const [saving, setSaving] = useState(false);
   const [windDirection, setWindDirection] = useState("");
   const [windSpeed, setWindSpeed] = useState("");
+  const [qnhHpa, setQnhHpa] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +125,9 @@ const AtisPanel: React.FC<AtisPanelProps> = ({ editable }) => {
   const windStateKey = current
     ? `${current.airportIcao}|${current.windAvailable}|${current.windDirectionDeg ?? ""}|${current.windSpeedKt ?? ""}`
     : "";
+  const qnhStateKey = current
+    ? `${current.airportIcao}|${current.qnhAvailable}|${current.qnhHpa ?? ""}`
+    : "";
 
   useEffect(() => {
     if (current == null) {
@@ -108,6 +137,13 @@ const AtisPanel: React.FC<AtisPanelProps> = ({ editable }) => {
     setWindDirection(inputs.direction);
     setWindSpeed(inputs.speed);
   }, [current, windStateKey]);
+
+  useEffect(() => {
+    if (current == null) {
+      return;
+    }
+    setQnhHpa(qnhInputFromState(current));
+  }, [current, qnhStateKey]);
 
   const applyAtisUpdate = async (request: Parameters<typeof updateAtis>[1]) => {
     if (!editable || current == null) {
@@ -167,6 +203,31 @@ const AtisPanel: React.FC<AtisPanelProps> = ({ editable }) => {
     await applyAtisUpdate({
       runwayInUse: current.runwayInUse,
       wind: null,
+    });
+  };
+
+  const onApplyQnh = async () => {
+    const parsed = parseQnhFromInput(qnhHpa);
+    if (!parsed.ok) {
+      setError(parsed.message);
+      return;
+    }
+    if (current == null) {
+      return;
+    }
+    await applyAtisUpdate({
+      runwayInUse: current.runwayInUse,
+      qnhHpa: parsed.qnhHpa,
+    });
+  };
+
+  const onClearQnh = async () => {
+    if (current == null) {
+      return;
+    }
+    await applyAtisUpdate({
+      runwayInUse: current.runwayInUse,
+      qnhHpa: null,
     });
   };
 
@@ -272,6 +333,45 @@ const AtisPanel: React.FC<AtisPanelProps> = ({ editable }) => {
           >
             Clear
           </button>
+        </div>
+      )}
+      {editable && (
+        <div className="mb-1 flex flex-wrap items-end gap-1 border-t border-atc-border/60 pt-1">
+          <label className="flex flex-col gap-0.5 font-mono text-[10px] text-atc-text-muted">
+            QNH
+            <input
+              type="number"
+              min={QNH_HPA_LIMITS.min}
+              max={QNH_HPA_LIMITS.max}
+              className="w-16 rounded border border-atc-border bg-atc-surface-elevated px-1 py-0.5 font-mono text-[11px]"
+              value={qnhHpa}
+              disabled={saving}
+              onChange={(e) => setQnhHpa(e.target.value)}
+              aria-label="QNH hectopascals"
+              placeholder="—"
+            />
+          </label>
+          <button
+            type="button"
+            className="rounded border border-atc-accent px-1.5 py-0.5 font-mono text-[10px] text-atc-text hover:bg-atc-accent hover:text-white disabled:opacity-50"
+            disabled={saving}
+            onClick={() => void onApplyQnh()}
+          >
+            Apply QNH
+          </button>
+          <button
+            type="button"
+            className="rounded border border-atc-border px-1.5 py-0.5 font-mono text-[10px] text-atc-text-muted hover:bg-atc-surface-elevated disabled:opacity-50"
+            disabled={saving}
+            onClick={() => void onClearQnh()}
+          >
+            Clear QNH
+          </button>
+        </div>
+      )}
+      {!editable && current.qnhAvailable && current.qnhHpa != null && (
+        <div className="mb-1 font-mono text-[10px] text-atc-text-muted">
+          QNH {current.qnhHpa} hPa
         </div>
       )}
       <pre className="whitespace-pre-wrap font-mono text-[10px] leading-snug text-atc-text-muted">

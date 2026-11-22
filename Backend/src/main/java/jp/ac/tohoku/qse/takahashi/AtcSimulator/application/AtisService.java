@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.airport.RunwayDefinition;
@@ -52,7 +53,7 @@ public class AtisService {
     }
 
     public Map<String, Object> updateAtis(String airportIcao, String runwayInUse, Character informationIdent) {
-        return updateAtis(airportIcao, runwayInUse, informationIdent, WindUpdate.absent());
+        return updateAtis(airportIcao, runwayInUse, informationIdent, WindUpdate.absent(), QnhUpdate.absent());
     }
 
     public Map<String, Object> updateAtis(
@@ -60,6 +61,15 @@ public class AtisService {
             String runwayInUse,
             Character informationIdent,
             WindUpdate windUpdate) {
+        return updateAtis(airportIcao, runwayInUse, informationIdent, windUpdate, QnhUpdate.absent());
+    }
+
+    public Map<String, Object> updateAtis(
+            String airportIcao,
+            String runwayInUse,
+            Character informationIdent,
+            WindUpdate windUpdate,
+            QnhUpdate qnhUpdate) {
         String icao = normalizeIcao(airportIcao);
         if (icao.isEmpty() || runwayCatalog.findByAirportIcao(icao).isEmpty()) {
             throw new IllegalArgumentException("Unknown airport: " + airportIcao);
@@ -68,20 +78,27 @@ public class AtisService {
         if (runwayCatalog.findRunway(icao, runway).isEmpty()) {
             throw new IllegalArgumentException("Unknown runway: " + runway + " at " + icao);
         }
-        WindUpdate update = windUpdate != null ? windUpdate : WindUpdate.absent();
-        boolean windChanged = applyWindUpdate(update);
+        WindUpdate wind = windUpdate != null ? windUpdate : WindUpdate.absent();
+        QnhUpdate qnh = qnhUpdate != null ? qnhUpdate : QnhUpdate.absent();
+        boolean windChanged = applyWindUpdate(wind);
 
         if (windChanged) {
             for (String airport : catalogAirportIcaos()) {
                 AirportAtisState current = ensureDefault(airport);
                 char nextIdent = resolveIdentAfterWindChange(airport, icao, informationIdent, current);
                 String runwayForState = airport.equals(icao) ? runway : current.runwayInUse();
-                states.put(airport, new AirportAtisState(runwayForState, nextIdent));
+                Integer qnhForState = airport.equals(icao)
+                        ? resolveNextQnh(current.qnhHpa(), qnh)
+                        : current.qnhHpa();
+                states.put(airport, new AirportAtisState(runwayForState, nextIdent, qnhForState));
             }
         } else {
             AirportAtisState current = ensureDefault(icao);
-            char nextIdent = resolveIdentForRunwayOnly(icao, runway, informationIdent, current);
-            states.put(icao, new AirportAtisState(runway, nextIdent));
+            Integer nextQnh = resolveNextQnh(current.qnhHpa(), qnh);
+            boolean qnhChanged = !Objects.equals(current.qnhHpa(), nextQnh);
+            char nextIdent = resolveIdentForAirportOnly(
+                    runway, informationIdent, current, qnhChanged);
+            states.put(icao, new AirportAtisState(runway, nextIdent, nextQnh));
         }
         return toApiMap(icao, ensureDefault(icao));
     }
@@ -108,6 +125,14 @@ public class AtisService {
         };
     }
 
+    private static Integer resolveNextQnh(Integer currentQnh, QnhUpdate qnhUpdate) {
+        return switch (qnhUpdate.kind()) {
+            case ABSENT -> currentQnh;
+            case CLEAR -> null;
+            case SET -> qnhUpdate.qnhHpa();
+        };
+    }
+
     private char resolveIdentAfterWindChange(
             String airport, String targetIcao, Character informationIdent, AirportAtisState current) {
         if (airport.equals(targetIcao) && informationIdent != null) {
@@ -120,8 +145,11 @@ public class AtisService {
         return AtisTextComposer.nextIdent(current.informationIdent());
     }
 
-    private char resolveIdentForRunwayOnly(
-            String icao, String runway, Character informationIdent, AirportAtisState current) {
+    private char resolveIdentForAirportOnly(
+            String runway,
+            Character informationIdent,
+            AirportAtisState current,
+            boolean qnhChanged) {
         if (informationIdent != null) {
             char next = Character.toUpperCase(informationIdent);
             if (next < 'A' || next > 'Z') {
@@ -129,7 +157,8 @@ public class AtisService {
             }
             return next;
         }
-        if (!current.runwayInUse().equals(runway)) {
+        boolean runwayChanged = !current.runwayInUse().equals(runway);
+        if (runwayChanged || qnhChanged) {
             return AtisTextComposer.nextIdent(current.informationIdent());
         }
         return current.informationIdent();
@@ -143,7 +172,7 @@ public class AtisService {
                             .findFirst()
                             .map(RunwayDefinition::designator)
                             .orElse(DEFAULT_RUNWAY));
-            return new AirportAtisState(runway, DEFAULT_IDENT);
+            return new AirportAtisState(runway, DEFAULT_IDENT, null);
         });
     }
 
@@ -157,12 +186,22 @@ public class AtisService {
         map.put(
                 "text",
                 AtisTextComposer.compose(
-                        name, icao, state.informationIdent(), state.runwayInUse(), sessionWind));
+                        name,
+                        icao,
+                        state.informationIdent(),
+                        state.runwayInUse(),
+                        sessionWind,
+                        state.qnhHpa()));
         boolean windAvailable = !sessionWind.isMissing();
         map.put("windAvailable", windAvailable);
         if (windAvailable) {
             sessionWind.directionDeg().ifPresent(deg -> map.put("windDirectionDeg", deg));
             sessionWind.speedKt().ifPresent(kt -> map.put("windSpeedKt", kt));
+        }
+        boolean qnhAvailable = state.qnhHpa() != null;
+        map.put("qnhAvailable", qnhAvailable);
+        if (qnhAvailable) {
+            map.put("qnhHpa", state.qnhHpa());
         }
         List<String> available = runwayCatalog.findByAirportIcao(icao).stream()
                 .map(RunwayDefinition::designator)
@@ -186,6 +225,6 @@ public class AtisService {
         return airportIcao.toUpperCase(Locale.ROOT).trim();
     }
 
-    private record AirportAtisState(String runwayInUse, char informationIdent) {
+    private record AirportAtisState(String runwayInUse, char informationIdent, Integer qnhHpa) {
     }
 }

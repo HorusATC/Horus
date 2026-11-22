@@ -5,8 +5,8 @@ import java.util.Locale;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 
 /**
- * Builds ATIS text without live weather values beyond session wind.
- * Missing wind observations are stated explicitly rather than fabricated.
+ * Builds ATIS text from runway, session wind, and optional per-airport QNH.
+ * Missing observations are stated explicitly rather than fabricated.
  */
 public final class AtisTextComposer {
 
@@ -26,6 +26,16 @@ public final class AtisTextComposer {
             char informationIdent,
             String runwayInUse,
             UniformWind wind) {
+        return compose(airportName, airportIcao, informationIdent, runwayInUse, wind, null);
+    }
+
+    public static String compose(
+            String airportName,
+            String airportIcao,
+            char informationIdent,
+            String runwayInUse,
+            UniformWind wind,
+            Integer qnhHpa) {
         UniformWind sessionWind = wind != null ? wind : UniformWind.missing();
         String name = airportName == null || airportName.isBlank()
                 ? airportIcao
@@ -35,24 +45,35 @@ public final class AtisTextComposer {
         String runway = runwayInUse.toUpperCase(Locale.ROOT).trim();
         return name + " (" + icao + ") INFORMATION " + letterWord + ".\n"
                 + "LANDING AND DEPARTURE RUNWAY " + runway + ".\n"
-                + windSection(sessionWind)
+                + windAndWeatherSection(sessionWind, qnhHpa)
                 + "ADVISE YOU HAVE INFORMATION " + letterWord + ".";
     }
 
-    private static String windSection(UniformWind wind) {
-        if (wind.isMissing()) {
+    private static String windAndWeatherSection(UniformWind wind, Integer qnhHpa) {
+        boolean hasWind = !wind.isMissing();
+        boolean hasQnh = qnhHpa != null;
+        if (!hasWind && !hasQnh) {
             return "WIND AND WEATHER NOT AVAILABLE.\n";
         }
-        if (wind.isCalm()) {
-            return "WIND CALM.\nWEATHER NOT AVAILABLE.\n";
+        StringBuilder section = new StringBuilder();
+        if (!hasWind) {
+            section.append("WIND NOT AVAILABLE.\n");
+        } else if (wind.isCalm()) {
+            section.append("WIND CALM.\n");
+        } else {
+            section.append(String.format(
+                    Locale.ROOT,
+                    "WIND %03d DEGREES %d KNOTS.\n",
+                    wind.directionDegOrZero(),
+                    wind.speedKnotsOrZero()));
         }
-        int direction = wind.directionDegOrZero();
-        int speed = wind.speedKnotsOrZero();
-        return String.format(
-                Locale.ROOT,
-                "WIND %03d DEGREES %d KNOTS.\nWEATHER NOT AVAILABLE.\n",
-                direction,
-                speed);
+        if (hasQnh) {
+            // JMA METAR uses Q0995; ATIS prose keeps the QNH label with the same 4-digit integer.
+            section.append(String.format(Locale.ROOT, "QNH %04d.\n", qnhHpa));
+        } else {
+            section.append("WEATHER NOT AVAILABLE.\n");
+        }
+        return section.toString();
     }
 
     public static String phoneticWord(char informationIdent) {

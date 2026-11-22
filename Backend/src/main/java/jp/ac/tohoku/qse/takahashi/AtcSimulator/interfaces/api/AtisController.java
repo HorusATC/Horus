@@ -44,7 +44,8 @@ public class AtisController {
                     airportIcao,
                     request.getRunwayInUse(),
                     ident,
-                    request.resolveWindUpdate()));
+                    request.resolveWindUpdate(),
+                    request.resolveQnhUpdate()));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "message", ex.getMessage()));
