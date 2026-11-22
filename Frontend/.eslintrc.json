@@ -1,9 +1,25 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript",
+    "plugin:@typescript-eslint/recommended-type-checked-only"
+  ],
+  "parserOptions": {
+    "project": true,
+    "projectService": true,
+    "tsconfigRootDir": "."
+  },
   "rules": {
-    "@typescript-eslint/no-explicit-any": "error"
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/switch-exhaustiveness-check": "error"
   },
   "overrides": [
+    {
+      "files": ["**/*.{test,spec}.{ts,tsx}"],
+      "rules": {
+        "@typescript-eslint/unbound-method": "off"
+      }
+    },
     {
       "files": ["app/api/**/*.ts"],
       "rules": {

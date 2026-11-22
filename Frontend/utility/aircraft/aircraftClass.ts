@@ -67,9 +67,10 @@ type _AircraftPartitionCoversClass =
 type _AircraftPartitionNoExtras = AircraftPartitionKey extends AircraftDataKey
   ? true
   : never;
-const _aircraftPartitionBidirectional: _AircraftPartitionCoversClass &
-  _AircraftPartitionNoExtras = true;
-void _aircraftPartitionBidirectional;
+const _aircraftPartitionCovers: _AircraftPartitionCoversClass = true;
+const _aircraftPartitionNoExtras: _AircraftPartitionNoExtras = true;
+void _aircraftPartitionCovers;
+void _aircraftPartitionNoExtras;
 
 type PolledAircraftKey = {
   [K in AircraftPartitionKey]: (typeof AIRCRAFT_FIELD_PARTITION)[K] extends "polled"
