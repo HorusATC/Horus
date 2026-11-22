@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In Progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-22
 - **関連**: [spec/spec.md](../spec.md)、[spec/20261121-one-command-quickstart/spec.md](../20261121-one-command-quickstart/spec.md)、[docs/DEVELOPMENT.md](../../docs/DEVELOPMENT.md)
@@ -67,20 +67,20 @@
 
 ## 完了条件（Success Criteria）
 
-- [ ] `spec/20261122-local-quickstart/spec.md` がリポジトリにあり、実装完了後に Status が Done になっている
-- [ ] 位置 API・シナリオ読み込み・シミュレーション開始の既存の動きが変わっていない（本スライスでエンドポイントの契約を足さない・変えない）
-- [ ] ルート README の先頭に、Docker なしで完走できる手順がある。先頭が `git clone` と `cd` だけで終わらない。本文に「spawn は Swagger で行う」と書かない
-- [ ] `scripts/dev-up.sh` が、Java 21 の解決、必要なら `npm ci`、`.env.local` の用意、Backend と Frontend の起動、完了メッセージ（URL とサンプルボタン）を行う。Java 22 / 24 は選ばない
-- [ ] 次の機械的確認が、未実装では失敗し、実装後は成功する（`scripts/verify-quickstart.sh`）。
+- [x] `spec/20261122-local-quickstart/spec.md` がリポジトリにあり、実装完了後に Status が Done になっている
+- [x] 位置 API・シナリオ読み込み・シミュレーション開始の既存の動きが変わっていない（本スライスでエンドポイントの契約を足さない・変えない）
+- [x] ルート README の先頭に、Docker なしで完走できる手順がある。先頭が `git clone` と `cd` だけで終わらない。本文に「spawn は Swagger で行う」と書かない
+- [x] `scripts/dev-up.sh` が、Java 21 の解決、必要なら `npm ci`、`.env.local` の用意、Backend と Frontend の起動、完了メッセージ（URL とサンプルボタン）を行う。Java 22 / 24 は選ばない
+- [x] 次の機械的確認が、未実装では失敗し、実装後は成功する（`scripts/verify-quickstart.sh`）。
   1. ルート README の先頭 80 行に `dev-up` と `START WITH SAMPLE` があり、`docs.html` で機体を作る手順が無い
   2. 起動後に `GET http://localhost:3333/` が 200 を返し、本文に `START WITH SAMPLE (サンプルで始める)` がある
   3. 同ホストで既存の `POST /api/scenario/load`（`Frontend/data/quickstart-arrival-sample.json`）と `POST /api/simulation/start` が成功し、`GET /api/aircraft/location/all` が 5 機を返す
   4. 1〜2 秒後の再取得で、少なくとも 1 機の緯度または経度が変わっている
-- [ ] Backend README と Frontend README の起動・連携確認が、スクリプトまたは同じ少数手順を指し、初回ユーザーに Swagger での機体作成を要求しない
-- [ ] `JAVA_HOME` が空で `java` が PATH に無いとき、`~/jdk21` に 21 があればスクリプトがそれを使う
-- [ ] Frontend のテストとビルド、Backend の既存テストが合格する
-- [ ] CI の 4 ジョブが、マージするコミットの SHA で全部合格する
-- [ ] ブラウザ確認: スクリプトで起動したあと、トップのサンプルボタンを 1 回押し、Controller に到着 5 機が見える
+- [x] Backend README と Frontend README の起動・連携確認が、スクリプトまたは同じ少数手順を指し、初回ユーザーに Swagger での機体作成を要求しない
+- [x] `JAVA_HOME` が空で `java` が PATH に無いとき、`~/jdk21` に 21 があればスクリプトがそれを使う
+- [x] Frontend のテストとビルド、Backend の既存テストが合格する
+- [x] CI の 4 ジョブが、マージするコミットの SHA で全部合格する
+- [x] ブラウザ確認: スクリプトで起動したあと、トップのサンプルボタンを 1 回押し、Controller に到着 5 機が見える
 
 ## 影響範囲
 
@@ -109,10 +109,10 @@
 
 ## 検証
 
-- [ ] 完了条件の機械的確認が、実装前は失敗し、実装後は成功する
-- [ ] `JAVA_HOME` 未設定かつ `~/jdk21` あり、の条件でスクリプトが Backend を起動できる
-- [ ] ブラウザでサンプル 5 機が見える
-- [ ] API 契約を変える差分が PR に含まれていない（`git diff origin/main -- Backend/src/main` が空）
+- [x] 完了条件の機械的確認が、実装前は失敗し、実装後は成功する
+- [x] `JAVA_HOME` 未設定かつ `~/jdk21` あり、の条件でスクリプトが Backend を起動できる
+- [x] ブラウザでサンプル 5 機が見える
+- [x] API 契約を変える差分が PR に含まれていない（`git diff origin/main -- Backend/src/main` が空）
 
 ---
 

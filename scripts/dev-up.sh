@@ -167,15 +167,15 @@ wait_for_url() {
 
 kill_tree() {
   local pid="$1"
+  local sig="${2:-TERM}"
   [ -n "$pid" ] || return 0
-  # Kill descendants first, then the root (gradle/npm wrappers spawn JVMs / node).
   local kids
   kids="$(pgrep -P "$pid" 2>/dev/null || true)"
   local k
   for k in $kids; do
-    kill_tree "$k"
+    kill_tree "$k" "$sig"
   done
-  kill "$pid" 2>/dev/null || true
+  kill "-${sig}" "$pid" 2>/dev/null || true
 }
 
 free_port() {
@@ -183,7 +183,11 @@ free_port() {
   local p
   if command -v lsof >/dev/null 2>&1; then
     for p in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
-      kill_tree "$p"
+      kill_tree "$p" TERM
+    done
+    sleep 0.3
+    for p in $(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true); do
+      kill -9 "$p" 2>/dev/null || true
     done
   elif command -v fuser >/dev/null 2>&1; then
     fuser -k "${port}/tcp" 2>/dev/null || true
@@ -192,20 +196,28 @@ free_port() {
 
 cleanup() {
   local ec=$?
-  trap - EXIT INT TERM
-  printf '\nStopping Backend and Frontend...\n' >&2
-  kill_tree "${FRONTEND_PID:-}"
-  kill_tree "${BACKEND_PID:-}"
-  free_port 8080
-  free_port 3333
-  # Brief wait so listeners release before the script exits.
-  sleep 1
-  wait "${FRONTEND_PID:-}" 2>/dev/null || true
-  wait "${BACKEND_PID:-}" 2>/dev/null || true
+  trap - EXIT INT TERM HUP
+  if [ -n "${BACKEND_PID:-}" ] || [ -n "${FRONTEND_PID:-}" ]; then
+    printf '\nStopping Backend and Frontend...\n' >&2
+    # setsid leaders: negative PID signals the whole process group.
+    [ -n "${FRONTEND_PID:-}" ] && kill -TERM -"${FRONTEND_PID}" 2>/dev/null || true
+    [ -n "${BACKEND_PID:-}" ] && kill -TERM -"${BACKEND_PID}" 2>/dev/null || true
+    kill_tree "${FRONTEND_PID:-}" TERM
+    kill_tree "${BACKEND_PID:-}" TERM
+    # bootRun may hand the JVM to a Gradle daemon outside our PID tree; free ports.
+    free_port 8080
+    free_port 3333
+    [ -n "${FRONTEND_PID:-}" ] && kill -KILL -"${FRONTEND_PID}" 2>/dev/null || true
+    [ -n "${BACKEND_PID:-}" ] && kill -KILL -"${BACKEND_PID}" 2>/dev/null || true
+    kill_tree "${FRONTEND_PID:-}" KILL
+    kill_tree "${BACKEND_PID:-}" KILL
+    free_port 8080
+    free_port 3333
+  fi
   exit "$ec"
 }
 
-trap cleanup EXIT INT TERM
+trap cleanup EXIT INT TERM HUP
 
 mkdir -p "$LOG_DIR"
 
@@ -233,17 +245,14 @@ else
 fi
 
 printf 'Starting Backend (./gradlew bootRun)...\n'
-(
-  cd "${ROOT_DIR}/Backend"
-  ./gradlew bootRun --no-daemon
-) >"$BACKEND_LOG" 2>&1 &
+# New session/process group so Ctrl-C / trap can signal the whole tree.
+setsid bash -c "cd \"${ROOT_DIR}/Backend\" && exec ./gradlew bootRun --no-daemon" \
+  >"$BACKEND_LOG" 2>&1 &
 BACKEND_PID=$!
 
 printf 'Starting Frontend (npm run dev)...\n'
-(
-  cd "${ROOT_DIR}/Frontend"
-  npm run dev
-) >"$FRONTEND_LOG" 2>&1 &
+setsid bash -c "cd \"${ROOT_DIR}/Frontend\" && exec npm run dev" \
+  >"$FRONTEND_LOG" 2>&1 &
 FRONTEND_PID=$!
 
 wait_for_url "http://localhost:8080/docs.html" "Backend" 180
@@ -261,5 +270,8 @@ Press Ctrl-C to stop Backend and Frontend.
 
 EOF
 
-# Wait until either process exits (or Ctrl-C).
-wait "$BACKEND_PID" "$FRONTEND_PID"
+# Stay alive until a child dies or a signal runs the trap.
+# A sleep loop is reliably interrupted by INT/TERM (unlike some wait cases).
+while kill -0 "${BACKEND_PID}" 2>/dev/null && kill -0 "${FRONTEND_PID}" 2>/dev/null; do
+  sleep 1
+done
