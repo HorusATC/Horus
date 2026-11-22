@@ -101,7 +101,7 @@ Phase 1 で導入した静的検査を一段厳しくする。Frontend で `noUn
 - [x] ローカルゲートがすべて終了コード 0:
   - Frontend: `npm run format:check && npx tsc --noEmit && npm run lint && npm run tailwind:check && npm test && npm run build`
   - Backend（Java 21）: `./gradlew spotlessCheck test`（PR A で確認。PR B/C は Backend 差分なし）
-- [x] CI の 4 ジョブ（Detect、Backend、Frontend、Docker Compose）がその head で success（#125 / #126 済み。本 PR C は CI 待ち→緑で確定）
+- [x] CI の 4 ジョブ（Detect、Backend、Frontend、Docker Compose）がその head で success（#125 / #126 / #127）
 
 ---
 
@@ -145,7 +145,7 @@ Phase 1 で導入した静的検査を一段厳しくする。Frontend で `noUn
 - [x] PR A: 正規化後 14 キーのアサート、誤パスで契約テストが失敗すること、DTO/Aircraft 片方追加の `tsc` 失敗ログ、Phase 1 / #123 の文言（#125）
 - [x] PR B: `npx tsc --noEmit` が 0。差分に新たな `!` / 値の `as` がないこと。有効化前の再計測は 63 件・16 ファイル（main `9da904b`）
 - [x] PR C: `npm run lint` が 0。未処理 Promise（または非網羅 `switch`）の失敗ログ
-- [x] 各 PR で Frontend / Backend のゲートと CI 4/4（#125 / #126 済み。本 PR C はローカルゲート済み・CI 待ち）
+- [x] 各 PR で Frontend / Backend のゲートと CI 4/4（#125 / #126 / #127）
 - [x] 各 PR で `git diff origin/main -- Backend/src/main` が空（PR B/C: `git diff origin/main -- Backend` も空）
 
 ---
