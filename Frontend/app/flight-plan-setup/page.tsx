@@ -477,10 +477,16 @@ export default function FlightPlanSetupPage() {
         <div className="shrink-0 border-b border-[#e4d8c4] px-5 py-4">
           <FlightPlanSetupHeader count={scenario.aircraft.length} />
           <FlightPlanSetupActionBar
-            onLoadTemplate={handleLoadTemplate}
-            onLoadTemplateAndSuggest={handleLoadTemplateAndSuggest}
+            onLoadTemplate={() => {
+              void handleLoadTemplate();
+            }}
+            onLoadTemplateAndSuggest={() => {
+              void handleLoadTemplateAndSuggest();
+            }}
             onImportJson={handleImportJson}
-            onExportJson={handleExportJson}
+            onExportJson={() => {
+              void handleExportJson();
+            }}
             loadingSuggest={loadingSuggest}
             hasAircraft={scenario.aircraft.length > 0}
             dataLoadWarning={atsDataError}
@@ -493,7 +499,9 @@ export default function FlightPlanSetupPage() {
                 (aircraft) => aircraft.flightPlan.callsign
               )}
               airports={airports}
-              onSubmit={handleAddAircraft}
+              onSubmit={(draft) => {
+                void handleAddAircraft(draft);
+              }}
               onCancel={
                 scenario.aircraft.length === 0
                   ? undefined
@@ -559,7 +567,9 @@ export default function FlightPlanSetupPage() {
           )}
           <button
             type="button"
-            onClick={handleStartWithThis}
+            onClick={() => {
+              void handleStartWithThis();
+            }}
             disabled={scenario.aircraft.length === 0 || starting}
             className="w-full rounded-full bg-[#c2410c] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#9a3412] disabled:opacity-40"
           >

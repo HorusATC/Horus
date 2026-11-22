@@ -67,7 +67,7 @@ describe("Controller location poll instructedVector", () => {
 
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => [dto],
+      json: () => Promise.resolve([dto]),
     }) as unknown as typeof fetch;
 
     const updated = await fetchAircraftLocation(existing, center, range);

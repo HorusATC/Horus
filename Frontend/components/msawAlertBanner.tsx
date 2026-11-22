@@ -8,11 +8,7 @@ import {
   parseMsawAlert,
   type MsawAlertType,
 } from "@/utility/aircraft/msawAlert";
-
-type LocationRow = {
-  callsign?: string;
-  msawAlert?: { type?: string; msaFt?: number; trigger?: string } | null;
-};
+import type { AircraftLocationDto } from "@/utility/api/location";
 
 const MsawAlertBanner: React.FC = () => {
   const [activeTypes, setActiveTypes] = useState<MsawAlertType[]>([]);
@@ -29,7 +25,7 @@ const MsawAlertBanner: React.FC = () => {
         if (!response.ok) {
           return;
         }
-        const rows: LocationRow[] = await response.json();
+        const rows = (await response.json()) as AircraftLocationDto[];
         const types = new Set<MsawAlertType>();
         for (const row of rows) {
           const alert = parseMsawAlert(row.msawAlert);

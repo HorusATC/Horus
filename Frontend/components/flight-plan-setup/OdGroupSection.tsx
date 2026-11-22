@@ -162,7 +162,9 @@ export function OdGroupSection({
             <div className="flex flex-wrap gap-2 items-center">
               <button
                 type="button"
-                onClick={handleSuggestRoute}
+                onClick={() => {
+                  void handleSuggestRoute();
+                }}
                 disabled={suggesting}
                 className="px-3 py-1.5 text-xs font-bold bg-atc-accent text-white rounded
                            hover:opacity-90 disabled:opacity-50"

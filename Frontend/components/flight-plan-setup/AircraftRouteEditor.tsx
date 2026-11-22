@@ -225,7 +225,9 @@ export function AircraftRouteEditor({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={handleSuggestRoute}
+          onClick={() => {
+            void handleSuggestRoute();
+          }}
           disabled={suggesting}
           className="rounded-full bg-[#1c1915] px-4 py-2 text-sm font-semibold text-[#f4efe4] hover:bg-[#3f3830] disabled:opacity-40"
         >

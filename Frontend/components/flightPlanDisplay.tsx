@@ -14,7 +14,7 @@ const FlightPlanDisplay: React.FC = () => {
 
   const refresh = React.useCallback(() => {
     if (!callsign) return;
-    fetchFlightPlan(callsign).then(setStatus);
+    void fetchFlightPlan(callsign).then(setStatus);
   }, [callsign]);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const FlightPlanDisplay: React.FC = () => {
     setStatus(null);
     let cancelled = false;
     setLoading(true);
-    fetchFlightPlan(callsign)
+    void fetchFlightPlan(callsign)
       .then((data) => {
         if (!cancelled) setStatus(data);
       })

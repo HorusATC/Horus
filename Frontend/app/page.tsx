@@ -89,7 +89,9 @@ export default function Home() {
 
         <div className="space-y-4">
           <button
-            onClick={handleStartWithSample}
+            onClick={() => {
+              void handleStartWithSample();
+            }}
             disabled={loading}
             className="w-full rounded-lg p-6 bg-atc-accent text-white font-mono font-bold tracking-wider
                        transition-colors duration-200
@@ -103,7 +105,9 @@ export default function Home() {
             <input
               type="file"
               accept=".json"
-              onChange={handleFileUpload}
+              onChange={(e) => {
+                void handleFileUpload(e);
+              }}
               disabled={loading}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
               id="file-upload"

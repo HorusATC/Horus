@@ -29,7 +29,7 @@ async function fetchSelectedAircraftLocation(
       cache: "no-store",
     });
     if (!response.ok) return null;
-    const data: AircraftLocationDto[] = await response.json();
+    const data = (await response.json()) as AircraftLocationDto[];
     return data.find((a) => a.callsign === callsign) ?? null;
   } catch {
     return null;
