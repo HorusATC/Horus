@@ -11,11 +11,15 @@ import jakarta.validation.constraints.NotNull;
  * @param flightPlan      Flight plan definition
  * @param initialPosition Initial position (required for immediate spawn)
  * @param spawnTime       Seconds from simulation start to spawn. null or 0 = immediate. Reserved for future delayed spawn.
+ * @param procedureId     Optional catalog procedure id; when set, route is mapped like assign-procedure
+ * @param transitionId    Optional SID enroute transition id (only with procedureId)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SpawnWithFlightPlanDto(
         @Valid @NotNull FlightPlanDto flightPlan,
         @Valid InitialPositionDto initialPosition,
-        Integer spawnTime
+        Integer spawnTime,
+        String procedureId,
+        String transitionId
 ) {
 }

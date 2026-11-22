@@ -15,7 +15,7 @@ cd Horus
 1. ブラウザで [http://localhost:3333](http://localhost:3333) を開く
 2. 「**START WITH SAMPLE (サンプルで始める)**」をクリック
 
-到着機 5 機のサンプルが読み込まれ、シミュレーションが始まり、Controller レーダーへ遷移します。停止は Ctrl-C（両方のプロセスを止めます）。
+RJTT RNAV STAR（`OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`、RWY 34L/34R カタログ）を割り当てた到着機 5 機が読み込まれ、ATIS の使用滑走路は 34L に揃い、シミュレーションが始まり、Controller レーダーへ遷移します。追加の手続き割当は不要です。停止は Ctrl-C（両方のプロセスを止めます）。
 
 > Java 21 が見つからない場合は、[Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21) を入れ、`JAVA_HOME` を指すか `~/jdk21` に展開してください。Java 22 / 24 は使えません。
 
@@ -64,7 +64,7 @@ docker compose up --build
    - 2つの主要画面（役割分担を想定した訓練シミュレーション）：
      - **Controller（管制官役）**: レーダーを見ながら音声で指示を出す。自分の発出指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。
      - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume、JOIN FINAL／復行／DEPART 初期上昇／タワー移管、RJTT SID/STAR 割当（VAMOS は TATEYAMA / DRAKY トランジション可））を行う。
-   - 最初のシナリオはトップの「START WITH SAMPLE (サンプルで始める)」で開始できる。独自シナリオは Flight Plan Setup（`/flight-plan-setup`）または JSON アップロードで投入する。
+   - 最初のシナリオはトップの「START WITH SAMPLE (サンプルで始める)」で開始できる（既定サンプルは RJTT RNAV STAR `OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`・使用滑走路 34L。レーダー既定中心は RJTT）。独自シナリオは Flight Plan Setup（`/flight-plan-setup`）または JSON アップロードで投入する。
    - 詳細は `Frontend/README.md` を参照
 
 ## システムの特徴

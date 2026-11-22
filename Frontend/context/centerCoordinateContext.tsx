@@ -19,9 +19,10 @@ export const CenterCoordinateProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   // state定義はシンプルに定義し、直接プロバイダに渡す
+  // RJTT (Haneda): frames the default STAR quickstart IFs inside the 400 km range.
   const [centerCoordinate, setCenterCoordinate] = useState<Coordinate>({
-    latitude: 34.482,
-    longitude: 138.614,
+    latitude: 35.5494,
+    longitude: 139.7798,
   });
 
   return (

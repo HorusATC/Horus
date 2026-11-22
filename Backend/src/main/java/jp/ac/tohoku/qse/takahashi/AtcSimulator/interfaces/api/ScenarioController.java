@@ -4,6 +4,8 @@ import static jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.constants.AtcSimula
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,15 +20,19 @@ import org.springframework.web.bind.annotation.RestController;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.AircraftFactory;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.AtisService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.FlightPlanFromDtoConverter;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ProcedureSpawnSupport;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ScenarioService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.globals.GlobalVariables;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftBase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.types.commercial.CommercialAircraft;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlan;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.AtsRouteFixPositionRepository;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.CreateAircraftDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.FlightPlanDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.InitialPositionDto;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.ScenarioAtisSeedDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.ScenarioLoadDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.SpawnWithFlightPlanDto;
 
@@ -43,15 +49,24 @@ public class ScenarioController {
     private final FlightPlanFromDtoConverter flightPlanConverter;
     private final AtsRouteFixPositionRepository airportRepository;
     private final AtisService atisService;
+    private final ProcedureSpawnSupport procedureSpawnSupport;
+    private final RunwayCatalog runwayCatalog;
 
-    public ScenarioController(ScenarioService scenarioService, AircraftRepository aircraftRepository,
-            FlightPlanFromDtoConverter flightPlanConverter, AtsRouteFixPositionRepository airportRepository,
-            AtisService atisService) {
+    public ScenarioController(
+            ScenarioService scenarioService,
+            AircraftRepository aircraftRepository,
+            FlightPlanFromDtoConverter flightPlanConverter,
+            AtsRouteFixPositionRepository airportRepository,
+            AtisService atisService,
+            ProcedureSpawnSupport procedureSpawnSupport,
+            RunwayCatalog runwayCatalog) {
         this.scenarioService = scenarioService;
         this.aircraftRepository = aircraftRepository;
         this.flightPlanConverter = flightPlanConverter;
         this.airportRepository = airportRepository;
         this.atisService = atisService;
+        this.procedureSpawnSupport = procedureSpawnSupport;
+        this.runwayCatalog = runwayCatalog;
     }
 
     @PostMapping(path = "/load", consumes = "application/json")
@@ -74,27 +89,59 @@ public class ScenarioController {
         // Validate FlightPlan of aircraft that will be spawned; skip those without initialPosition
         for (SpawnWithFlightPlanDto ac : dto.aircraft()) {
             if (ac.initialPosition() == null) continue;
-            try {
-                flightPlanConverter.toDomain(ac.flightPlan());
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("success", false, "message", e.getMessage()));
+            if (ac.procedureId() == null || ac.procedureId().isBlank()) {
+                try {
+                    flightPlanConverter.toDomain(ac.flightPlan());
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("success", false, "message", e.getMessage()));
+                }
             }
+        }
+
+        ProcedureSpawnSupport.ResolveResult[] resolved = new ProcedureSpawnSupport.ResolveResult[dto.aircraft().size()];
+        for (int i = 0; i < dto.aircraft().size(); i++) {
+            SpawnWithFlightPlanDto ac = dto.aircraft().get(i);
+            if (ac.initialPosition() == null) {
+                resolved[i] = ProcedureSpawnSupport.ResolveResult.none();
+                continue;
+            }
+            ProcedureSpawnSupport.ResolveResult result = procedureSpawnSupport.resolve(ac);
+            if (result.kind() == ProcedureSpawnSupport.ResolveKind.NOT_FOUND) {
+                return ResponseEntity.notFound().build();
+            }
+            if (result.kind() == ProcedureSpawnSupport.ResolveKind.BAD_REQUEST) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", result.message()));
+            }
+            resolved[i] = result;
+        }
+
+        ResponseEntity<Map<String, Object>> atisError = validateAtisSeeds(dto.atis());
+        if (atisError != null) {
+            return atisError;
         }
 
         GlobalVariables.isSimulationRunning = false;
         aircraftRepository.clear();
         atisService.resetToDefaults();
+        applyAtisSeeds(dto.atis());
 
         int count = 0;
-        for (SpawnWithFlightPlanDto ac : dto.aircraft()) {
+        for (int i = 0; i < dto.aircraft().size(); i++) {
+            SpawnWithFlightPlanDto ac = dto.aircraft().get(i);
             if (ac.initialPosition() == null) {
                 logger.warn("Skipping aircraft {}: missing initialPosition", ac.flightPlan().callsign());
                 continue;
             }
-            FlightPlan fp = flightPlanConverter.toDomain(ac.flightPlan());
-            var aircraft = createAircraftFromSpawn(ac.flightPlan(), ac.initialPosition());
-            aircraft.setFlightPlan(fp);
+            CommercialAircraft aircraft = createAircraftFromSpawn(ac.flightPlan(), ac.initialPosition());
+            ProcedureSpawnSupport.ResolveResult result = resolved[i];
+            if (result.kind() == ProcedureSpawnSupport.ResolveKind.OK) {
+                procedureSpawnSupport.apply((AircraftBase) aircraft, result.mapped());
+            } else {
+                FlightPlan fp = flightPlanConverter.toDomain(ac.flightPlan());
+                aircraft.setFlightPlan(fp);
+            }
             scenarioService.spawnAircraft(aircraft);
             count++;
         }
@@ -106,6 +153,40 @@ public class ScenarioController {
         body.put("aircraftCount", count);
         body.put("message", "Scenario loaded successfully");
         return ResponseEntity.ok(body);
+    }
+
+    private ResponseEntity<Map<String, Object>> validateAtisSeeds(List<ScenarioAtisSeedDto> seeds) {
+        if (seeds == null || seeds.isEmpty()) {
+            return null;
+        }
+        for (ScenarioAtisSeedDto seed : seeds) {
+            String icao = seed.icao() == null ? "" : seed.icao().trim().toUpperCase(Locale.ROOT);
+            String runway = seed.runwayInUse() == null
+                    ? ""
+                    : seed.runwayInUse().trim().toUpperCase(Locale.ROOT);
+            if (icao.isEmpty() || runwayCatalog.findByAirportIcao(icao).isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Unknown airport: " + seed.icao()));
+            }
+            if (runwayCatalog.findRunway(icao, runway).isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of(
+                                "success",
+                                false,
+                                "message",
+                                "Unknown runway: " + runway + " at " + icao));
+            }
+        }
+        return null;
+    }
+
+    private void applyAtisSeeds(List<ScenarioAtisSeedDto> seeds) {
+        if (seeds == null || seeds.isEmpty()) {
+            return;
+        }
+        for (ScenarioAtisSeedDto seed : seeds) {
+            atisService.updateAtis(seed.icao(), seed.runwayInUse(), null);
+        }
     }
 
     private CommercialAircraft createAircraftFromSpawn(FlightPlanDto fpDto, InitialPositionDto pos) {

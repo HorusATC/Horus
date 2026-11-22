@@ -12,7 +12,8 @@ import { useRblTool } from "@/context/rblToolContext";
 import { useVelocityVectorLookahead } from "@/context/velocityVectorLookaheadContext";
 
 const RadarViewSetting = () => {
-  const [selectedSector, setSelectedSector] = useState("T09");
+  // Label only until the user picks a sector; initial radar center is RJTT (see CenterCoordinateProvider).
+  const [selectedSector, setSelectedSector] = useState("RJTT");
   const { displayRange } = useDisplayRange();
   const { rangeRingsSetting } = useRangeRingsSetting();
   const { toolEnabled: rblToolEnabled } = useRblTool();

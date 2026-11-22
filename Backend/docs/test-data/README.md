@@ -33,6 +33,8 @@
 
 | ファイル | 用途 |
 |----------|------|
+| quickstart-arrival-sample.json | 既定 START WITH SAMPLE 相当。OSHIMA1A / AKSEL1K / AROSA2C / AKSEL2C / GODIN2A + ATIS `34L`（`Frontend/data/` と同内容） |
+| quickstart-arrival-open-vector.json | 旧い空ルート到着 5 機（非既定。アップロード比較用） |
 | scenario-load-minimal.json | `POST /api/scenario/load` 用。1 機・空の route（Swagger / 手動の最小例）。コールサイン `SCLOAD01` |
 | spawn-with-flightplan-sample.json | T09 セクター（伊豆・駿河湾付近）。KOITO→BOKJO→AOIKU。spawn は KOITO 東約 5km |
 | spawn-with-flightplan-minimal.json | T09 最短テスト（KOITO→UNAGI）。spawn は KOITO 東約 5km、約 1 分で KOITO 通過 |

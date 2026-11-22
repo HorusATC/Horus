@@ -14,7 +14,7 @@
 
 **SID / STAR 割当**: Operator の `procedureAssignControl` から RJTT RNAV STAR / VAMOS FOUR を選択して割当。VAMOS 各滑走路 SID には **TATEYAMA / DRAKY** エンルート・トランジションが選べる（接続点 VAMOS）。割当経路は飛行計画パネル（割当直後に更新）とレーダー折れ線に出る。VAMOS の VA は公示高度到達まで真方位を保持してから DF/TF。VISIP・公示ホールド自動・KIAS 自動適用は未実装。出典は README / データファイルのみ（UI 警告バナーなし）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
 
-最初のシナリオはトップの「**START WITH SAMPLE (サンプルで始める)**」で開始できる。独自シナリオは **Flight Plan Setup**（`/flight-plan-setup`）またはトップの JSON アップロードで投入する。
+最初のシナリオはトップの「**START WITH SAMPLE (サンプルで始める)**」で開始できる。既定サンプル（`data/quickstart-arrival-sample.json`）は RJTT RNAV STAR **`OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`**（RWY 34L/34R）到着 5 機で、シナリオ読込時に ATIS 使用滑走路を **34L** に揃える。POLIX 系は CHIPS フィーダー共有による STCA を避けるため既定に含めない。レーダー既定中心は RJTT。VAMOS 出発機は既定に含めない。旧い空ルートサンプルは `data/quickstart-arrival-open-vector.json`（および `public/samples/`）に残しており、JSON アップロードで読める。独自シナリオは **Flight Plan Setup**（`/flight-plan-setup`）またはトップの JSON アップロードで投入する。
 
 ## 技術スタック
 
@@ -130,12 +130,12 @@ npm run dev:clean
 http://localhost:3333
 ```
 
-トップの「START WITH SAMPLE (サンプルで始める)」で到着サンプル 5 機を開始できます。
+トップの「START WITH SAMPLE (サンプルで始める)」で RJTT RNAV STAR 到着サンプル 5 機（OSHIMA1A / AKSEL1K / AROSA2C / AKSEL2C / GODIN2A、使用滑走路 34L）を開始できます。
 
 6. テストの実行
 
 ```bash
-npm test  # Jest によるテストを実行 (31 suites, 168 tests: jsdom + node environments)
+npm test  # Jest によるテストを実行 (jsdom + node environments)
 ```
 
 テストは Jest で実行されます。通常のコンポーネントテストは jsdom 環境で、App Router の route handler tests (`route.test.ts`) は node 環境で実行されます。
