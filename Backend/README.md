@@ -210,7 +210,7 @@ npm run dev
 
 1. ルートで `./scripts/dev-up.sh`（または Backend / Frontend を個別起動）
 2. ブラウザで http://localhost:3333 を開く
-3. 「**START WITH SAMPLE (サンプルで始める)**」をクリックし、Controller に RJTT RNAV STAR 到着 5 機（経路折れ線あり・ATIS 使用滑走路 34L）が表示されることを確認
+3. 「**START WITH SAMPLE (サンプルで始める)**」をクリックし、Controller に RJTT RNAV STAR 到着 5 機（OSHIMA1A / AKSEL1K / AROSA2C / AKSEL2C / GODIN2A、経路折れ線あり・ATIS 使用滑走路 34L）が表示されることを確認
 
 ### フライトプラン機能のマニュアルテスト
 

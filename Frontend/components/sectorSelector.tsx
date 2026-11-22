@@ -5,6 +5,7 @@ import { useState } from "react";
 export const sectorCenterCoordinates: {
   [key: string]: { latitude: number; longitude: number };
 } = {
+  RJTT: { latitude: 35.5494, longitude: 139.7798 },
   T09: { latitude: 34.482, longitude: 138.614 },
   T10: { latitude: 33.041, longitude: 139.456 },
   T14: { latitude: 33.667, longitude: 137.918 },
@@ -65,7 +66,7 @@ const SectorSelector = ({
   value,
   onChange,
 }: SectorSelectorProps) => {
-  const [internalSector, setInternalSector] = useState("T09");
+  const [internalSector, setInternalSector] = useState("RJTT");
   const { setCenterCoordinate } = useCenterCoordinate();
 
   const isControlled = value !== undefined && onChange !== undefined;

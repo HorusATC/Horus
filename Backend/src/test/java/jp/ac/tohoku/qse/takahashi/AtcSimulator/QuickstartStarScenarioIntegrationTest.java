@@ -21,19 +21,27 @@ import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ConflictAlertService;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.SimulationTiming;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.globals.GlobalVariables;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Aircraft;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftBase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.AltitudeConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlanWaypoint;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.msaw.MsawDetector;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.ProcedureCatalog;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.ConflictAlertDto;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
 class QuickstartStarScenarioIntegrationTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final int CONFLICT_FREE_SIM_SECONDS = 600;
+    private static final List<String> EXPECTED_PROCEDURE_IDS =
+            List.of("OSHIMA1A", "AKSEL1K", "AROSA2C", "AKSEL2C", "GODIN2A");
 
     @LocalServerPort
     private int port;
@@ -46,6 +54,12 @@ class QuickstartStarScenarioIntegrationTest {
 
     @Autowired
     private ProcedureCatalog procedureCatalog;
+
+    @Autowired
+    private ConflictAlertService conflictAlertService;
+
+    @Autowired
+    private MsawDetector msawDetector;
 
     private String baseUrl() {
         return "http://localhost:" + port;
@@ -66,8 +80,10 @@ class QuickstartStarScenarioIntegrationTest {
     @Test
     void sampleJsonProcedureIdsExistInCatalog() throws Exception {
         JsonNode root = readQuickstartSample();
+        List<String> ids = new java.util.ArrayList<>();
         for (JsonNode aircraft : root.get("aircraft")) {
             String procedureId = aircraft.get("procedureId").asText();
+            ids.add(procedureId);
             assertThat(procedureCatalog.findById(procedureId))
                     .as("catalog must contain %s", procedureId)
                     .isPresent();
@@ -75,6 +91,7 @@ class QuickstartStarScenarioIntegrationTest {
                     .as("%s must be assignable", procedureId)
                     .isTrue();
         }
+        assertThat(ids).containsExactlyElementsOf(EXPECTED_PROCEDURE_IDS);
     }
 
     @Test
@@ -112,6 +129,32 @@ class QuickstartStarScenarioIntegrationTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(rjtt.get("runwayInUse")).isEqualTo("34L");
+    }
+
+    @Test
+    void defaultSampleStaysConflictAndMsawFreeForTenSimulatedMinutes() throws Exception {
+        JsonNode root = readQuickstartSample();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = OBJECT_MAPPER.convertValue(root, Map.class);
+
+        ResponseEntity<Map> load = restTemplate.postForEntity(
+                baseUrl() + "/api/scenario/load", body, Map.class);
+        assertThat(load.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(aircraftRepository.findAll()).hasSize(5);
+
+        GlobalVariables.isSimulationRunning = true;
+        double dt = SimulationTiming.SIM_DELTA_SECONDS;
+        for (int second = 0; second <= CONFLICT_FREE_SIM_SECONDS; second++) {
+            assertConflictAndMsawClean(second);
+            if (second == CONFLICT_FREE_SIM_SECONDS) {
+                break;
+            }
+            for (Aircraft aircraft : aircraftRepository.findAll()) {
+                AircraftBase base = (AircraftBase) aircraft;
+                base.calculateNextAircraftVector(dt);
+                base.calculateNextAircraftPosition(dt);
+            }
+        }
     }
 
     @Test
@@ -171,6 +214,18 @@ class QuickstartStarScenarioIntegrationTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(rjtt.get("runwayInUse")).isEqualTo("16R");
+    }
+
+    private void assertConflictAndMsawClean(int simSecond) {
+        List<ConflictAlertDto> violations = conflictAlertService.getSeparationViolationAlerts();
+        assertThat(violations)
+                .as("conflict/violations must stay empty at t=%ds", simSecond)
+                .isEmpty();
+        for (Aircraft aircraft : aircraftRepository.findAll()) {
+            assertThat(msawDetector.detectAlert(aircraft))
+                    .as("MSAW must stay clean for %s at t=%ds", aircraft.getCallsign(), simSecond)
+                    .isNull();
+        }
     }
 
     private JsonNode readQuickstartSample() throws Exception {

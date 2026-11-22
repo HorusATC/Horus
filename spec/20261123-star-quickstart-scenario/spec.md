@@ -41,13 +41,15 @@
 
 1. **既定の START WITH SAMPLE を STAR 到着シナリオにする**
    - 機数は **5 機のまま**（`verify-quickstart.sh` の台数契約を維持する）。コールサインは現行どおり ANA101 / JAL202 / SKY303 / ANA404 / JAL505 でよい。
-   - 5 機はいずれも RJTT 向け到着で、カタログにある RNAV STAR を 1 機 1 本割り当てる。進入方向と端末（ARLON / KAIHO / CREAM）が偏らないよう、次を推奨する（実装で同分の入方向に差し替えてもよいが、テストのゴールデンは 1 組に固定する）。
-     - ANA101: `OSHIMA1A`（IF XAC）
-     - JAL202: `AKSEL1K`（IF AKSEL、端末 KAIHO）
-     - SKY303: `AROSA2C`（IF AROSA、端末 CREAM）
-     - ANA404: `POLIX2A`（IF POLIX、AT FL150）
-     - JAL505: `GODIN2A`（IF GODIN）
-   - 初期位置は、その手続きの **IF のカタログ座標**（`waypoints.json` / 手続きカタログ。新規の座標を作らない）。初期針路は **次の TF の公示真方位**（測地／真の枠。偏差は適用しない）。初期高度は、IF に公示高度があるときはそれに合わせる（AKSEL 1K は AT 12000、POLIX 2A は FL150 のマッピングどおり 15000）。IF に高度が無い手続き（OSHIMA / AROSA / GODIN）は、最初の下流制約を下回らない巡航高度をシナリオに書く（例: OSHIMA は ANZAC の AT 13000 以上、AROSA は AVEEY の AT 11000 以上、GODIN は CHIPS の AT OR BELOW 13000 に向けて 13000 以下へ降りる前の巡航。数字はテストで固定し、AIP の未記載高度を「公示」と書かない）。
+   - 5 機はいずれも RJTT 向け到着で、カタログにある RNAV STAR を 1 機 1 本割り当てる。**最終ゴールデン（STCA 無し・10 シミュレーション分）**:
+     - ANA101: `OSHIMA1A`（IF XAC → ARLON）
+     - JAL202: `AKSEL1K`（IF AKSEL → KAIHO、公示 AT 12000）
+     - SKY303: `AROSA2C`（IF AROSA → CREAM）
+     - ANA404: `AKSEL2C`（IF AKSEL → CREAM。`AKSEL1K` と同一 IF だが最初の TF が CLONE で分岐。高度は `AKSEL1K` より 1000 ft 以上）
+     - JAL505: `GODIN2A`（IF GODIN → ARLON。北からの単独フィーダー）
+   - **POLIX 系は既定サンプルに入れない**（GODIN と CHIPS–COLOR… を共有し、起動直後から STCA になるため。`POLIX2A` の代わりに `AKSEL2C` を使う）。
+   - 既定サンプルはロード後 **少なくとも 10 シミュレーション分**、`GET /api/conflict/violations` が空で、MSAW もクリーンであること（Backend 統合テストで固定）。終端付近の経路合流は、その間に STCA 予測が出なければ許容する。
+   - 初期位置は、その手続きの **IF のカタログ座標**（`waypoints.json` / 手続きカタログ。新規の座標を作らない）。初期針路は **次の TF の公示真方位**（測地／真の枠。偏差は適用しない）。初期高度は、IF に公示高度があるときはそれに合わせる（AKSEL 1K は AT 12000）。IF に高度が無い手続き（OSHIMA / AROSA / AKSEL2C / GODIN）は、最初の下流制約を下回らない巡航高度をシナリオに書く（例: OSHIMA1A は ANZAC の AT 13000 以上、AROSA は AVEEY の AT 11000 以上、AKSEL2C は同一 IF の AKSEL1K より 1000 ft 以上、GODIN は CHIPS の AT OR BELOW 13000 に向けて降りる前の巡航。数字はテストで固定し、AIP の未記載高度を「公示」と書かない）。
    - 対地速度は既存サンプルと同程度（260–300 kt 程度）でよい。垂直速度は、次の高度制約に向けて緩やかな降下でも、一時的に 0 でもよい。
    - 既定ボタンは VAMOS 出発機を入れない（`DEPART` との結合は #139 の非目標のまま）。VISIP も入れない。
 
@@ -98,15 +100,17 @@
    - `procedureId` 付きのシナリオ（またはスポーン）をロードすると、飛行計画ルートが `assign-procedure` と同じマッピングになる。ゴールデン: 上記 5 機のうち少なくとも OSHIMA 1A のフィックス順と高度制約。KIAS は `speed` に入らない。
    - 未知の `procedureId` は 400 または 404。
    - STAR 既定サンプルをロードすると、`GET /api/atis` の RJTT 使用滑走路が仕様で固定した 34L（または 34R）である。シードの無い既存シナリオでは 16R のまま。
+   - 既定サンプルは 10 シミュレーション分間、conflict violations 空・MSAW クリーン（統合テスト）。
    - 既存のシナリオ読込・ATIS・割当テストは契約を緩めずに通る。
 2. **Frontend**
    - 型検査（または既定の静的検査）と Frontend ビルドが通る。
    - トップの START WITH SAMPLE は新しい STAR サンプルを使う。追加の割当クリックなしで、Controller レーダーに 5 機の経路折れ線が見える（スクリーンショットまたはブラウザ確認）。警告バナーは無い。
+   - 既定レーダー中心は RJTT 付近とし、既定 400 km レンジで 5 機の IF が視野に入る。
 3. **クイックスタート**
    - `dev-up` → START WITH SAMPLE の手順は変わらない。
    - `scripts/verify-quickstart.sh --readme-only` および（サーバ起動時の）`--live` が合格する（5 機、位置が動く、README 先頭契約）。
 4. **文書**
-   - README が既定サンプルの内容（STAR、使用滑走路）を説明する。ギャップ台帳の SID／STAR 行を更新する。未実装を実装済みと書かない。
+   - README が既定サンプルの最終 STAR セット（OSHIMA1A / AKSEL1K / AROSA2C / AKSEL2C / GODIN2A）と使用滑走路を説明する。ギャップ台帳の SID／STAR 行を更新する。未実装を実装済みと書かない。
 5. **CI**
    - 4 ジョブがマージ SHA で合格する。
 

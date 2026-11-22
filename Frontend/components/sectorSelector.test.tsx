@@ -27,8 +27,8 @@ describe("SectorSelector", () => {
       </CenterCoordinateProvider>
     );
 
-    expect(screen.getByTestId("lat")).toHaveTextContent("34.482");
-    expect(screen.getByTestId("lon")).toHaveTextContent("138.614");
+    expect(screen.getByTestId("lat")).toHaveTextContent("35.5494");
+    expect(screen.getByTestId("lon")).toHaveTextContent("139.7798");
 
     const select = screen.getByRole("combobox");
     await user.selectOptions(select, "T10");

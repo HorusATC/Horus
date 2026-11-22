@@ -1,6 +1,6 @@
 {
   "scenarioName": "Quickstart RJTT RNAV STAR Sample",
-  "description": "Default START WITH SAMPLE: five RJTT RNAV STAR arrivals (RWY 34L/34R catalog) with ATIS runway 34L. Procedure routes come from aip/rjtt-sid-star-20261101.json; IF coordinates from waypoints.json. Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.",
+  "description": "Default START WITH SAMPLE: five RJTT RNAV STAR arrivals (OSHIMA1A, AKSEL1K, AROSA2C, AKSEL2C, GODIN2A) with ATIS runway 34L. POLIX omitted so no shared CHIPS feeder pair; AKSEL1K/AKSEL2C share the AKSEL IF with vertical separation and diverge at the first TF. IF coordinates from waypoints.json; routes from aip/rjtt-sid-star-20261101.json. Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.",
   "atis": [
     {
       "icao": "RJTT",
@@ -25,7 +25,7 @@
         "altitude": 14000,
         "heading": 61,
         "groundSpeed": 280,
-        "verticalSpeed": -500
+        "verticalSpeed": 0
       }
     },
     {
@@ -55,35 +55,35 @@
         "aircraftType": "B737",
         "departureAirport": "RJBB",
         "arrivalAirport": "RJTT",
-        "cruiseAltitude": 13000,
+        "cruiseAltitude": 17000,
         "cruiseSpeed": 260,
         "route": []
       },
       "initialPosition": {
         "latitude": 34.700478,
         "longitude": 140.699247,
-        "altitude": 13000,
+        "altitude": 17000,
         "heading": 270,
         "groundSpeed": 260,
-        "verticalSpeed": -500
+        "verticalSpeed": 0
       }
     },
     {
-      "procedureId": "POLIX2A",
+      "procedureId": "AKSEL2C",
       "flightPlan": {
         "callsign": "ANA404",
         "aircraftType": "A320",
         "departureAirport": "RJFK",
         "arrivalAirport": "RJTT",
-        "cruiseAltitude": 15000,
+        "cruiseAltitude": 16000,
         "cruiseSpeed": 290,
         "route": []
       },
       "initialPosition": {
-        "latitude": 36.210294,
-        "longitude": 140.439592,
-        "altitude": 15000,
-        "heading": 271,
+        "latitude": 34.677644,
+        "longitude": 139.857475,
+        "altitude": 16000,
+        "heading": 77,
         "groundSpeed": 290,
         "verticalSpeed": 0
       }
@@ -95,17 +95,17 @@
         "aircraftType": "B787",
         "departureAirport": "RJSM",
         "arrivalAirport": "RJTT",
-        "cruiseAltitude": 15000,
+        "cruiseAltitude": 20000,
         "cruiseSpeed": 270,
         "route": []
       },
       "initialPosition": {
         "latitude": 36.407039,
         "longitude": 140.282192,
-        "altitude": 15000,
+        "altitude": 20000,
         "heading": 189,
         "groundSpeed": 270,
-        "verticalSpeed": -500
+        "verticalSpeed": 0
       }
     }
   ]

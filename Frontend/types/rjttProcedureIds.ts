@@ -43,6 +43,6 @@ export const QUICKSTART_STAR_PROCEDURE_IDS = [
   "OSHIMA1A",
   "AKSEL1K",
   "AROSA2C",
-  "POLIX2A",
+  "AKSEL2C",
   "GODIN2A",
 ] as const satisfies readonly RjttCatalogProcedureId[];
