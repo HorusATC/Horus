@@ -145,6 +145,7 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 .map(p -> new AircraftLocationDto.PatternPointDto(
                         p.latitude.toDouble(), p.longitude.toDouble()))
                 .toList();
+        var entryProcedure = base.getHoldEntryProcedure();
         return new AircraftLocationDto.HoldingDto(
                 base.getHoldingFixName() != null ? base.getHoldingFixName() : "",
                 fix.latitude.toDouble(),
@@ -156,7 +157,8 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 base.getHoldFrozenOutboundLegNm(),
                 base.getHoldFrozenTurnRateDegPerSec(),
                 base.getHoldFrozenTurnRadiusNm(),
-                pattern
+                pattern,
+                entryProcedure != null ? entryProcedure.name() : null
         );
     }
 

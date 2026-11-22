@@ -43,6 +43,7 @@ public record AircraftLocationDto(
     /**
      * Instructed holding racetrack from the single backend geometry definition.
      * {@code legMinutes} and {@code legNm} mirror the instruction (one may be null).
+     * {@code entryProcedure} is predicted before the fix and frozen at first passage.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record HoldingDto(
@@ -56,7 +57,8 @@ public record AircraftLocationDto(
             double outboundLegNm,
             double turnRateDegPerSec,
             double turnRadiusNm,
-            List<PatternPointDto> pattern
+            List<PatternPointDto> pattern,
+            String entryProcedure
     ) {}
 
     public record PatternPointDto(double latitude, double longitude) {}
