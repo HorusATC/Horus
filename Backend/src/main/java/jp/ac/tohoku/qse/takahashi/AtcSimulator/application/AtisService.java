@@ -18,6 +18,8 @@ public class AtisService {
 
     private static final char DEFAULT_IDENT = 'A';
     private static final String DEFAULT_RUNWAY = "16R";
+    /** Session-start revision; bumps when that airport's GET representation actually changes. */
+    private static final int INITIAL_REVISION = 0;
 
     private final RunwayCatalog runwayCatalog;
     private final AtsRouteFixPositionRepository airportRepository;
@@ -50,6 +52,18 @@ public class AtisService {
             result.add(toApiMap(icao, ensureDefault(icao)));
         }
         return result;
+    }
+
+    public Map<String, Object> getAtis(String airportIcao) {
+        String icao = normalizeIcao(airportIcao);
+        if (icao.isEmpty() || runwayCatalog.findByAirportIcao(icao).isEmpty()) {
+            throw new IllegalArgumentException("Unknown airport: " + airportIcao);
+        }
+        return toApiMap(icao, ensureDefault(icao));
+    }
+
+    public int currentRevision(String airportIcao) {
+        return ensureDefault(normalizeIcao(airportIcao)).revision();
     }
 
     public Map<String, Object> updateAtis(String airportIcao, String runwayInUse, Character informationIdent) {
@@ -90,7 +104,11 @@ public class AtisService {
                 Integer qnhForState = airport.equals(icao)
                         ? resolveNextQnh(current.qnhHpa(), qnh)
                         : current.qnhHpa();
-                states.put(airport, new AirportAtisState(runwayForState, nextIdent, qnhForState));
+                // Shared wind changes every airport's GET wind fields and composed text.
+                states.put(
+                        airport,
+                        new AirportAtisState(
+                                runwayForState, nextIdent, qnhForState, current.revision() + 1));
             }
         } else {
             AirportAtisState current = ensureDefault(icao);
@@ -98,7 +116,11 @@ public class AtisService {
             boolean qnhChanged = !Objects.equals(current.qnhHpa(), nextQnh);
             char nextIdent = resolveIdentForAirportOnly(
                     runway, informationIdent, current, qnhChanged);
-            states.put(icao, new AirportAtisState(runway, nextIdent, nextQnh));
+            boolean representationChanged = !current.runwayInUse().equals(runway)
+                    || current.informationIdent() != nextIdent
+                    || !Objects.equals(current.qnhHpa(), nextQnh);
+            int nextRevision = representationChanged ? current.revision() + 1 : current.revision();
+            states.put(icao, new AirportAtisState(runway, nextIdent, nextQnh, nextRevision));
         }
         return toApiMap(icao, ensureDefault(icao));
     }
@@ -172,7 +194,7 @@ public class AtisService {
                             .findFirst()
                             .map(RunwayDefinition::designator)
                             .orElse(DEFAULT_RUNWAY));
-            return new AirportAtisState(runway, DEFAULT_IDENT, null);
+            return new AirportAtisState(runway, DEFAULT_IDENT, null, INITIAL_REVISION);
         });
     }
 
@@ -207,6 +229,7 @@ public class AtisService {
                 .map(RunwayDefinition::designator)
                 .toList();
         map.put("availableRunways", available);
+        map.put("revision", state.revision());
         return map;
     }
 
@@ -225,6 +248,7 @@ public class AtisService {
         return airportIcao.toUpperCase(Locale.ROOT).trim();
     }
 
-    private record AirportAtisState(String runwayInUse, char informationIdent, Integer qnhHpa) {
+    private record AirportAtisState(
+            String runwayInUse, char informationIdent, Integer qnhHpa, int revision) {
     }
 }

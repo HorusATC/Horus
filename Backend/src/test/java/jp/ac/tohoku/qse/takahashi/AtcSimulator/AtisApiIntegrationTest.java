@@ -48,6 +48,11 @@ class AtisApiIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody()).hasSize(2);
+        Map<?, ?> rjtt = (Map<?, ?>) response.getBody().stream()
+                .filter(m -> "RJTT".equals(((Map<?, ?>) m).get("airportIcao")))
+                .findFirst()
+                .orElseThrow();
+        assertThat(rjtt.get("revision")).isEqualTo(0);
     }
 
     @Test
@@ -62,6 +67,20 @@ class AtisApiIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsEntry("runwayInUse", "34L");
         assertThat(response.getBody()).containsEntry("informationIdent", "B");
+        assertThat(response.getBody()).containsEntry("revision", 1);
+    }
+
+    @Test
+    void putMatchingExpectedRevisionSucceedsAndAdvancesRevision() {
+        HttpMethod put = HttpMethod.PUT;
+        ResponseEntity<Map> response = restTemplate.exchange(
+                baseUrl() + "/api/atis/RJTT",
+                put,
+                new HttpEntity<>(Map.of("runwayInUse", "34L", "expectedRevision", 0)),
+                Map.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsEntry("runwayInUse", "34L");
+        assertThat(response.getBody()).containsEntry("revision", 1);
     }
 
     @Test

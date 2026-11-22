@@ -6,7 +6,17 @@ import userEvent from "@testing-library/user-event";
 import AtisPanel from "./atisPanel";
 import * as atisApi from "@/utility/api/atis";
 
-jest.mock("@/utility/api/atis");
+jest.mock("@/utility/api/atis", () => {
+  const actual =
+    jest.requireActual<typeof import("@/utility/api/atis")>(
+      "@/utility/api/atis"
+    );
+  return {
+    ...actual,
+    fetchAtisAll: jest.fn(),
+    updateAtis: jest.fn(),
+  };
+});
 
 const sample: atisApi.AtisState = {
   airportIcao: "RJTT",
@@ -17,6 +27,7 @@ const sample: atisApi.AtisState = {
   availableRunways: ["16R", "34L", "16L", "34R", "04", "22", "05", "23"],
   windAvailable: false,
   qnhAvailable: false,
+  revision: 0,
 };
 
 describe("AtisPanel", () => {
@@ -39,6 +50,7 @@ describe("AtisPanel", () => {
         ...sample,
         runwayInUse: "34L",
         informationIdent: "B",
+        revision: 1,
         text: sample.text.replaceAll("16R", "34L").replaceAll("ALPHA", "BRAVO"),
       },
     });
@@ -53,6 +65,7 @@ describe("AtisPanel", () => {
     });
     expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
       runwayInUse: "34L",
+      expectedRevision: 0,
     });
   });
 
@@ -62,6 +75,7 @@ describe("AtisPanel", () => {
       state: {
         ...sample,
         informationIdent: "B",
+        revision: 1,
         windAvailable: true,
         windDirectionDeg: 160,
         windSpeedKt: 12,
@@ -80,6 +94,7 @@ describe("AtisPanel", () => {
       expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
         runwayInUse: "16R",
         wind: { directionDeg: 160, speedKt: 12 },
+        expectedRevision: 0,
       });
     });
   });
@@ -90,6 +105,7 @@ describe("AtisPanel", () => {
         ok: true,
         state: {
           ...sample,
+          revision: 1,
           windAvailable: true,
           windSpeedKt: 0,
           text: sample.text,
@@ -97,7 +113,7 @@ describe("AtisPanel", () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        state: { ...sample, windAvailable: false },
+        state: { ...sample, revision: 2, windAvailable: false },
       });
     const user = userEvent.setup();
     render(<AtisPanel editable />);
@@ -109,6 +125,7 @@ describe("AtisPanel", () => {
       expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
         runwayInUse: "16R",
         wind: { speedKt: 0 },
+        expectedRevision: 0,
       });
     });
     await user.click(screen.getByRole("button", { name: "Clear" }));
@@ -116,6 +133,7 @@ describe("AtisPanel", () => {
       expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
         runwayInUse: "16R",
         wind: null,
+        expectedRevision: 1,
       });
     });
   });
@@ -127,6 +145,7 @@ describe("AtisPanel", () => {
         state: {
           ...sample,
           informationIdent: "B",
+          revision: 1,
           qnhAvailable: true,
           qnhHpa: 1013,
           text: sample.text
@@ -142,6 +161,7 @@ describe("AtisPanel", () => {
         state: {
           ...sample,
           informationIdent: "C",
+          revision: 2,
           qnhAvailable: false,
         },
       });
@@ -156,6 +176,7 @@ describe("AtisPanel", () => {
       expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
         runwayInUse: "16R",
         qnhHpa: 1013,
+        expectedRevision: 0,
       });
     });
     await user.click(screen.getByRole("button", { name: /Clear QNH/i }));
@@ -163,6 +184,7 @@ describe("AtisPanel", () => {
       expect(atisApi.updateAtis).toHaveBeenCalledWith("RJTT", {
         runwayInUse: "16R",
         qnhHpa: null,
+        expectedRevision: 1,
       });
     });
   });

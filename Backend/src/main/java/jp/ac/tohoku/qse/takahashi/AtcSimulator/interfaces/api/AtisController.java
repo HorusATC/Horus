@@ -1,8 +1,11 @@
 package jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.api;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +23,8 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/atis")
 public class AtisController {
 
+    private static final String REVISION_MISMATCH_MESSAGE = "ATIS revision mismatch";
+
     private final AtisService atisService;
 
     public AtisController(AtisService atisService) {
@@ -36,6 +41,15 @@ public class AtisController {
             @PathVariable String airportIcao,
             @Valid @RequestBody UpdateAtisRequestDto request) {
         try {
+            if (request.isExpectedRevisionPresent()) {
+                Map<String, Object> current = atisService.getAtis(airportIcao);
+                Object revisionValue = current.get("revision");
+                if (!Objects.equals(request.getExpectedRevision(), revisionValue)) {
+                    Map<String, Object> conflictBody = new LinkedHashMap<>(current);
+                    conflictBody.put("message", REVISION_MISMATCH_MESSAGE);
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(conflictBody);
+                }
+            }
             Character ident = null;
             if (request.getInformationIdent() != null && !request.getInformationIdent().isBlank()) {
                 ident = request.getInformationIdent().charAt(0);
