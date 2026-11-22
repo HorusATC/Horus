@@ -1,4 +1,11 @@
 #!/usr/bin/env sh
 set -e
 cd "$(dirname "$0")/.." || exit 1
-npx lint-staged
+
+if [ ! -x node_modules/.bin/lint-staged ]; then
+  echo "error: root hook tooling missing — run: npm ci" >&2
+  exit 1
+fi
+
+# Never let npx download a random lint-staged; use the local binary only.
+./node_modules/.bin/lint-staged

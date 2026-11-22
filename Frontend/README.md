@@ -80,7 +80,7 @@ npm ci
 # または npm install
 ```
 
-`prepare` によりリポジトリルートの Git hooks（`.husky`）が自動で有効になる。pre-commit は staged の Frontend ファイルに Prettier / ESLint `--fix` を適用する。`--no-verify` は使わない。
+`prepare` によりリポジトリルートの Git hooks（`.husky`）が自動で有効になる。pre-commit は staged の Frontend ファイルに Prettier / ESLint `--fix` を適用する。pre-push は Frontend 変更時に `npm run typecheck` と `npm run format:check` を実行する（`Frontend/node_modules` が無い場合は `cd Frontend && npm ci` を促して失敗する）。`--no-verify` は使わない。CI が最終ゲート。
 
 3. 環境変数の設定
 

@@ -4,30 +4,34 @@ const repoRoot = process.cwd();
 
 /**
  * @param {string[]} filenames
- * @returns {string}
+ * @returns {string[]}
  */
 function prettierWrite(filenames) {
-  // Use Frontend's prettier binary so format matches `cd Frontend && npm run format:check`
+  if (filenames.length === 0) return [];
   const files = filenames.map((f) => JSON.stringify(f)).join(" ");
-  return `npm exec --prefix Frontend -- prettier --write ${files}`;
+  return [`node scripts/run-frontend-bin.mjs prettier --write ${files}`];
 }
 
 /**
  * @param {string[]} filenames
- * @returns {string}
+ * @returns {string[]}
  */
 function eslintFix(filenames) {
-  const files = filenames.map((f) => JSON.stringify(f)).join(" ");
-  const pluginsRoot = JSON.stringify(path.join(repoRoot, "Frontend"));
-  return `npm exec --prefix Frontend -- eslint --fix --resolve-plugins-relative-to ${pluginsRoot} ${files}`;
+  if (filenames.length === 0) return [];
+  const files = filenames.map((f) => JSON.stringify(path.resolve(f))).join(" ");
+  return [`node scripts/run-frontend-bin.mjs eslint --fix ${files}`];
 }
 
 /**
- * Module-level apply when any Backend .java is staged.
- * @returns {string}
+ * @param {string[]} filenames
+ * @returns {string[]}
  */
-function spotlessApply() {
-  return "./Backend/gradlew -p Backend spotlessApply --no-daemon";
+function spotlessApply(filenames) {
+  if (filenames.length === 0) return [];
+  const abs = filenames
+    .map((f) => JSON.stringify(path.resolve(repoRoot, f)))
+    .join(" ");
+  return [`sh scripts/spotless-staged.sh ${abs}`];
 }
 
 export default {

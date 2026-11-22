@@ -3,6 +3,7 @@
 ## メタデータ
 
 - **Status**: In Progress
+- **Author**: Kazuki Futawatari
 - **Date**: 2026-11-22
 
 ## 概要

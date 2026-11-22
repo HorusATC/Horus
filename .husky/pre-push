@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "$0")/.." || exit 1
 
-# Compare against upstream if set; otherwise origin/main; otherwise all commits on HEAD.
+# Compare against upstream if set; otherwise origin/main; otherwise empty tree.
 if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
   BASE="$(git merge-base HEAD @{u})"
 elif git rev-parse --verify origin/main >/dev/null 2>&1; then
@@ -12,7 +12,6 @@ else
 fi
 
 CHANGED="$(git diff --name-only "$BASE" HEAD)"
-# Also include uncommitted staged/unstaged so a dirty push attempt is still gated
 CHANGED="${CHANGED}
 $(git diff --name-only)
 $(git diff --name-only --cached)"
@@ -23,11 +22,20 @@ printf '%s\n' "$CHANGED" | grep -q '^Frontend/' && frontend_changed=1 || true
 printf '%s\n' "$CHANGED" | grep -q '^Backend/' && backend_changed=1 || true
 
 if [ "$frontend_changed" -eq 1 ]; then
-  echo "pre-push: Frontend changes detected — running tsc and format:check"
-  (cd Frontend && npx tsc --noEmit && npm run format:check)
+  if [ ! -x Frontend/node_modules/.bin/tsc ] || [ ! -x Frontend/node_modules/.bin/prettier ]; then
+    echo "error: Frontend deps missing — run: cd Frontend && npm ci" >&2
+    exit 1
+  fi
+  echo "pre-push: Frontend changes detected — running typecheck and format:check"
+  # npm run uses local node_modules/.bin (no network install)
+  (cd Frontend && npm run typecheck && npm run format:check)
 fi
 
 if [ "$backend_changed" -eq 1 ]; then
+  if [ ! -x Backend/gradlew ]; then
+    echo "error: missing Backend/gradlew" >&2
+    exit 1
+  fi
   echo "pre-push: Backend changes detected — running spotlessCheck"
   (cd Backend && ./gradlew spotlessCheck --no-daemon)
 fi
