@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In Progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-22
 
@@ -125,7 +125,6 @@
 ## 未解決事項（Unresolved Questions）
 
 - Cloud Agent ランタイムが `core.hooksPath` をプラットフォーム用パスへ上書きする場合の共存方法（install 後の再設定が必要か）
-- Spotless をファイル単位で適用する際の Gradle プロパティ互換性（失敗時は Backend 全体の `spotlessApply` にフォールバック）
 
 ---
 
