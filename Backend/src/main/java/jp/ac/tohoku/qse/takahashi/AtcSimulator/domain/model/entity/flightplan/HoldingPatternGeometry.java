@@ -8,6 +8,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Aircraft
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Longitude;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.FixPosition;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.GeodeticUtils;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.MathUtils;
 
 /**
  * Single definition source for wind-free holding racetrack geometry.
@@ -44,11 +45,99 @@ public final class HoldingPatternGeometry {
     }
 
     /**
+     * AIM FIG 5-3-4: holding-side sector width from the outbound course (degrees).
+     * Teardrop occupies this arc; parallel occupies {@link #ENTRY_PARALLEL_SECTOR_DEG} on the
+     * non-holding side; the remainder is direct.
+     */
+    public static final double ENTRY_TEARDROP_SECTOR_DEG = 70.0;
+    /** Non-holding-side sector width from outbound (180° − teardrop 70° = 110°). */
+    public static final double ENTRY_PARALLEL_SECTOR_DEG = 110.0;
+    /** Teardrop outbound offset from the outbound course toward the holding side. */
+    public static final double TEARDROP_OFFSET_DEG = 30.0;
+    /**
+     * AIM entry-leg time for timed holds (always 1.00 min, independent of the racetrack leg minutes).
+     */
+    public static final double ENTRY_LEG_MINUTES = 1.0;
+
+    /**
      * Bearing from the fix to the protected side of the pattern (inbound +90° RIGHT, −90° LEFT).
      */
     public static double offsetBearingDeg(double inboundCourseDeg, HoldTurnDirection turnDirection) {
         double delta = turnDirection == HoldTurnDirection.RIGHT ? 90.0 : -90.0;
         return GeodeticUtils.normalizeAngle(inboundCourseDeg + delta);
+    }
+
+    /**
+     * Signed heading delta from {@code fromDeg} to {@code toDeg} in (−180, 180].
+     */
+    public static double signedHeadingDeltaDeg(double fromDeg, double toDeg) {
+        return MathUtils.normalizeAngleTo180(toDeg - fromDeg);
+    }
+
+    /**
+     * AIM 5-3-8 entry sector from the arrival heading at the fix (deterministic half-open edges).
+     * RIGHT inbound 090° / outbound 270°: DIRECT [020,200), TEARDROP [200,270), PARALLEL [270,020).
+     * LEFT is the mirror across the inbound axis.
+     */
+    public static HoldEntryProcedure classifyEntryProcedure(
+            double arrivalHeadingDeg, double inboundCourseDeg, HoldTurnDirection turnDirection) {
+        double outbound = outboundBearingDeg(inboundCourseDeg);
+        double delta = signedHeadingDeltaDeg(outbound, arrivalHeadingDeg);
+        if (turnDirection == HoldTurnDirection.RIGHT) {
+            // Teardrop [O−70, O), parallel [O, O+110), direct the rest (e.g. I=090 → [020,200)).
+            if (delta >= -ENTRY_TEARDROP_SECTOR_DEG && delta < 0.0) {
+                return HoldEntryProcedure.TEARDROP;
+            }
+            if (delta >= 0.0 && delta < ENTRY_PARALLEL_SECTOR_DEG) {
+                return HoldEntryProcedure.PARALLEL;
+            }
+            return HoldEntryProcedure.DIRECT;
+        }
+        // LEFT is the mirror: teardrop (O, O+70], parallel (O−110, O], direct the rest.
+        if (delta > 0.0 && delta <= ENTRY_TEARDROP_SECTOR_DEG) {
+            return HoldEntryProcedure.TEARDROP;
+        }
+        if (delta > -ENTRY_PARALLEL_SECTOR_DEG && delta <= 0.0) {
+            return HoldEntryProcedure.PARALLEL;
+        }
+        return HoldEntryProcedure.DIRECT;
+    }
+
+    /**
+     * Teardrop outbound heading: outbound ± 30° toward the holding side.
+     */
+    public static double teardropHeadingDeg(double inboundCourseDeg, HoldTurnDirection turnDirection) {
+        double outbound = outboundBearingDeg(inboundCourseDeg);
+        double offset = turnDirection == HoldTurnDirection.RIGHT ? -TEARDROP_OFFSET_DEG : TEARDROP_OFFSET_DEG;
+        return GeodeticUtils.normalizeAngle(outbound + offset);
+    }
+
+    /**
+     * Entry outbound/teardrop leg length: timed holds use {@link #ENTRY_LEG_MINUTES};
+     * distance holds use the instructed NM (FAA AIP “time replaced by distance”).
+     */
+    public static double entryLegDistanceNm(HoldLeg leg, double groundSpeedKt) {
+        return switch (leg) {
+            case HoldLeg.DistanceNm(var nm) -> nm;
+            case HoldLeg.TimedMinutes(var ignored) -> outboundDistanceNm(
+                    new HoldLeg.TimedMinutes(ENTRY_LEG_MINUTES), groundSpeedKt);
+        };
+    }
+
+    /**
+     * Turn direction for the first parallel outbound turn: opposite the pattern
+     * (non-holding side).
+     */
+    public static HoldTurnDirection parallelOutboundTurnDirection(HoldTurnDirection patternDirection) {
+        return patternDirection == HoldTurnDirection.RIGHT ? HoldTurnDirection.LEFT : HoldTurnDirection.RIGHT;
+    }
+
+    /**
+     * Turn direction back onto the inbound course after a parallel outbound leg:
+     * toward the holding/protected side (may exceed 180°).
+     */
+    public static HoldTurnDirection parallelInboundTurnDirection(HoldTurnDirection patternDirection) {
+        return parallelOutboundTurnDirection(patternDirection);
     }
 
     /**

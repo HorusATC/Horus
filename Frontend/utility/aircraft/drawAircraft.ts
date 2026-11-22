@@ -2,6 +2,7 @@ import CoordinateManager from "../coordinateManager/CoordinateManager";
 import { GLOBAL_CONSTANTS } from "../globals/constants";
 import { GLOBAL_SETTINGS } from "../globals/settings";
 import { Aircraft } from "./aircraftClass";
+import { holdEntryProcedureLabel } from "./holdingPattern";
 import { DisplayRange } from "@/context/displayRangeContext";
 import type { Coordinate } from "@/context/centerCoordinateContext";
 import type { DataBlockDisplaySetting } from "@/context/dataBlockDisplaySettingContext";
@@ -152,6 +153,7 @@ class DrawAircraft {
   /**
    * Instructed hold racetrack from Backend `holding.pattern`.
    * Amber dashed — distinct from cyan RBL and range rings; drawn under the track.
+   * Entry procedure label (DIR/TDP/PAR) is drawn near the fix.
    */
   private static drawHoldingPattern(
     ctx: CanvasRenderingContext2D,
@@ -181,6 +183,18 @@ class DrawAircraft {
       }
     });
     ctx.stroke();
+    const entryLabel = holdEntryProcedureLabel(holding.entryProcedure);
+    if (entryLabel != null) {
+      const fixCanvas = CoordinateManager.calculateCanvasCoordinates(
+        { latitude: holding.fixLatitude, longitude: holding.fixLongitude },
+        centerCoordinate,
+        displayRange
+      );
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = "11px monospace";
+      ctx.fillText(entryLabel, fixCanvas.x + 8, fixCanvas.y - 8);
+    }
     ctx.restore();
   }
 
@@ -490,7 +504,14 @@ class DrawAircraft {
 
     if (aircraft.navigationMode === "HOLDING") {
       ctx.fillStyle = "#f59e0b";
-      ctx.fillText("HLD", labelX, lineY);
+      const entryLabel = holdEntryProcedureLabel(
+        aircraft.holding?.entryProcedure
+      );
+      ctx.fillText(
+        entryLabel != null ? `HLD ${entryLabel}` : "HLD",
+        labelX,
+        lineY
+      );
       lineY += lineHeight;
     }
 

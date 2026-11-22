@@ -594,6 +594,8 @@ class FlightPlanApiIntegrationTest {
         assertThat(holding.get("legMinutes")).isEqualTo(1.0);
         assertThat(holding).containsKey("outboundLegNm");
         assertThat(holding).containsKey("turnRadiusNm");
+        assertThat(holding).containsKey("entryProcedure");
+        assertThat(holding.get("entryProcedure")).isIn("DIRECT", "TEARDROP", "PARALLEL");
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> pattern = (List<Map<String, Object>>) holding.get("pattern");
         assertThat(pattern).isNotNull();

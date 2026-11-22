@@ -139,7 +139,7 @@
 
 ### Phase 2（このスライスの外）
 
-- 進入セクター、公示カタログ、EAT／EFC
+- 進入セクター（→ [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md) で実装）、公示カタログ、EAT／EFC
 - 風修正とインバウンド時間の調整、TAS 換算
 - 経路表示のオン／オフ
 

@@ -107,7 +107,7 @@
 |---|--------|--------|--------|-------|------------------|
 | 3-1 | スクオーク割当・表示 | 🔴 | ★☆☆ | [#55](https://github.com/Futty93/Horus/issues/55) | 着手用子 spec [20260509-phase3-squawk-assignment-display](20260509-phase3-squawk-assignment-display/spec.md)。Backend: 航空機状態 + API。Frontend: `AircraftLocationDto` / `drawAircraft` の実値化（現プレースホルダ）。 |
 | 3-1b | 特定 Squawk 強調表示 | 🟡 | ★☆☆ | - | 着手用子 spec [20260509-phase3-squawk-highlight-filter](20260509-phase3-squawk-highlight-filter/spec.md)。完全一致フィルタとレーダー強調（STCA優先）。 |
-| 3-2 | ホールディング（`HOLD`） | 🔄 | ★★★ | [#56](https://github.com/Futty93/Horus/issues/56) | 指示要素は [20261122-hold-inbound-leg-turns](20261122-hold-inbound-leg-turns/spec.md)。標準率レーストラック飛行＋レーダー経路オーバーレイは [20261122-hold-racetrack-overlay](20261122-hold-racetrack-overlay/spec.md)。着手用子 [20260509-phase3-holding-pattern](20260509-phase3-holding-pattern/spec.md)。**残り**: 公示パターン（AS PUBLISHED）、EAT/EFC、進入セクター、風修正。 |
+| 3-2 | ホールディング（`HOLD`） | 🔄 | ★★★ | [#56](https://github.com/Futty93/Horus/issues/56) | 指示要素は [20261122-hold-inbound-leg-turns](20261122-hold-inbound-leg-turns/spec.md)。標準率レーストラック飛行＋レーダー経路オーバーレイは [20261122-hold-racetrack-overlay](20261122-hold-racetrack-overlay/spec.md)。進入セクター（DIRECT／TEARDROP／PARALLEL）は [20261122-hold-entry-sectors](20261122-hold-entry-sectors/spec.md)。着手用子 [20260509-phase3-holding-pattern](20260509-phase3-holding-pattern/spec.md)。**残り**: 公示パターン（AS PUBLISHED）、EAT/EFC、風修正。 |
 | 3-3 | 高度制限の指示 | 🟡 | ★★☆ | [#57](https://github.com/Futty93/Horus/issues/57) | `AltitudeConstraint` と `ControlAircraftService` / DTO の拡張。 |
 | 3-4 | ハンドオフ（`HANDOFF`） | 🟡 | ★★★ | [#58](https://github.com/Futty93/Horus/issues/58) | 表示から入るなら UI 状態のみでも可。 |
 | 3-5 | Mach 数指示 | 🟢 | ★☆☆ | [#59](https://github.com/Futty93/Horus/issues/59) | 指示 DTO と速度変換。 |
@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-22 | 待機の進入セクター（ダイレクト／ティアドロップ／パラレル）（[20261122-hold-entry-sectors](20261122-hold-entry-sectors/spec.md)）。位置 API に任意 `holding.entryProcedure`。公示・EAT/EFC・風は残課題。 |
 | 2026-11-22 | 待機の標準率レーストラックと指示経路オーバーレイ（[20261122-hold-racetrack-overlay](20261122-hold-racetrack-overlay/spec.md)）。位置 API に任意 `holding`。公示・セクター・EAT/EFC・風は残課題。 |
 | 2026-11-22 | 待機指示の入方向・レグ・左右旋回（[20261122-hold-inbound-leg-turns](20261122-hold-inbound-leg-turns/spec.md)）。3-2 を部分完了に更新。公示パターンは残課題。 |
 | 2026-11-22 | Docker なしローカルクイックスタート（[20261122-local-quickstart](20261122-local-quickstart/spec.md)）。`scripts/dev-up.sh` / `verify-quickstart.sh`。台帳の進入復行・タワー移管を実装済みに更新。 |

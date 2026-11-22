@@ -671,6 +671,13 @@ components:
                     type: number
                   longitude:
                     type: number
+            entryProcedure:
+              type: string
+              nullable: true
+              enum: [DIRECT, TEARDROP, PARALLEL]
+              description: >
+                AIM 5-3-8 entry sector from arrival heading at the fix.
+                Predicted before first passage; frozen afterward.
     Flight:
       type: "object"
       example:

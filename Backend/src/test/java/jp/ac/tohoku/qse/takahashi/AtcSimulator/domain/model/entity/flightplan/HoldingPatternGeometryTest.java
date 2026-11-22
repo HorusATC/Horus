@@ -250,6 +250,188 @@ class HoldingPatternGeometryTest {
                 "outbound end must not be the old axial shuttle target");
     }
 
+    @Test
+    @DisplayName("DIRECT entry at fix heading 090° starts outbound turn immediately")
+    void simulation_directEntry_startsOutboundTurn() {
+        FixPosition holdFix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
+        AircraftBase aircraft = createAircraftAt(holdFix, 180.0, 3.0);
+        aircraft.setHoldAtFix(holdFix, new HoldInstruction(
+                "ABENO", HoldTurnDirection.RIGHT, 90.0, new HoldLeg.TimedMinutes(1.0)));
+        placeOnFixAndBeginEntry(aircraft, holdFix, 90.0);
+        assertEquals(HoldEntryProcedure.DIRECT, aircraft.getHoldEntryProcedure());
+        assertEquals(HoldPhase.OUTBOUND_TURN, aircraft.getHoldPhase());
+    }
+
+    @Test
+    @DisplayName("TEARDROP entry flies 240° for 1.00 min then intercepts inbound before racetrack")
+    void simulation_teardropEntry_offsetThenInbound() {
+        FixPosition holdFix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
+        AircraftBase aircraft = createAircraftAt(holdFix, 180.0, 3.0);
+        aircraft.setHoldAtFix(holdFix, new HoldInstruction(
+                "ABENO", HoldTurnDirection.RIGHT, 90.0, new HoldLeg.TimedMinutes(1.0)));
+        placeOnFixAndBeginEntry(aircraft, holdFix, 240.0);
+        assertEquals(HoldEntryProcedure.TEARDROP, aircraft.getHoldEntryProcedure());
+        assertEquals(HoldPhase.ENTRY_TEARDROP_TURN, aircraft.getHoldPhase());
+
+        boolean sawTeardropHeading = false;
+        boolean sawTeardropLeg = false;
+        boolean sawInboundLeg = false;
+        boolean sawRacetrackOutbound = false;
+        for (int i = 0; i < 500; i++) {
+            aircraft.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
+            aircraft.calculateNextAircraftPosition(SimulationTiming.SIM_DELTA_SECONDS);
+            // Re-arm waypoint pass when flying inbound to the fix after entry.
+            if (aircraft.getHoldPhase() == HoldPhase.INBOUND_LEG) {
+                sawInboundLeg = true;
+                maybePassFix(aircraft, holdFix);
+            }
+            double heading = aircraft.getAircraftVector().heading.toDouble();
+            if (aircraft.getHoldPhase() == HoldPhase.ENTRY_TEARDROP_LEG) {
+                sawTeardropLeg = true;
+                if (smallestHeadingDelta(heading, 240.0) <= HEADING_TOLERANCE_DEG) {
+                    sawTeardropHeading = true;
+                    FixPosition here = new FixPosition(
+                            aircraft.getAircraftPosition().latitude,
+                            aircraft.getAircraftPosition().longitude);
+                    double cross = HoldingPatternGeometry.crossTrackNm(holdFix, here, 90.0);
+                    assertTrue(cross > 0.0, "teardrop path must be on the holding (right) side");
+                }
+            }
+            if (aircraft.getHoldPhase() == HoldPhase.OUTBOUND_TURN && sawInboundLeg) {
+                sawRacetrackOutbound = true;
+                break;
+            }
+        }
+        assertTrue(sawTeardropHeading, "should fly teardrop heading 240°");
+        assertTrue(sawTeardropLeg, "should enter teardrop leg");
+        assertTrue(sawInboundLeg, "should intercept inbound and fly to fix");
+        assertTrue(sawRacetrackOutbound, "second fix passage should start racetrack outbound turn");
+    }
+
+    @Test
+    @DisplayName("PARALLEL entry flies non-holding outbound then >180° back to inbound")
+    void simulation_parallelEntry_nonHoldingThenReturn() {
+        FixPosition holdFix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
+        AircraftBase aircraft = createAircraftAt(holdFix, 180.0, 3.0);
+        aircraft.setHoldAtFix(holdFix, new HoldInstruction(
+                "ABENO", HoldTurnDirection.RIGHT, 90.0, new HoldLeg.TimedMinutes(1.0)));
+        // Arrive from the north (non-holding) so the first left turn to outbound builds offset.
+        placeOnFixAndBeginEntry(aircraft, holdFix, 10.0);
+        assertEquals(HoldEntryProcedure.PARALLEL, aircraft.getHoldEntryProcedure());
+        assertEquals(HoldPhase.ENTRY_PARALLEL_OUTBOUND_TURN, aircraft.getHoldPhase());
+
+        boolean sawNonHoldingOutbound = false;
+        boolean sawParallelLeg = false;
+        boolean sawInboundLeg = false;
+        boolean sawRacetrackOutbound = false;
+        for (int i = 0; i < 700; i++) {
+            aircraft.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
+            aircraft.calculateNextAircraftPosition(SimulationTiming.SIM_DELTA_SECONDS);
+            if (aircraft.getHoldPhase() == HoldPhase.INBOUND_LEG) {
+                sawInboundLeg = true;
+                maybePassFix(aircraft, holdFix);
+            }
+            if (aircraft.getHoldPhase() == HoldPhase.ENTRY_PARALLEL_LEG) {
+                sawParallelLeg = true;
+                FixPosition here = new FixPosition(
+                        aircraft.getAircraftPosition().latitude,
+                        aircraft.getAircraftPosition().longitude);
+                double cross = HoldingPatternGeometry.crossTrackNm(holdFix, here, 90.0);
+                if (cross < -0.2) {
+                    sawNonHoldingOutbound = true;
+                }
+            }
+            if (aircraft.getHoldPhase() == HoldPhase.OUTBOUND_TURN && sawInboundLeg) {
+                sawRacetrackOutbound = true;
+                break;
+            }
+        }
+        assertTrue(sawParallelLeg, "should fly parallel outbound leg");
+        assertTrue(sawNonHoldingOutbound, "parallel outbound must be on the non-holding side");
+        assertTrue(sawInboundLeg, "should return to inbound after >180° turn");
+        assertTrue(sawRacetrackOutbound, "second fix passage should start racetrack");
+    }
+
+    @Test
+    @DisplayName("RIGHT I=090° sector: DIRECT/TEARDROP/PARALLEL and 70° edges")
+    void entrySectors_rightInbound090() {
+        assertEquals(HoldEntryProcedure.DIRECT,
+                HoldingPatternGeometry.classifyEntryProcedure(90.0, 90.0, HoldTurnDirection.RIGHT));
+        // Half-open [270, 020): 019° is PARALLEL; 020° starts DIRECT.
+        assertEquals(HoldEntryProcedure.PARALLEL,
+                HoldingPatternGeometry.classifyEntryProcedure(19.0, 90.0, HoldTurnDirection.RIGHT));
+        assertEquals(HoldEntryProcedure.DIRECT,
+                HoldingPatternGeometry.classifyEntryProcedure(20.0, 90.0, HoldTurnDirection.RIGHT));
+        assertEquals(HoldEntryProcedure.DIRECT,
+                HoldingPatternGeometry.classifyEntryProcedure(199.0, 90.0, HoldTurnDirection.RIGHT));
+        assertEquals(HoldEntryProcedure.TEARDROP,
+                HoldingPatternGeometry.classifyEntryProcedure(200.0, 90.0, HoldTurnDirection.RIGHT));
+        assertEquals(HoldEntryProcedure.TEARDROP,
+                HoldingPatternGeometry.classifyEntryProcedure(240.0, 90.0, HoldTurnDirection.RIGHT));
+        assertEquals(HoldEntryProcedure.PARALLEL,
+                HoldingPatternGeometry.classifyEntryProcedure(270.0, 90.0, HoldTurnDirection.RIGHT));
+        assertEquals(HoldEntryProcedure.PARALLEL,
+                HoldingPatternGeometry.classifyEntryProcedure(0.0, 90.0, HoldTurnDirection.RIGHT));
+        assertEquals(HoldEntryProcedure.PARALLEL,
+                HoldingPatternGeometry.classifyEntryProcedure(10.0, 90.0, HoldTurnDirection.RIGHT));
+    }
+
+    @Test
+    @DisplayName("LEFT I=090° sector is the mirror of RIGHT across the inbound axis")
+    void entrySectors_leftInbound090_isMirror() {
+        assertEquals(HoldEntryProcedure.DIRECT,
+                HoldingPatternGeometry.classifyEntryProcedure(90.0, 90.0, HoldTurnDirection.LEFT));
+        assertEquals(HoldEntryProcedure.TEARDROP,
+                HoldingPatternGeometry.classifyEntryProcedure(340.0, 90.0, HoldTurnDirection.LEFT));
+        assertEquals(HoldEntryProcedure.TEARDROP,
+                HoldingPatternGeometry.classifyEntryProcedure(300.0, 90.0, HoldTurnDirection.LEFT));
+        assertEquals(HoldEntryProcedure.PARALLEL,
+                HoldingPatternGeometry.classifyEntryProcedure(270.0, 90.0, HoldTurnDirection.LEFT));
+        assertEquals(HoldEntryProcedure.PARALLEL,
+                HoldingPatternGeometry.classifyEntryProcedure(200.0, 90.0, HoldTurnDirection.LEFT));
+        assertEquals(HoldEntryProcedure.DIRECT,
+                HoldingPatternGeometry.classifyEntryProcedure(160.0, 90.0, HoldTurnDirection.LEFT));
+        assertEquals(HoldEntryProcedure.DIRECT,
+                HoldingPatternGeometry.classifyEntryProcedure(20.0, 90.0, HoldTurnDirection.LEFT));
+        // Mirror map: RIGHT 200 TEARDROP → LEFT 340 TEARDROP; RIGHT 270 PARALLEL → LEFT 270 PARALLEL
+        assertEquals(
+                HoldingPatternGeometry.classifyEntryProcedure(200.0, 90.0, HoldTurnDirection.RIGHT),
+                HoldingPatternGeometry.classifyEntryProcedure(340.0, 90.0, HoldTurnDirection.LEFT));
+        assertEquals(
+                HoldingPatternGeometry.classifyEntryProcedure(270.0, 90.0, HoldTurnDirection.RIGHT),
+                HoldingPatternGeometry.classifyEntryProcedure(270.0, 90.0, HoldTurnDirection.LEFT));
+    }
+
+    @Test
+    @DisplayName("teardrop heading RIGHT I=090 → 240°; LEFT → 300°")
+    void teardropHeading_offsetThirtyFromOutbound() {
+        assertEquals(240.0,
+                HoldingPatternGeometry.teardropHeadingDeg(90.0, HoldTurnDirection.RIGHT),
+                BEARING_TOLERANCE_DEG);
+        assertEquals(300.0,
+                HoldingPatternGeometry.teardropHeadingDeg(90.0, HoldTurnDirection.LEFT),
+                BEARING_TOLERANCE_DEG);
+    }
+
+    /**
+     * Proves the AIM 70° holding-side line. Mutating ENTRY_TEARDROP_SECTOR_DEG 70→110
+     * would reclassify heading 200° (RIGHT I=090) away from TEARDROP.
+     */
+    @Test
+    @DisplayName("mutation guard: teardrop sector must be 70° from outbound (not 110°)")
+    void mutationGuard_teardropSectorIsSeventyNotOneTen() {
+        assertEquals(70.0, HoldingPatternGeometry.ENTRY_TEARDROP_SECTOR_DEG, 0.0);
+        assertEquals(110.0, HoldingPatternGeometry.ENTRY_PARALLEL_SECTOR_DEG, 0.0);
+        assertEquals(HoldEntryProcedure.TEARDROP,
+                HoldingPatternGeometry.classifyEntryProcedure(200.0, 90.0, HoldTurnDirection.RIGHT));
+        // If the teardrop arc were 110° from outbound, 200° (delta=-70) would still be inside,
+        // but the direct/teardrop edge at 200° would move to 160° — 199° must stay DIRECT.
+        assertEquals(HoldEntryProcedure.DIRECT,
+                HoldingPatternGeometry.classifyEntryProcedure(199.0, 90.0, HoldTurnDirection.RIGHT));
+        assertNotEquals(HoldEntryProcedure.TEARDROP,
+                HoldingPatternGeometry.classifyEntryProcedure(160.0, 90.0, HoldTurnDirection.RIGHT));
+    }
+
     /**
      * Proves r = gs / (20 π ω). Mutating the divisor 20→10 makes
      * {@link #turnRadius_180ktStandardRate_isThreeOverPiNm} fail against 3/π.
@@ -321,5 +503,41 @@ class HoldingPatternGeometryTest {
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private static void placeOnFixAndBeginEntry(AircraftBase aircraft, FixPosition fix, double arrivalHeading) {
+        aircraft.setAircraftPosition(new AircraftPosition(
+                fix.latitude, fix.longitude, aircraft.getAircraftPosition().altitude));
+        aircraft.setAircraftVector(new AircraftVector(
+                new Heading(arrivalHeading),
+                aircraft.getAircraftVector().groundSpeed,
+                aircraft.getAircraftVector().verticalSpeed));
+        try {
+            var method = AircraftBase.class.getDeclaredMethod("beginEntryOrRacetrackFromFix");
+            method.setAccessible(true);
+            method.invoke(aircraft);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static void maybePassFix(AircraftBase aircraft, FixPosition fix) {
+        FixPosition here = new FixPosition(
+                aircraft.getAircraftPosition().latitude,
+                aircraft.getAircraftPosition().longitude);
+        if (HoldingPatternGeometry.planarDistanceNm(here, fix) < 0.25) {
+            try {
+                var method = AircraftBase.class.getDeclaredMethod("onHoldingTargetReached");
+                method.setAccessible(true);
+                method.invoke(aircraft);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    private static double smallestHeadingDelta(double a, double b) {
+        double delta = Math.abs(GeodeticUtils.normalizeAngle(a) - GeodeticUtils.normalizeAngle(b));
+        return Math.min(delta, 360.0 - delta);
     }
 }
