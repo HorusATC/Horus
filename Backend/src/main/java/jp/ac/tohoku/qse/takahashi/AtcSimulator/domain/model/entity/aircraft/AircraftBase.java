@@ -5,6 +5,9 @@ import java.util.List;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.ApproachControlReleasedException;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.behavior.FlightBehavior;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.characteristics.AircraftCharacteristics;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.guidance.Guidance;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.guidance.KinematicStep;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.guidance.TurnConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlan;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlanWaypoint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldEntryProcedure;
@@ -33,7 +36,6 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Type.AircraftType;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.GeodeticUtils;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.IndicatedAirspeedConverter;
-import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.PositionUtils;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.StringUtils;
 
 /**
@@ -123,10 +125,15 @@ public abstract class AircraftBase implements Aircraft {
     private static final double WAYPOINT_PASS_THRESHOLD_MAX_NM = 5.0;
     private static final double WAYPOINT_PASS_SECONDS = 5.0;
     private static final double HOLD_WAYPOINT_PASS_THRESHOLD_NM = 0.25;
-    private static final double HOLD_HEADING_CAPTURE_DEG = 2.0;
+    /** First ENTRY arrival under wind; wider than the calm 0.25 NM racetrack threshold. */
+    private static final double HOLD_ENTRY_PASS_THRESHOLD_NM = 1.0;
+    /** Inbound fix passage allows up to this |xtk| when along-track crosses zero. */
+    private static final double HOLD_INBOUND_PASS_XTK_NM = 1.0;
     private static final double HOLD_ABEAM_TOLERANCE_NM = 0.15;
     private static final double HOLD_INTERCEPT_XTK_NM = 0.5;
     private static final double HOLD_PARALLEL_MIN_TURN_DEG = 180.0;
+    /** Along-track NM from the holding fix on the inbound course (for abeam crossing). */
+    private double previousHoldAlongTrackNm = Double.NaN;
 
     private static final boolean WP_DEBUG = "true".equalsIgnoreCase(System.getProperty("flightplan.wp.debug"));
 
@@ -188,86 +195,47 @@ public abstract class AircraftBase implements Aircraft {
         updateInstructedVectorFromNavigation();
         advanceHoldingPhase(simDeltaSeconds);
 
-        double turnRate = resolveActiveTurnRateDegPerSec();
+        Guidance guidance = resolveCurrentGuidance();
+        TurnConstraint turnConstraint = resolveTurnConstraint();
         double headingBefore = this.aircraftVector.heading.toDouble();
-        double targetHeadingDeg = resolveHeadingTargetWithWindCorrection(
-                this.instructedVector.instructedHeading.toDouble());
-        Heading nextHeading;
-        // Parallel re-intercept: continuous turn past 180° until the inbound axis is reached,
-        // then a normal forced turn captures the inbound heading.
-        boolean parallelInbound = holdPhase == HoldPhase.ENTRY_PARALLEL_INBOUND_TURN
-                && holdEntryForcedTurnDirection != null;
-        boolean parallelContinuous = parallelInbound
-                && !(holdEntryTurnAccumDeg >= HOLD_PARALLEL_MIN_TURN_DEG && inboundAxisCaptured());
-        if (parallelContinuous) {
-            nextHeading = calculateNextHeadingContinuousTurn(headingBefore, holdEntryForcedTurnDirection, turnRate);
-        } else if (parallelInbound) {
-            // Axis reached after >180°: shortest turn to roll out on inbound (avoid long-way force).
-            nextHeading = flightBehavior.calculateNextHeading(
-                    headingBefore,
-                    targetHeadingDeg,
-                    turnRate);
-        } else if (shouldForceHoldTurn(HoldTurnDirection.RIGHT)) {
-            nextHeading = calculateNextHeadingRightTurn(
-                    headingBefore,
-                    targetHeadingDeg,
-                    turnRate);
-        } else if (shouldForceHoldTurn(HoldTurnDirection.LEFT)) {
-            nextHeading = calculateNextHeadingLeftTurn(
-                    headingBefore,
-                    targetHeadingDeg,
-                    turnRate);
-        } else {
-            nextHeading = flightBehavior.calculateNextHeading(
-                    headingBefore,
-                    targetHeadingDeg,
-                    turnRate);
-        }
+
+        Integer iasForStep = (navigationMode == NavigationMode.HEADING && !procedureVaActive)
+                ? instructedIndicatedAirspeedKnots
+                : null;
+        KinematicStep.State before = KinematicStep.State.from(aircraftPosition, aircraftVector);
+        KinematicStep.State after = KinematicStep.next(
+                before,
+                guidance,
+                ambientWind,
+                new KinematicStep.Targets(
+                        instructedVector.instructedAltitude.toDouble(),
+                        instructedVector.instructedGroundSpeed.toDouble(),
+                        iasForStep),
+                new KinematicStep.Limits(
+                        resolveActiveTurnRateDegPerSec(),
+                        characteristics.getMaxAcceleration(),
+                        characteristics.getMaxClimbRate()),
+                turnConstraint,
+                simDeltaSeconds);
+
         if (navigationMode == NavigationMode.HOLDING && holdEntryForcedTurnDirection != null) {
             holdEntryTurnAccumDeg += Math.abs(
-                    HoldingPatternGeometry.signedHeadingDeltaDeg(headingBefore, nextHeading.toDouble()));
+                    HoldingPatternGeometry.signedHeadingDeltaDeg(headingBefore, after.headingDeg()));
         }
 
-        double targetTrueAirspeedKnots = resolveEffectiveTargetTrueAirspeedKnots(nextHeading.toDouble());
-        var nextTrueAirspeed = flightBehavior.calculateNextGroundSpeed(
-            this.aircraftVector.trueAirspeedKnots,
-            targetTrueAirspeedKnots,
-            this.characteristics.getMaxAcceleration()
-        );
-
-        var nextVerticalSpeed = flightBehavior.calculateNextVerticalSpeed(
-            this.aircraftPosition.altitude.toDouble(),
-            this.instructedVector.instructedAltitude.toDouble(),
-            this.characteristics.getMaxClimbRate(),
-            simDeltaSeconds
-        );
-
-        double nextTasKt = nextTrueAirspeed.toDouble();
-        WindTriangle.GroundVelocity groundVelocity = WindTriangle.groundVelocity(
-                nextHeading.toDouble(), nextTasKt, ambientWind);
-        this.aircraftVector = new AircraftVector(
-                nextHeading,
-                new GroundSpeed(groundVelocity.groundSpeedKt()),
-                nextVerticalSpeed,
-                groundVelocity.trackDeg(),
-                nextTasKt);
-
-        double currentAltitude = this.aircraftPosition.altitude.toDouble();
-        double targetAltitude = this.instructedVector.instructedAltitude.toDouble();
-        double altitudeDifference = Math.abs(currentAltitude - targetAltitude);
-
-        if (altitudeDifference <= 5.0 && Math.abs(nextVerticalSpeed.toDouble()) <= 50.0) {
-            this.aircraftPosition = new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.AircraftPosition(
-                this.aircraftPosition.latitude,
-                this.aircraftPosition.longitude,
-                this.instructedVector.instructedAltitude
-            );
+        this.aircraftVector = after.toVector();
+        if (Math.abs(before.altitudeFt() - instructedVector.instructedAltitude.toDouble()) <= 5.0
+                && Math.abs(after.verticalSpeedFpm()) <= 50.0) {
+            this.aircraftPosition = new AircraftPosition(
+                    this.aircraftPosition.latitude,
+                    this.aircraftPosition.longitude,
+                    this.instructedVector.instructedAltitude);
             this.aircraftVector = new AircraftVector(
-                    nextHeading,
-                    new GroundSpeed(groundVelocity.groundSpeedKt()),
-                    new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.VerticalSpeed(0.0),
-                    groundVelocity.trackDeg(),
-                    nextTasKt);
+                    new Heading(after.headingDeg()),
+                    new GroundSpeed(after.groundSpeedKt()),
+                    new VerticalSpeed(0.0),
+                    after.trackDeg(),
+                    after.trueAirspeedKt());
         }
     }
 
@@ -278,17 +246,87 @@ public abstract class AircraftBase implements Aircraft {
         return this.characteristics.getMaxTurnRate();
     }
 
-    private boolean shouldForceHoldTurn(HoldTurnDirection direction) {
+    private TurnConstraint resolveTurnConstraint() {
         if (navigationMode != NavigationMode.HOLDING || !holdingEntryCompleted) {
-            return false;
+            return TurnConstraint.SHORTEST;
         }
-        if (holdEntryForcedTurnDirection != null) {
-            return holdEntryForcedTurnDirection == direction;
+        boolean parallelInbound = holdPhase == HoldPhase.ENTRY_PARALLEL_INBOUND_TURN
+                && holdEntryForcedTurnDirection != null;
+        boolean parallelContinuous = parallelInbound
+                && !(holdEntryTurnAccumDeg >= HOLD_PARALLEL_MIN_TURN_DEG && inboundAxisCaptured());
+        if (parallelContinuous) {
+            return holdEntryForcedTurnDirection == HoldTurnDirection.RIGHT
+                    ? TurnConstraint.CONTINUOUS_RIGHT
+                    : TurnConstraint.CONTINUOUS_LEFT;
         }
-        if (holdTurnDirection != direction) {
-            return false;
+        if (parallelInbound) {
+            // Axis reached after >180°: shortest turn to roll out on inbound.
+            return TurnConstraint.SHORTEST;
         }
-        return holdPhase == HoldPhase.OUTBOUND_TURN || holdPhase == HoldPhase.INBOUND_TURN;
+        HoldTurnDirection forced = holdEntryForcedTurnDirection != null
+                ? holdEntryForcedTurnDirection
+                : ((holdPhase == HoldPhase.OUTBOUND_TURN || holdPhase == HoldPhase.INBOUND_TURN)
+                        ? holdTurnDirection
+                        : null);
+        if (forced == HoldTurnDirection.RIGHT) {
+            return TurnConstraint.FORCE_RIGHT;
+        }
+        if (forced == HoldTurnDirection.LEFT) {
+            return TurnConstraint.FORCE_LEFT;
+        }
+        return TurnConstraint.SHORTEST;
+    }
+
+    /**
+     * Exactly one guidance kind for this tick. WCA applies only for {@link Guidance.TrackCourse}.
+     */
+    private Guidance resolveCurrentGuidance() {
+        if (procedureVaActive && procedureVaCourseTrueDeg != null) {
+            return new Guidance.FlyHeading(procedureVaCourseTrueDeg);
+        }
+        if (navigationMode == NavigationMode.HEADING) {
+            if (finalApproachCourseHeading != null && !finalApproachCoursePending) {
+                // Anchor at the aircraft so xtk≈0: maintain course with WCA (JOIN FINAL).
+                FixPosition anchor = new FixPosition(aircraftPosition.latitude, aircraftPosition.longitude);
+                return new Guidance.TrackCourse(finalApproachCourseHeading, anchor);
+            }
+            return new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+        }
+        if (navigationMode == NavigationMode.DIRECT_TO && directToTarget != null) {
+            return new Guidance.SteerTo(directToTarget);
+        }
+        if (navigationMode == NavigationMode.FLIGHT_PLAN && flightPlan != null) {
+            return flightPlan.getNextWaypoint(currentWaypointIndex)
+                    .map(wp -> (Guidance) new Guidance.SteerTo(wp.getPosition()))
+                    .orElseGet(() -> new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble()));
+        }
+        if (navigationMode == NavigationMode.HOLDING && holdingFix != null) {
+            if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY) {
+                return new Guidance.SteerTo(holdingFix);
+            }
+            return resolveHoldingGuidance();
+        }
+        return new Guidance.FlyHeading(instructedVector.instructedHeading.toDouble());
+    }
+
+    private Guidance resolveHoldingGuidance() {
+        double outbound = HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg);
+        double teardrop = HoldingPatternGeometry.teardropHeadingDeg(holdInboundCourseDeg, holdTurnDirection);
+        FixPosition turnExit = HoldingPatternGeometry.outboundTurnExit(
+                holdingFix, holdInboundCourseDeg, holdTurnDirection, holdFrozenTurnRadiusNm);
+        return switch (holdPhase) {
+            case ENTRY_TEARDROP_TURN -> new Guidance.FlyHeading(teardrop);
+            // Entry straight legs keep FlyHeading so AIM entry geometry matches no-wind tests;
+            // racetrack legs use TrackCourse (WCA + XTK).
+            case ENTRY_TEARDROP_LEG -> new Guidance.FlyHeading(teardrop);
+            case ENTRY_TEARDROP_INBOUND_TURN, ENTRY_PARALLEL_INBOUND_TURN, INBOUND_TURN ->
+                new Guidance.FlyHeading(holdInboundCourseDeg);
+            case ENTRY_PARALLEL_OUTBOUND_TURN, OUTBOUND_TURN -> new Guidance.FlyHeading(outbound);
+            case ENTRY_PARALLEL_LEG -> new Guidance.FlyHeading(outbound);
+            case OUTBOUND_LEG -> new Guidance.TrackCourse(outbound, turnExit);
+            case INBOUND_LEG -> new Guidance.TrackCourse(holdInboundCourseDeg, holdingFix);
+            case ENTRY -> new Guidance.SteerTo(holdingFix);
+        };
     }
 
     private void updateInstructedVectorFromNavigation() {
@@ -319,31 +357,13 @@ public abstract class AircraftBase implements Aircraft {
     private void updateInstructedVectorForHolding() {
         Altitude targetAltitude = resolveTargetAltitude();
         GroundSpeed targetSpeed = resolveTargetSpeed();
-        double outbound = HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg);
-        double teardrop = HoldingPatternGeometry.teardropHeadingDeg(holdInboundCourseDeg, holdTurnDirection);
-        double heading = switch (holdPhase) {
-            case ENTRY_TEARDROP_TURN, ENTRY_TEARDROP_LEG -> teardrop;
-            case ENTRY_TEARDROP_INBOUND_TURN, ENTRY_PARALLEL_INBOUND_TURN, INBOUND_TURN -> holdInboundCourseDeg;
-            case ENTRY_PARALLEL_OUTBOUND_TURN, ENTRY_PARALLEL_LEG, OUTBOUND_TURN -> outbound;
-            case OUTBOUND_LEG -> outbound;
-            case INBOUND_LEG, ENTRY -> {
-                if (ambientWind.affectsMotion()) {
-                    yield holdInboundCourseDeg;
-                }
-                yield flightBehavior.calculateTurnAngle(
-                        aircraftPosition, aircraftVector.heading.toDouble(), holdingFix);
-            }
+        Guidance guidance = resolveHoldingGuidance();
+        double heading = switch (guidance) {
+            case Guidance.FlyHeading fly -> fly.headingDeg();
+            case Guidance.TrackCourse track -> track.courseDeg();
+            case Guidance.SteerTo steer -> flightBehavior.calculateTurnAngle(
+                    aircraftPosition, aircraftVector.heading.toDouble(), steer.fix());
         };
-        if (holdPhase == HoldPhase.OUTBOUND_LEG
-                && holdingOutboundTarget != null
-                && !ambientWind.affectsMotion()) {
-            heading = flightBehavior.calculateTurnAngle(
-                    aircraftPosition, aircraftVector.heading.toDouble(), holdingOutboundTarget);
-        }
-        if (holdPhase == HoldPhase.ENTRY_PARALLEL_LEG || holdPhase == HoldPhase.ENTRY_TEARDROP_LEG) {
-            // Hold heading; timing drives the leg end.
-            heading = holdPhase == HoldPhase.ENTRY_TEARDROP_LEG ? teardrop : outbound;
-        }
         this.instructedVector = new InstructedVector(new Heading(heading), targetAltitude, targetSpeed);
     }
 
@@ -377,7 +397,7 @@ public abstract class AircraftBase implements Aircraft {
         double teardrop = HoldingPatternGeometry.teardropHeadingDeg(holdInboundCourseDeg, holdTurnDirection);
         switch (holdPhase) {
             case ENTRY_TEARDROP_TURN -> {
-                if (headingCapture(heading, teardrop)) {
+                if (holdTurnCaptured(heading, teardrop)) {
                     holdPhase = HoldPhase.ENTRY_TEARDROP_LEG;
                     holdEntryForcedTurnDirection = null;
                     holdEntryLegElapsedSec = 0.0;
@@ -394,13 +414,11 @@ public abstract class AircraftBase implements Aircraft {
             }
             case ENTRY_TEARDROP_INBOUND_TURN -> {
                 if (inboundCourseIntercepted()) {
-                    holdPhase = HoldPhase.INBOUND_LEG;
-                    holdEntryForcedTurnDirection = null;
-                    previousDistanceToWaypoint = Double.MAX_VALUE;
+                    enterInboundLeg();
                 }
             }
             case ENTRY_PARALLEL_OUTBOUND_TURN -> {
-                if (headingCapture(heading, outbound)) {
+                if (holdTurnCaptured(heading, outbound)) {
                     holdPhase = HoldPhase.ENTRY_PARALLEL_LEG;
                     holdEntryForcedTurnDirection = null;
                     holdEntryLegElapsedSec = 0.0;
@@ -419,14 +437,12 @@ public abstract class AircraftBase implements Aircraft {
             case ENTRY_PARALLEL_INBOUND_TURN -> {
                 if (holdEntryTurnAccumDeg >= HOLD_PARALLEL_MIN_TURN_DEG
                         && inboundAxisCaptured()
-                        && headingCapture(heading, holdInboundCourseDeg)) {
-                    holdPhase = HoldPhase.INBOUND_LEG;
-                    holdEntryForcedTurnDirection = null;
-                    previousDistanceToWaypoint = Double.MAX_VALUE;
+                        && holdTurnCaptured(heading, holdInboundCourseDeg)) {
+                    enterInboundLeg();
                 }
             }
             case OUTBOUND_TURN -> {
-                if (headingCapture(heading, outbound)) {
+                if (holdTurnCaptured(heading, outbound)) {
                     holdPhase = HoldPhase.OUTBOUND_LEG;
                     holdOutboundLegElapsedSec = 0.0;
                     holdOutboundTimingStarted = false;
@@ -443,14 +459,31 @@ public abstract class AircraftBase implements Aircraft {
                 }
             }
             case INBOUND_TURN -> {
-                if (headingCapture(heading, holdInboundCourseDeg)) {
-                    holdPhase = HoldPhase.INBOUND_LEG;
-                    previousDistanceToWaypoint = Double.MAX_VALUE;
+                if (holdTurnCaptured(heading, holdInboundCourseDeg)) {
+                    enterInboundLeg();
                 }
             }
             default -> {
             }
         }
+    }
+
+    private void enterInboundLeg() {
+        holdPhase = HoldPhase.INBOUND_LEG;
+        holdEntryForcedTurnDirection = null;
+        previousDistanceToWaypoint = Double.MAX_VALUE;
+        FixPosition here = new FixPosition(aircraftPosition.latitude, aircraftPosition.longitude);
+        previousHoldAlongTrackNm =
+                HoldingPatternGeometry.alongTrackNm(holdingFix, here, holdInboundCourseDeg);
+    }
+
+    /**
+     * Turn complete when heading matches the FlyHeading target (the course).
+     * Track-only capture is not used: under wind track can reach the course while heading is still
+     * catching up, which would enter OUTBOUND_LEG before rollout and never start leg timing.
+     */
+    private boolean holdTurnCaptured(double headingDeg, double courseDeg) {
+        return KinematicStep.headingCaptured(headingDeg, courseDeg);
     }
 
     private boolean entryLegComplete() {
@@ -467,7 +500,7 @@ public abstract class AircraftBase implements Aircraft {
 
     private boolean inboundCourseIntercepted() {
         return inboundAxisCaptured()
-                && headingCapture(aircraftVector.heading.toDouble(), holdInboundCourseDeg);
+                && holdTurnCaptured(aircraftVector.heading.toDouble(), holdInboundCourseDeg);
     }
 
     private boolean inboundAxisCaptured() {
@@ -491,9 +524,8 @@ public abstract class AircraftBase implements Aircraft {
                 holdTurnDirection,
                 holdFrozenTurnRadiusNm,
                 HOLD_ABEAM_TOLERANCE_NM);
-        boolean rolledOut = headingCapture(
-                aircraftVector.heading.toDouble(),
-                HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg));
+        double outbound = HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg);
+        boolean rolledOut = holdTurnCaptured(aircraftVector.heading.toDouble(), outbound);
         // FAA AIP ENR 1.5: start at later of abeam/fix; if abeam unknown, at outbound turn complete.
         if (abeam || rolledOut) {
             holdOutboundTimingStarted = true;
@@ -524,9 +556,7 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private static boolean headingCapture(double currentHeading, double targetHeading) {
-        double delta = Math.abs(GeodeticUtils.normalizeAngle(currentHeading) - GeodeticUtils.normalizeAngle(targetHeading));
-        delta = Math.min(delta, 360.0 - delta);
-        return delta <= HOLD_HEADING_CAPTURE_DEG;
+        return KinematicStep.headingCaptured(currentHeading, targetHeading);
     }
 
     private Altitude resolveTargetAltitude() {
@@ -562,36 +592,6 @@ public abstract class AircraftBase implements Aircraft {
 
     protected double resolveEffectiveTargetGroundSpeedKnots() {
         return resolveEffectiveTargetTrueAirspeedKnots(aircraftVector.heading.toDouble());
-    }
-
-    private double resolveHeadingTargetWithWindCorrection(double courseDeg) {
-        if (!shouldApplyWindCorrectionAngle()) {
-            return courseDeg;
-        }
-        return WindTriangle.headingToMaintainCourseDeg(
-                courseDeg, aircraftVector.trueAirspeedKnots, ambientWind);
-    }
-
-    private boolean shouldApplyWindCorrectionAngle() {
-        if (!ambientWind.affectsMotion()) {
-            return false;
-        }
-        if (navigationMode == NavigationMode.HEADING
-                && finalApproachCourseHeading != null
-                && !finalApproachCoursePending) {
-            return true;
-        }
-        if (navigationMode != NavigationMode.HOLDING || !holdingEntryCompleted) {
-            return false;
-        }
-        return switch (holdPhase) {
-            case ENTRY_TEARDROP_TURN, ENTRY_TEARDROP_LEG,
-                 ENTRY_TEARDROP_INBOUND_TURN, ENTRY_PARALLEL_INBOUND_TURN, INBOUND_TURN,
-                 ENTRY_PARALLEL_OUTBOUND_TURN, ENTRY_PARALLEL_LEG, OUTBOUND_TURN -> true;
-            case INBOUND_LEG -> true;
-            case OUTBOUND_LEG -> holdingOutboundTarget == null;
-            default -> false;
-        };
     }
 
     public UniformWind getAmbientWind() {
@@ -634,10 +634,38 @@ public abstract class AircraftBase implements Aircraft {
         if (target == null) {
             return;
         }
+        if (navigationMode == NavigationMode.HOLDING) {
+            if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY) {
+                double currentDistance = GeodeticUtils.distanceToFix(aircraftPosition, target);
+                boolean withinThreshold = currentDistance < HOLD_ENTRY_PASS_THRESHOLD_NM;
+                boolean movingAway = currentDistance > previousDistanceToWaypoint;
+                previousDistanceToWaypoint = currentDistance;
+                if (withinThreshold && movingAway) {
+                    onHoldingTargetReached();
+                }
+                return;
+            }
+            if (holdPhase == HoldPhase.INBOUND_LEG && holdingFix != null) {
+                FixPosition here = new FixPosition(aircraftPosition.latitude, aircraftPosition.longitude);
+                double along = HoldingPatternGeometry.alongTrackNm(holdingFix, here, holdInboundCourseDeg);
+                double xtk = HoldingPatternGeometry.crossTrackNm(holdingFix, here, holdInboundCourseDeg);
+                boolean crossed = !Double.isNaN(previousHoldAlongTrackNm)
+                        && previousHoldAlongTrackNm < 0.0
+                        && along >= 0.0
+                        && Math.abs(xtk) <= HOLD_INBOUND_PASS_XTK_NM;
+                previousHoldAlongTrackNm = along;
+                previousDistanceToWaypoint = GeodeticUtils.distanceToFix(aircraftPosition, holdingFix);
+                if (crossed) {
+                    onHoldingTargetReached();
+                }
+                return;
+            }
+            // Outbound end is handled in advanceHoldingPhase.
+            return;
+        }
+
         double currentDistance = GeodeticUtils.distanceToFix(aircraftPosition, target);
-        double threshold = navigationMode == NavigationMode.HOLDING
-                ? HOLD_WAYPOINT_PASS_THRESHOLD_NM
-                : calculateDynamicThreshold();
+        double threshold = calculateDynamicThreshold();
 
         boolean withinThreshold = currentDistance < threshold;
         boolean movingAway = currentDistance > previousDistanceToWaypoint;
@@ -661,15 +689,6 @@ public abstract class AircraftBase implements Aircraft {
 
         if (navigationMode == NavigationMode.DIRECT_TO) {
             onDirectToTargetReached();
-            return;
-        }
-        if (navigationMode == NavigationMode.HOLDING) {
-            // Only fix passages advance the racetrack; outbound end is handled in advanceHoldingPhase.
-            if (!holdingEntryCompleted
-                    || holdPhase == HoldPhase.ENTRY
-                    || holdPhase == HoldPhase.INBOUND_LEG) {
-                onHoldingTargetReached();
-            }
             return;
         }
 
@@ -944,55 +963,59 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     /**
-     * Steps heading, indicated-airspeed conversion, vertical speed, and position in the same
-     * order as a live tick. Acceptance is the removal radius, not a wider margin.
+     * Steps with the same {@link KinematicStep} as the live tick (guidance + wind + track).
+     * Acceptance is the removal radius, not a wider margin.
      */
     private boolean maintainedTrackReachesThreshold(double thresholdLatitude, double thresholdLongitude) {
-        double lat = aircraftPosition.latitude.toDouble();
-        double lon = aircraftPosition.longitude.toDouble();
-        double altitude = aircraftPosition.altitude.toDouble();
-        double heading = aircraftVector.heading.toDouble();
-        double speed = aircraftVector.groundSpeed.toDouble();
-        double verticalSpeed = aircraftVector.verticalSpeed.toDouble();
-        double targetHeading = instructedVector.instructedHeading.toDouble();
-        double targetAltitude = instructedVector.instructedAltitude.toDouble();
-        double fallbackGroundSpeed = instructedVector.instructedGroundSpeed.toDouble();
-        double previous = horizontalDistanceNm(lat, lon, thresholdLatitude, thresholdLongitude);
+        Guidance guidance = resolveCurrentGuidance();
+        KinematicStep.State state = KinematicStep.State.from(aircraftPosition, aircraftVector);
+        KinematicStep.Targets targets = new KinematicStep.Targets(
+                instructedVector.instructedAltitude.toDouble(),
+                instructedVector.instructedGroundSpeed.toDouble(),
+                instructedIndicatedAirspeedKnots);
+        KinematicStep.Limits limits = new KinematicStep.Limits(
+                characteristics.getMaxTurnRate(),
+                characteristics.getMaxAcceleration(),
+                characteristics.getMaxClimbRate());
+        double previous = horizontalDistanceNm(
+                state.latitude(), state.longitude(), thresholdLatitude, thresholdLongitude);
         double minimum = previous;
         int recedingSeconds = 0;
+        double targetHeading = KinematicStep.resolveGuidanceHeading(
+                guidance,
+                state.latitude(),
+                state.longitude(),
+                state.altitudeFt(),
+                state.headingDeg(),
+                state.trueAirspeedKt(),
+                ambientWind);
         for (int second = 0; second < TOWER_HANDOFF_TRACK_HORIZON_SECONDS; second++) {
             if (previous <= TOWER_HANDOFF_REMOVAL_NM) {
                 return true;
             }
-            heading = flightBehavior.calculateNextHeading(heading, targetHeading, characteristics.getMaxTurnRate())
-                    .toDouble();
-            double targetSpeed = instructedIndicatedAirspeedKnots == null
-                    ? fallbackGroundSpeed
-                    : IndicatedAirspeedConverter.indicatedToTrueAirspeedKnots(
-                            instructedIndicatedAirspeedKnots, altitude);
-            speed = flightBehavior.calculateNextGroundSpeed(
-                    speed, targetSpeed, characteristics.getMaxAcceleration()).toDouble();
-            verticalSpeed = flightBehavior.calculateNextVerticalSpeed(
-                    altitude, targetAltitude, characteristics.getMaxClimbRate(), 1.0).toDouble();
-            if (Math.abs(altitude - targetAltitude) <= 5.0 && Math.abs(verticalSpeed) <= 50.0) {
-                altitude = targetAltitude;
-                verticalSpeed = 0.0;
+            // Re-resolve TrackCourse anchors (JOIN FINAL) from the simulated position each second.
+            Guidance stepGuidance = guidance;
+            if (guidance instanceof Guidance.TrackCourse track
+                    && finalApproachCourseHeading != null
+                    && !finalApproachCoursePending) {
+                stepGuidance = new Guidance.TrackCourse(
+                        track.courseDeg(),
+                        new FixPosition(new Latitude(state.latitude()), new Longitude(state.longitude())));
             }
-            AircraftPosition stepped = PositionUtils.calculateNextPosition(
-                    new AircraftPosition(
-                            new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Latitude(lat),
-                            new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Longitude(lon),
-                            new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude(altitude)),
-                    Math.max(0.0, speed),
-                    heading,
-                    verticalSpeed,
-                    1.0);
-            lat = stepped.latitude.toDouble();
-            lon = stepped.longitude.toDouble();
-            altitude = stepped.altitude.toDouble();
-            double distanceNm = horizontalDistanceNm(lat, lon, thresholdLatitude, thresholdLongitude);
+            state = KinematicStep.next(
+                    state, stepGuidance, ambientWind, targets, limits, TurnConstraint.SHORTEST, 1.0);
+            targetHeading = KinematicStep.resolveGuidanceHeading(
+                    stepGuidance,
+                    state.latitude(),
+                    state.longitude(),
+                    state.altitudeFt(),
+                    state.headingDeg(),
+                    state.trueAirspeedKt(),
+                    ambientWind);
+            double distanceNm = horizontalDistanceNm(
+                    state.latitude(), state.longitude(), thresholdLatitude, thresholdLongitude);
             minimum = Math.min(minimum, distanceNm);
-            boolean aligned = smallestHeadingDelta(heading, targetHeading) < 1.0;
+            boolean aligned = smallestHeadingDelta(state.headingDeg(), targetHeading) < 1.0;
             if (aligned && distanceNm > previous) {
                 recedingSeconds++;
                 if (recedingSeconds >= 5) {
@@ -1469,6 +1492,7 @@ public abstract class AircraftBase implements Aircraft {
         this.holdEntryForcedTurnDirection = null;
         this.holdEntryTurnAccumDeg = 0.0;
         this.resumeFlightPlanIndexAfterHold = -1;
+        this.previousHoldAlongTrackNm = Double.NaN;
     }
 
     private int computeResumeFlightPlanIndexAfterHold(String fixName) {
@@ -1491,27 +1515,6 @@ public abstract class AircraftBase implements Aircraft {
             return waypointCount;
         }
         return nextIndex;
-    }
-
-    private Heading calculateNextHeadingRightTurn(double currentHeading, double targetHeading, double maxTurnRate) {
-        double clockwiseDelta = GeodeticUtils.normalizeAngle(targetHeading - currentHeading);
-        double turnAmount = Math.min(maxTurnRate, clockwiseDelta);
-        return new Heading(GeodeticUtils.normalizeAngle(currentHeading + turnAmount));
-    }
-
-    private Heading calculateNextHeadingLeftTurn(double currentHeading, double targetHeading, double maxTurnRate) {
-        double counterClockwiseDelta = GeodeticUtils.normalizeAngle(currentHeading - targetHeading);
-        double turnAmount = Math.min(maxTurnRate, counterClockwiseDelta);
-        return new Heading(GeodeticUtils.normalizeAngle(currentHeading - turnAmount));
-    }
-
-    /** Continuous rate turn used when the maneuver must exceed 180° (parallel re-intercept). */
-    private Heading calculateNextHeadingContinuousTurn(
-            double currentHeading, HoldTurnDirection direction, double maxTurnRate) {
-        if (direction == HoldTurnDirection.RIGHT) {
-            return new Heading(GeodeticUtils.normalizeAngle(currentHeading + maxTurnRate));
-        }
-        return new Heading(GeodeticUtils.normalizeAngle(currentHeading - maxTurnRate));
     }
 
     public void setNavigationMode(NavigationMode mode) {

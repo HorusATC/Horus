@@ -18,8 +18,8 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 - 操縦目標は針路・高度・地速。経路操作は Direct To、ホールド（入方向・レグ・左右旋回）、Resume。スクオーク割当とフィルタ強調、管制メモ行がある。
 - コンフリクトは水平 5海里・垂直 1,000フィート固定（`RiskAssessment`）。
 - フライトプランのウェイポイントには高度制約のデータ型があるが、機体の飛行更新はフィックスへの針路更新が中心で、通過高度・速度制限には従わない。
-- ホールド API は入方向・レグ（分/NM）・左右旋回を受け付ける（[20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。標準率レーストラック飛行と指示経路オーバーレイは [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)。進入セクター（DIRECT／TEARDROP／PARALLEL）は [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)。一様風のレグ WCA・GS／トラックは [20261122-uniform-wind](../20261122-uniform-wind/spec.md) で実装済み。公示ホールディング（AS PUBLISHED）・EAT／EFC・**待機レグ時間の公式風補正**は未実装。
-- 経路末尾の `REMOVE_AIRCRAFT` は機体削除であり、シナリオ終端の削除として残す。タワー移管は別 API として実装済み（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)）。
+- ホールド API は入方向・レグ（分/NM）・左右旋回を受け付ける（[20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。標準率レーストラック飛行と指示経路オーバーレイは [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)。進入セクター（DIRECT／TEARDROP／PARALLEL）は [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)。一様風のレグ WCA・GS／トラックは [20261122-uniform-wind](../20261122-uniform-wind/spec.md)、風下でのレーストラック維持と移管予測の共有運動は [20261123-hold-handoff-wind](../20261123-hold-handoff-wind/spec.md) で実装済み。公示ホールディング（AS PUBLISHED）・EAT／EFC・**待機レグ時間の公式風補正**は未実装。
+- 経路末尾の `REMOVE_AIRCRAFT` は機体削除であり、シナリオ終端の削除として残す。タワー移管は別 API として実装済み（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)）。予測はライブと同じ風対応 `KinematicStep`（[20261123-hold-handoff-wind](../20261123-hold-handoff-wind/spec.md)）。
 - セクター境界、シミュレーション速度の可変、セッション記録、複数セクターはロードマップ上の別項目である。ATIS・使用滑走路（6-2）は [20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md) で実装済み（PR [#132](https://github.com/HorusATC/Horus/pull/132)）。一様風・GS／トラック（6-1）は [20261122-uniform-wind](../20261122-uniform-wind/spec.md) で実装済み（シアー・高度別風・待機時間補正は残課題）。
 
 ### 課題（Problem Statement）
@@ -46,7 +46,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
    - 水平間隔の 3海里と、後方乱気流カテゴリに応じた海里
    - 滑走路と最終進入（延長線上への会合まで。進入復行は次段）
 3. 既存ロードマップ項目（セクター境界、MSAW、風、ハンドオフ、複数セクター、記録・採点）は重複して新 Issue を切らず、本台帳から参照する。ATIS・使用滑走路（6-2）は実装済み。
-4. ホールドの指示要素は [20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)、標準率レーストラック＋経路描画は [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)、進入セクターは [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md) で実装済み。公示パターン・EAT／EFC・風は後続。
+4. ホールドの指示要素は [20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)、標準率レーストラック＋経路描画は [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)、進入セクターは [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)、風下レーストラック維持は [20261123-hold-handoff-wind](../20261123-hold-handoff-wind/spec.md) で実装済み。公示パターン・EAT／EFC・レグ時間の公式風補正は後続。
 
 ### 検討した他案（Alternatives Considered）
 
