@@ -41,8 +41,7 @@ export interface AircraftLocationDto {
 export const fetchAircraftLocation = async (
   controllingAircrafts: Aircraft[],
   centerCoordinate: Coordinate,
-  displayRange: DisplayRange,
-  pathname: string
+  displayRange: DisplayRange
 ) => {
   let updatedControllingAircraft: Aircraft[] = [];
   try {
@@ -61,8 +60,7 @@ export const fetchAircraftLocation = async (
       );
       updatedControllingAircraft = updateControllingAircrafts(
         aircraftData,
-        controllingAircrafts,
-        pathname
+        controllingAircrafts
       );
     } else {
       console.error("Request failed with status:", response.status);
@@ -136,8 +134,7 @@ function mapDtoToAircraft(
 
 function updateControllingAircrafts(
   apiResponse: Aircraft[],
-  controllingAircrafts: Aircraft[],
-  pathname: string
+  controllingAircrafts: Aircraft[]
 ): Aircraft[] {
   const newAircraftMap = new Map<string, Aircraft>();
 
@@ -148,11 +145,7 @@ function updateControllingAircrafts(
   controllingAircrafts = controllingAircrafts.filter((airplane) => {
     const newAircraft = newAircraftMap.get(airplane.callsign);
     if (newAircraft) {
-      if (pathname === "/operator") {
-        airplane.updateAircraftInfo(newAircraft);
-      } else {
-        airplane.updateAircraftLocationInfo(newAircraft);
-      }
+      airplane.applyPolledFields(newAircraft);
       newAircraftMap.delete(airplane.callsign);
       return true;
     } else {

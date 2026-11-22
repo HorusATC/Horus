@@ -14,7 +14,10 @@ describe("Aircraft", () => {
     altitude: 35000,
   };
 
-  it("updateAircraftLocationInfo does NOT update instructedVector", () => {
+  it("applyPolledFields syncs instructedVector from polled location (Controller path)", () => {
+    // Regression: Controller polls used to skip instructedVector, so the
+    // data-block target altitude did not move after Operator altitude
+    // instructions (PR #119 / main).
     const aircraft = new Aircraft(
       "JAL123",
       basePosition,
@@ -55,11 +58,11 @@ describe("Aircraft", () => {
       30
     );
 
-    aircraft.updateAircraftLocationInfo(newAircraft);
+    aircraft.applyPolledFields(newAircraft);
 
     expect(aircraft.position).toEqual(newAircraft.position);
     expect(aircraft.vector).toEqual(newAircraft.vector);
-    expect(aircraft.instructedVector).toEqual(baseInstructedVector);
+    expect(aircraft.instructedVector).toEqual(newAircraft.instructedVector);
     expect(aircraft.eta).toBe("12:05");
     expect(aircraft.riskLevel).toBe(30);
     expect(aircraft.atcClearance).toEqual({
@@ -67,6 +70,7 @@ describe("Aircraft", () => {
       groundSpeed: 240,
       altitude: 34000,
     });
+    expect(aircraft.label).toEqual({ x: 50, y: 50 });
     expect(aircraft.positionHistory).toHaveLength(1);
     expect(aircraft.positionHistory[0]).toMatchObject({
       latitude: baseGeo.latitude,
@@ -76,7 +80,7 @@ describe("Aircraft", () => {
     expect(aircraft.positionHistory[0].recordedAt).toEqual(expect.any(String));
   });
 
-  it("updateAircraftLocationInfo copies goAround", () => {
+  it("applyPolledFields copies goAround", () => {
     const aircraft = new Aircraft(
       "JAL123",
       basePosition,
@@ -118,11 +122,11 @@ describe("Aircraft", () => {
       null,
       true
     );
-    aircraft.updateAircraftLocationInfo(next);
+    aircraft.applyPolledFields(next);
     expect(aircraft.goAround).toBe(true);
   });
 
-  it("updateAircraftLocationInfo copies towerHandoff", () => {
+  it("applyPolledFields copies towerHandoff", () => {
     const aircraft = new Aircraft(
       "JAL123",
       basePosition,
@@ -165,7 +169,7 @@ describe("Aircraft", () => {
       false,
       true
     );
-    aircraft.updateAircraftLocationInfo(next);
+    aircraft.applyPolledFields(next);
     expect(aircraft.towerHandoff).toBe(true);
   });
 
@@ -210,7 +214,7 @@ describe("Aircraft", () => {
         50,
         0
       );
-      aircraft.updateAircraftLocationInfo(next);
+      aircraft.applyPolledFields(next);
     }
 
     expect(aircraft.positionHistory.length).toBe(POSITION_HISTORY_MAX_POINTS);

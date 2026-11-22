@@ -97,7 +97,6 @@ const RadarCanvas: React.FC = () => {
   const isSelectFixModeRef = useRef(isSelectFixMode);
   const atsRouteDataRef = useRef(atsRouteData);
   const controllerClearanceAltitudeRowRef = useRef(false);
-  const pathnameRef = useRef(pathname);
   const squawkHighlightRef = useRef<string | null>(null);
   const simulationSpeedMultiplierRef = useRef(1);
 
@@ -114,7 +113,6 @@ const RadarCanvas: React.FC = () => {
   selectedAircraftRef.current = selectedAircraft;
   controllingAircraftsRef.current = controllingAircrafts;
   controllerClearanceAltitudeRowRef.current = pathname === "/controller";
-  pathnameRef.current = pathname;
   bgRef.current = bg;
   squawkHighlightRef.current =
     squawkFilterInput.trim().length === 4 ? squawkFilterInput.trim() : null;
@@ -456,8 +454,7 @@ const RadarCanvas: React.FC = () => {
           fetchAircraftLocation(
             controllingAircraftsRef.current,
             centerCoordinateRef.current,
-            displayRangeRef.current,
-            pathnameRef.current
+            displayRangeRef.current
           ),
         ]);
         if (speed != null) {

@@ -18,6 +18,48 @@ export type PositionHistoryPoint = {
 /** Enough for 90s track marks at ~1 Hz polls plus margin. */
 export const POSITION_HISTORY_MAX_POINTS = 120;
 
+/**
+ * Server-owned Aircraft fields refreshed from each location poll.
+ * Client-owned fields (`label`, `positionHistory`, and static identity/type
+ * metadata) are intentionally excluded.
+ */
+export type PolledAircraftServerFields = Pick<
+  Aircraft,
+  | "position"
+  | "geoPosition"
+  | "vector"
+  | "instructedVector"
+  | "atcClearance"
+  | "squawk"
+  | "eta"
+  | "navigationMode"
+  | "riskLevel"
+  | "indicatedAirspeedKnots"
+  | "goAround"
+  | "towerHandoff"
+  | "msawAlert"
+>;
+
+/**
+ * Exhaustive key checklist for {@link PolledAircraftServerFields}.
+ * Adding a field to that type without an entry here is a TypeScript error.
+ */
+export const POLLED_AIRCRAFT_SERVER_FIELD_KEYS = {
+  position: true,
+  geoPosition: true,
+  vector: true,
+  instructedVector: true,
+  atcClearance: true,
+  squawk: true,
+  eta: true,
+  navigationMode: true,
+  riskLevel: true,
+  indicatedAirspeedKnots: true,
+  goAround: true,
+  towerHandoff: true,
+  msawAlert: true,
+} as const satisfies Record<keyof PolledAircraftServerFields, true>;
+
 export class Aircraft {
   callsign: string;
   position: { x: number; y: number; altitude: number };
@@ -117,36 +159,35 @@ export class Aircraft {
     }
   }
 
-  public updateAircraftInfo(newAircraft: Aircraft) {
+  /**
+   * Apply server-owned fields from a location poll while keeping client-owned
+   * `label` and `positionHistory`. Keys are driven by
+   * {@link POLLED_AIRCRAFT_SERVER_FIELD_KEYS} so a new server-owned field cannot
+   * be silently skipped (tsc error via `satisfies`).
+   */
+  public applyPolledFields(source: PolledAircraftServerFields): void {
     this.recordPastGeoSample();
-    this.position = newAircraft.position;
-    this.geoPosition = newAircraft.geoPosition;
-    this.vector = newAircraft.vector;
-    this.instructedVector = newAircraft.instructedVector;
-    this.atcClearance = newAircraft.atcClearance;
-    this.squawk = newAircraft.squawk;
-    this.eta = newAircraft.eta;
-    this.navigationMode = newAircraft.navigationMode;
-    this.riskLevel = newAircraft.riskLevel;
-    this.indicatedAirspeedKnots = newAircraft.indicatedAirspeedKnots;
-    this.goAround = newAircraft.goAround;
-    this.towerHandoff = newAircraft.towerHandoff;
-    this.msawAlert = newAircraft.msawAlert;
-  }
-
-  public updateAircraftLocationInfo(newAircraft: Aircraft) {
-    this.recordPastGeoSample();
-    this.position = newAircraft.position;
-    this.geoPosition = newAircraft.geoPosition;
-    this.vector = newAircraft.vector;
-    this.atcClearance = newAircraft.atcClearance;
-    this.squawk = newAircraft.squawk;
-    this.eta = newAircraft.eta;
-    this.navigationMode = newAircraft.navigationMode;
-    this.riskLevel = newAircraft.riskLevel;
-    this.indicatedAirspeedKnots = newAircraft.indicatedAirspeedKnots;
-    this.goAround = newAircraft.goAround;
-    this.towerHandoff = newAircraft.towerHandoff;
-    this.msawAlert = newAircraft.msawAlert;
+    // Explicit object must list every PolledAircraftServerFields key; combined
+    // with POLLED_AIRCRAFT_SERVER_FIELD_KEYS `satisfies`, a new server-owned
+    // field cannot be silently skipped.
+    const next = {
+      position: source.position,
+      geoPosition: source.geoPosition,
+      vector: source.vector,
+      instructedVector: source.instructedVector,
+      atcClearance: source.atcClearance,
+      squawk: source.squawk,
+      eta: source.eta,
+      navigationMode: source.navigationMode,
+      riskLevel: source.riskLevel,
+      indicatedAirspeedKnots: source.indicatedAirspeedKnots,
+      goAround: source.goAround,
+      towerHandoff: source.towerHandoff,
+      msawAlert: source.msawAlert,
+    } satisfies PolledAircraftServerFields;
+    const _keysMatchChecklist: Record<keyof typeof next, true> =
+      POLLED_AIRCRAFT_SERVER_FIELD_KEYS;
+    void _keysMatchChecklist;
+    Object.assign(this, next);
   }
 }
