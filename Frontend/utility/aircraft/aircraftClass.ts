@@ -39,6 +39,7 @@ export type AircraftFieldKind = "client" | "identity" | "polled";
  */
 export const AIRCRAFT_FIELD_PARTITION = {
   label: "client",
+  labelPinned: "client",
   positionHistory: "client",
   callsign: "identity",
   type: "identity",
@@ -88,8 +89,8 @@ export type AircraftIdentityKey = {
 
 /**
  * Server-owned Aircraft fields refreshed from each location poll.
- * Client-owned (`label`, `positionHistory`) and identity fields are excluded;
- * identity is set at construction and not overwritten by polling.
+ * Client-owned (`label`, `labelPinned`, `positionHistory`) and identity fields
+ * are excluded; identity is set at construction and not overwritten by polling.
  */
 export type PolledAircraftServerFields = Pick<Aircraft, PolledAircraftKey>;
 
@@ -144,6 +145,11 @@ export class Aircraft {
   /** ISO 8601 instant from API; data block shows UTC HH:mm (see spec 20260318-data-block-display-items). */
   eta: string;
   label: { x: number; y: number };
+  /**
+   * When true, auto-placement must not move `label` (set after the user drags).
+   * Client-owned; never written by location polling.
+   */
+  labelPinned: boolean;
   riskLevel: number; // 危険度（0-100）
   /** MSAW alert from Backend; null when no alert (or older Backend omitting the field). */
   msawAlert: MsawAlertDto | null;
@@ -181,7 +187,8 @@ export class Aircraft {
     goAround: boolean = false,
     towerHandoff: boolean = false,
     msawAlert: MsawAlertDto | null = null,
-    holding: HoldingPatternDto | null = null
+    holding: HoldingPatternDto | null = null,
+    labelPinned: boolean = false
   ) {
     this.callsign = callsign;
     this.position = position;
@@ -198,6 +205,7 @@ export class Aircraft {
     this.squawk = squawk;
     this.eta = eta;
     this.label = { x: labelX, y: labelY };
+    this.labelPinned = labelPinned;
     this.riskLevel = riskLevel;
     this.navigationMode = navigationMode;
     this.indicatedAirspeedKnots = indicatedAirspeedKnots;
@@ -222,9 +230,9 @@ export class Aircraft {
 
   /**
    * Apply server-owned fields from a location poll while keeping client-owned
-   * `label` / `positionHistory` and identity fields. Keys are driven by
-   * {@link POLLED_AIRCRAFT_SERVER_FIELD_KEYS} so a new polled field cannot
-   * be silently skipped (tsc error via `satisfies`).
+   * `label` / `labelPinned` / `positionHistory` and identity fields. Keys are
+   * driven by {@link POLLED_AIRCRAFT_SERVER_FIELD_KEYS} so a new polled field
+   * cannot be silently skipped (tsc error via `satisfies`).
    */
   public applyPolledFields(source: PolledAircraftServerFields): void {
     this.recordPastGeoSample();

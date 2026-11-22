@@ -71,6 +71,7 @@ describe("Aircraft", () => {
       altitude: 34000,
     });
     expect(aircraft.label).toEqual({ x: 50, y: 50 });
+    expect(aircraft.labelPinned).toBe(false);
     expect(aircraft.positionHistory).toHaveLength(1);
     const historyEntry = aircraft.positionHistory[0];
     expect(historyEntry).toBeDefined();
@@ -83,6 +84,57 @@ describe("Aircraft", () => {
       altitude: basePosition.altitude,
     });
     expect(historyEntry.recordedAt).toEqual(expect.any(String));
+  });
+
+  it("applyPolledFields does not overwrite labelPinned or label", () => {
+    const aircraft = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      12,
+      -34,
+      0,
+      "HEADING",
+      null,
+      false,
+      false,
+      null,
+      null,
+      true
+    );
+    const next = new Aircraft(
+      "JAL123",
+      { x: 150, y: 250, altitude: 36000 },
+      { latitude: 35.1, longitude: 139.1 },
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:05",
+      50,
+      50,
+      0
+    );
+    aircraft.applyPolledFields(next);
+    expect(aircraft.labelPinned).toBe(true);
+    expect(aircraft.label).toEqual({ x: 12, y: -34 });
   });
 
   it("applyPolledFields copies holding pattern and clears it when null", () => {
