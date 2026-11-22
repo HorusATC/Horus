@@ -141,7 +141,7 @@
 
 | # | タスク | 優先度 | 難易度 | Issue | 実装方針のフック |
 |---|--------|--------|--------|-------|------------------|
-| 6-1 | 風と対地速度 | ✅ | ★★☆ | [#69](https://github.com/Futty93/Horus/issues/69) | 一様水平風・GS／トラック・ATIS 風欄・最終進入／待機レグ WCA。[20261122-uniform-wind](20261122-uniform-wind/spec.md)。**残り**: 高度別風・シアー・待機時間公式補正・磁方位表示。 |
+| 6-1 | 風と対地速度 | ✅ | ★★☆ | [#69](https://github.com/Futty93/Horus/issues/69) | 一様水平風・GS／トラック・ATIS 風欄・最終進入／待機レグ WCA。[20261122-uniform-wind](20261122-uniform-wind/spec.md)。風下 Hold 維持と移管予測の共有運動は [20261123-hold-handoff-wind](20261123-hold-handoff-wind/spec.md)。**残り**: 高度別風・シアー・待機時間公式補正・磁方位表示。 |
 | 6-2 | ATIS 表示 | ✅ | ★☆☆ | [#71](https://github.com/Futty93/Horus/issues/71) | 使用滑走路 + 一様風 + 空港ごと QNH（hPa）を ATIS 本文・パネルに載せる。[20261122-atis-runway-in-use](20261122-atis-runway-in-use/spec.md)、[20261122-uniform-wind](20261122-uniform-wind/spec.md)、[20261122-atis-qnh](20261122-atis-qnh/spec.md)。**残り**: 高度換算（移行高度／FL・指示高度と真高度）、視程・雲・inHg 併記。 |
 | 6-3 | 気象レーダー | 🟢 | ★★★ | [#70](https://github.com/Futty93/Horus/issues/70) | 外部データ・タイル。 |
 
@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-23 | Hold / タワー移管の風一貫ガイダンス（[20261123-hold-handoff-wind](20261123-hold-handoff-wind/spec.md)）。`Guidance` + 共有 `KinematicStep`。N1／outbound WCA／移管予測を修正。 |
 | 2026-11-23 | 既定クイックスタートを RJTT RNAV STAR 到着シナリオに（[20261123-star-quickstart-scenario](20261123-star-quickstart-scenario/spec.md)）。`procedureId` / ATIS シードはシナリオ load に加算。VAMOS・VISIP・KIAS 自動は既定に含めない。 |
 | 2026-11-22 | RJTT SID/STAR 第一スライス（[20261122-sid-star](20261122-sid-star/spec.md)、**Done**）。RNAV STAR 15・VAMOS FOUR（TATEYAMA/DRAKY トランジション含む）、割当 API、レーダー経路。VISIP・公示ホールド自動・KIAS は未実装。 |
 | 2026-11-22 | ATIS 空港ごと QNH（[20261122-atis-qnh](20261122-atis-qnh/spec.md)）。6-2 の風・QNH・使用滑走路が揃う。高度換算・視程は残課題。 |

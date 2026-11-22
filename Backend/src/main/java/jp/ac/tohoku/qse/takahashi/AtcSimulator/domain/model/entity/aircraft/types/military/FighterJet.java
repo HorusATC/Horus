@@ -3,6 +3,8 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.typ
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftBase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.behavior.FixedWingFlightBehavior;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.characteristics.AircraftCharacteristics;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atmosphere.WindTriangle;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.GroundSpeed;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.AircraftPosition;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.AircraftVector;
@@ -82,7 +84,6 @@ public class FighterJet extends AircraftBase {
      * 緊急時の急激な方向転換
      */
     public void performTacticalManeuver(double emergencyHeading) {
-        // 戦闘機は緊急時により急激な旋回が可能
         double tacticalTurnRate = characteristics.getMaxTurnRate() * 1.5;
 
         var emergencyHeadingObj = flightBehavior.calculateNextHeading(
@@ -91,14 +92,20 @@ public class FighterJet extends AircraftBase {
             tacticalTurnRate
         );
 
-        // 緊急機動では速度も調整
-        var emergencySpeed = flightBehavior.calculateNextGroundSpeed(
-            aircraftVector.groundSpeed.toDouble(),
-            characteristics.getMaxSpeed() * 0.8, // 最高速度の80%
-            characteristics.getMaxAcceleration() * 2.0 // 緊急加速
+        double targetTas = characteristics.getMaxSpeed() * 0.8;
+        var nextTas = flightBehavior.calculateNextGroundSpeed(
+            aircraftVector.trueAirspeedKnots,
+            targetTas,
+            characteristics.getMaxAcceleration() * 2.0
         );
-
-        setAircraftVector(new AircraftVector(emergencyHeadingObj, emergencySpeed, aircraftVector.verticalSpeed));
+        WindTriangle.GroundVelocity gv = WindTriangle.groundVelocity(
+                emergencyHeadingObj.toDouble(), nextTas.toDouble(), getAmbientWind());
+        setAircraftVector(new AircraftVector(
+                emergencyHeadingObj,
+                new GroundSpeed(gv.groundSpeedKt()),
+                aircraftVector.verticalSpeed,
+                gv.trackDeg(),
+                nextTas.toDouble()));
     }
 
     // Getters

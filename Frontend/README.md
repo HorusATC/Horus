@@ -271,7 +271,7 @@ Operator 専用。航空機の指示先 Fix をレーダー上で選択し、`Di
 
 ### 6. フライトプラン制御 (FlightPlanControl)
 
-Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、出発初期上昇（`DEPART`: カタログ物理進入端へ置き、標高+35 ft から滑走路真方位で上昇。任意の初期針路は DER 標高+400 ft まで滑走路方位維持。地上滑走・SID なし。開始高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、その針路のまま末端に入る機体）、Resume Navigation、および `POST /api/aircraft/{callsign}/assign-procedure`（SID/STAR 割当）をバックエンドへ送信。空港・滑走路入力は現行 ATIS の使用滑走路で初期表示するが、API には明示して送る（使用滑走路変更だけでは進入中機体は付け替わらない）。復行中は `GA`、初期上昇中は `DEP`、移管後は `TWR` をレーダーラベルに出す。詳細は [spec/20261122-initial-climb](../spec/20261122-initial-climb/spec.md)。
+Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、出発初期上昇（`DEPART`: カタログ物理進入端へ置き、標高+35 ft から滑走路真方位で上昇。任意の初期針路は DER 標高+400 ft まで滑走路方位維持。地上滑走・SID なし。開始高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、風込みの予測軌道が末端 0.5 NM 以内を通る機体）、Resume Navigation、および `POST /api/aircraft/{callsign}/assign-procedure`（SID/STAR 割当）をバックエンドへ送信。空港・滑走路入力は現行 ATIS の使用滑走路で初期表示するが、API には明示して送る（使用滑走路変更だけでは進入中機体は付け替わらない）。復行中は `GA`、初期上昇中は `DEP`、移管後は `TWR` をレーダーラベルに出す。詳細は [spec/20261122-initial-climb](../spec/20261122-initial-climb/spec.md)。
 
 ### 7. 経路情報表示設定 (RouteInfoDisplaySetting)
 
@@ -328,13 +328,13 @@ React Context APIを使用して、以下の状態を管理しています：
 - `GET /api/aircraft/{callsign}/flightplan` - フライトプラン取得
 - `POST /api/aircraft/{callsign}/flightplan` - フライトプラン割り当て
 - `POST /api/aircraft/{callsign}/direct-to` - 直行指示
-- `POST /api/aircraft/{callsign}/hold` - ホールディング指示（任意: `inboundCourseDeg` / `legMinutes`|`legNm` / `turnDirection` LEFT|RIGHT。省略時は右旋回・4.0 NM・Fix名ハッシュ入方向）。Backend は到着針路の AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）でフィックスへ合流し、その後無風・標準率のレーストラックで周回する。位置 API の `holding.pattern` / `holding.entryProcedure` で同じ経路と進入方式をレーダー表示する。Hold POST 契約は変更なし。残課題: 公示パターン・EAT／EFC・風
+- `POST /api/aircraft/{callsign}/hold` - ホールディング指示（任意: `inboundCourseDeg` / `legMinutes`|`legNm` / `turnDirection` LEFT|RIGHT。省略時は右旋回・4.0 NM・Fix名ハッシュ入方向）。Backend は到着針路の AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）でフィックスへ合流し、標準率レーストラックで周回する。風ありでは直線レグに WCA + cross-track 収束（[spec/20261123-hold-handoff-wind](../spec/20261123-hold-handoff-wind/spec.md)）。位置 API の `holding.pattern` / `holding.entryProcedure` で指示形状（無風式）をレーダー表示する。Hold POST 契約は変更なし。残課題: 公示パターン・EAT／EFC・レグ時間の公式風補正
 - `POST /api/aircraft/{callsign}/final-approach` - 最終進入（`JOIN FINAL`）
 - `POST /api/aircraft/{callsign}/go-around` - 進入復行
 - `GET /api/procedures?airport=RJTT` / `GET /api/procedures/{id}` - RJTT SID/STAR カタログ
 - `POST /api/aircraft/{callsign}/assign-procedure` - SID/STAR を飛行計画へ割当（レーダー折れ線表示）
 - `POST /api/aircraft/{callsign}/depart` - 出発初期上昇（物理進入端へ移動・標高+35 ft・滑走路真方位。任意 `initialHeadingDeg`。SID なし）
-- `POST /api/aircraft/{callsign}/tower-handoff` - タワー移管
+- `POST /api/aircraft/{callsign}/tower-handoff` - タワー移管（予測はライブと同じ風対応運動。受理 ⇔ 末端 0.5 NM 到達）
 - `POST /api/aircraft/{callsign}/resume-navigation` - ナビゲーション再開
 - `POST /api/simulation/start` - シミュレーション開始
 - `POST /api/simulation/pause` - シミュレーション一時停止

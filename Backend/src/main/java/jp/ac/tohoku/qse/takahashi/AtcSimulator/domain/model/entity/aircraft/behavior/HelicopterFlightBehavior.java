@@ -25,11 +25,11 @@ public class HelicopterFlightBehavior implements FlightBehavior {
             return new AircraftPosition(currentPos.latitude, currentPos.longitude, newAlt);
         }
 
-        // 通常の移動：共通ユーティリティを使用
+        // Move along ground track (same wind-aware path as fixed-wing).
         return PositionUtils.calculateNextPosition(
             currentPos,
             vector.groundSpeed.toDouble(),
-            vector.heading.toDouble(),
+            vector.motionDirectionDeg(),
             vector.verticalSpeed.toDouble(),
             simDeltaSeconds
         );
