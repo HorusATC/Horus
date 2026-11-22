@@ -3,6 +3,7 @@ import {
   Aircraft,
   type AircraftIdentityKey,
   type AircraftMotionVector,
+  type FlightPlanRoutePoint,
   type PolledAircraftServerFields,
 } from "../aircraft/aircraftClass";
 import { CoordinateManager } from "../coordinateManager/CoordinateManager";
@@ -61,6 +62,8 @@ export interface AircraftLocationDto {
    * must arrive on the location stream from the same vertices that drive flight.
    */
   holding?: HoldingPatternDto | null;
+  /** Remaining flight-plan fixes for radar polylines; omitted when none. */
+  flightPlanRoute?: FlightPlanRoutePoint[] | null;
 }
 
 /**
@@ -95,6 +98,7 @@ export const AIRCRAFT_LOCATION_DTO_FIELD_PARTITION = {
   riskLevel: "polledMapped",
   msawAlert: "polledMapped",
   holding: "polledMapped",
+  flightPlanRoute: "polledMapped",
 } as const satisfies Record<
   keyof AircraftLocationDto,
   AircraftLocationDtoFieldKind
@@ -158,6 +162,7 @@ export const POLLED_AIRCRAFT_DTO_SOURCE = {
   towerHandoff: "towerHandoff",
   msawAlert: "msawAlert",
   holding: "holding",
+  flightPlanRoute: "flightPlanRoute",
 } as const satisfies Record<
   keyof PolledAircraftServerFields,
   DtoPolledMappedKey
@@ -277,8 +282,18 @@ function mapDtoToAircraft(
     dto.initialClimb === true,
     dto.towerHandoff === true,
     parseMsawAlert(dto.msawAlert),
-    parseHoldingPattern(dto.holding)
+    parseHoldingPattern(dto.holding),
+    parseFlightPlanRoute(dto.flightPlanRoute)
   );
+}
+
+function parseFlightPlanRoute(
+  route: FlightPlanRoutePoint[] | null | undefined
+): FlightPlanRoutePoint[] | null {
+  if (route == null || !Array.isArray(route) || route.length === 0) {
+    return null;
+  }
+  return route;
 }
 
 function parseHoldingPattern(
@@ -352,6 +367,7 @@ function updateControllingAircrafts(
       newAircraft.towerHandoff,
       newAircraft.msawAlert,
       newAircraft.holding,
+      newAircraft.flightPlanRoute,
       false
     );
     controllingAircrafts.push(newAirplane);

@@ -30,7 +30,12 @@ public record AircraftLocationDto(
     double riskLevel,
     @JsonInclude(JsonInclude.Include.ALWAYS) MsawAlertDto msawAlert,
     /** Present only while {@code navigationMode} is HOLDING; omitted otherwise. */
-    HoldingDto holding
+    HoldingDto holding,
+    /**
+     * Remaining flight-plan fixes with coordinates for radar polylines (SID/STAR assign).
+     * Omitted when the aircraft has no flight plan.
+     */
+    List<FlightPlanRoutePointDto> flightPlanRoute
 ) {
     public record PositionDto(double latitude, double longitude, double altitude) {}
     public record VectorDto(double heading, double groundSpeed, double verticalSpeed, double track) {}
@@ -63,4 +68,6 @@ public record AircraftLocationDto(
     ) {}
 
     public record PatternPointDto(double latitude, double longitude) {}
+
+    public record FlightPlanRoutePointDto(String fix, double latitude, double longitude) {}
 }

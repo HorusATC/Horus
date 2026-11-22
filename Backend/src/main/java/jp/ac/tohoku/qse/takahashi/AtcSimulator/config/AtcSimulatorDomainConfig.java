@@ -20,6 +20,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.msaw.MsawDet
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.AtsRouteFixPositionRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.MsaCatalog;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.ProcedureCatalog;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
 
 /**
@@ -50,6 +51,11 @@ public class AtcSimulatorDomainConfig {
     @Bean
     public MsaCatalog msaCatalog() {
         return new MsaCatalog();
+    }
+
+    @Bean
+    public ProcedureCatalog procedureCatalog() {
+        return new ProcedureCatalog();
     }
 
     @Bean

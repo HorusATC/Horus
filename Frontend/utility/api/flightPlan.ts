@@ -1,12 +1,22 @@
+export interface FlightPlanRouteStatusPoint {
+  fix: string;
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  constraint?: string;
+}
+
 export interface FlightPlanStatus {
   callsign: string;
   navigationMode: string;
   currentWaypointIndex?: number;
   currentWaypoint?: string | null;
   remainingWaypoints?: string[];
+  route?: FlightPlanRouteStatusPoint[];
   departureAirport?: string;
   arrivalAirport?: string;
   hasFlightPlan?: boolean;
+  procedureVaActive?: boolean;
 }
 
 export type HoldTurnDirection = "LEFT" | "RIGHT";

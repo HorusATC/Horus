@@ -230,6 +230,9 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/hold` | Hold At Fix。任意の `inboundCourseDeg`（0以上360未満）、`legMinutes` または `legNm`（同時指定不可。省略時 4.0 NM）、`turnDirection` `LEFT`/`RIGHT`（省略時 RIGHT）。省略時の入方向は Fix 名ハッシュ（運用コースではない）。フィックス到着時の針路で AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）を選び、合流後に標準率（min(3°/s, バンク30°)）のレーストラック。風欠測時は無風と同一。風ありではインバウンド／アウトバウンド直線レグで一次の WCA を掛け、指示オーバーレイ形状は無風式のまま。時間レグはアビーム／ロールアウト後に計時。契約フィールドは #129 のまま（本エンドポイントは変更なし） |
 | POST | `/api/aircraft/{callsign}/final-approach` | 最終進入延長線上の会合点へ向かい、到達後に進入コース針路へ移る。横風時は会合後の `HEADING` で WCA を掛け、地上トラックを進入コースに沿わせる（`JOIN FINAL` 要求形は不変） |
 | POST | `/api/aircraft/{callsign}/go-around` | 進入復行。滑走路方位のまま上昇（上昇高度は現在高度より 500 ft 以上、末端から 120NM 以内） |
+| GET | `/api/procedures?airport=RJTT` | RJTT SID/STAR カタログ一覧（RNAV STAR 15・VAMOS 滑走路系・トランジション・VISIP は一覧に含むが割当不可）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made. |
+| GET | `/api/procedures/{id}` | 手続き詳細（レグ・公示真方位・高度。Hold 行はカタログのみ） |
+| POST | `/api/aircraft/{callsign}/assign-procedure` | SID/STAR を飛行計画へ割当（ボディ: `procedureId`、任意 `transitionId`）。成功時に既存 FlightPlanWaypoint 列へ載せる。VAMOS VA は真方位を指示し at-or-above 後に DF/TF。KIAS・VISIP 飛行・公示ホールド自動は未実装 |
 | POST | `/api/aircraft/{callsign}/depart` | 出発・初期上昇。カタログ物理進入端（TORA 始端）へ置き、標高+35 ft・滑走路真方位（FLY RUNWAY HEADING）で指定高度へ上昇。任意 `initialHeadingDeg` は DER 標高+400 ft まで滑走路方位を維持してから旋回。地上滑走・SID・V 速度なし。上昇は開始高度より 500 ft 以上（1,000–45,000）。RJTT 05 可。位置 API に `initialClimb`。出典: FAA JO 7110.65 5-8-2 / 5-8-3 NOTE 1。針路は真方位（磁偏差なし）。200 ft/NM 勾配は既存上昇率任せ |
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
 | POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |
@@ -386,7 +389,8 @@ jp.ac.tohoku.qse.takahashi.AtcSimulator/
 **主要クラス**:
 - **★ `AircraftRepositoryInMemory.java`** - インメモリ航空機リポジトリ (`infrastructure/persistence/inMemory/`)
 - **`AtsRouteFixPositionRepository.java`** - Fix 位置・ATS 経路データ (`infrastructure/fix/`)
-  - 読み込み元: `fix/waypoints.json`, `fix/radio_navigation_aids.json`, `fix/ats_lower_routes.json`, `fix/rnav_routes.json`, `fix/japan-outline.json`, `fix/airports.json`
+  - 読み込み元: `fix/waypoints.json`, `fix/radio_navigation_aids.json`, `fix/ats_lower_routes.json`, `fix/rnav_routes.json`, `fix/japan-outline.json`, `fix/airports.json`, `fix/rjtt-sid-star-20261101.json`（RJTT SID/STAR。正本はリポジトリ `aip/rjtt-sid-star-20261101.json`）
+  - SID/STAR 出典: Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
   - `GET /ats/airports` は `icaoCode`・`latitude`・`longitude` に加え、`name` と（ある場合）`iataCode` を返す
   - 経路提案グラフは各ルートの隣接 Fix 同士の辺のみ。ウェイポイントが **ルート定義に一度も出現しない**と最寄り Fix がグラフに載らず A\* が失敗し二点フォールバックになる。欠落は `rnav_routes.json` に **`_HORUS_GAP_*`** のブリッジ区間（各空港の最寄りウェイポイント［`airports.json` 基準］から、距離最短の既存グラフノードへ 1 本つなぐ訓練用ギャップ埋め）で補う。**テンプレ既定 O/D はすべて連結になるよう一括整備済み**（運航の公式ルート複製ではない）。
 

@@ -80,6 +80,7 @@ class DrawAircraft {
     ctx.save();
     try {
       this.drawHoldingPattern(ctx, aircraft, centerCoordinate, displayRange);
+      this.drawFlightPlanRoute(ctx, aircraft, centerCoordinate, displayRange);
       this.drawTrack(
         ctx,
         aircraft,
@@ -153,6 +154,41 @@ class DrawAircraft {
 
   public static labelHitWidthPx(): number {
     return DATA_BLOCK_HIT_WIDTH_PX;
+  }
+
+  /**
+   * Assigned SID/STAR (or other) flight-plan polyline from location `flightPlanRoute`.
+   * Green solid — distinct from amber hold and cyan RBL; drawn under the track.
+   */
+  private static drawFlightPlanRoute(
+    ctx: CanvasRenderingContext2D,
+    aircraft: Aircraft,
+    centerCoordinate: Coordinate,
+    displayRange: DisplayRange
+  ): void {
+    const route = aircraft.flightPlanRoute;
+    if (route == null || route.length < 2) {
+      return;
+    }
+    ctx.save();
+    ctx.strokeStyle = "#22c55e";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    route.forEach((point, index) => {
+      const canvas = CoordinateManager.calculateCanvasCoordinates(
+        { latitude: point.latitude, longitude: point.longitude },
+        centerCoordinate,
+        displayRange
+      );
+      if (index === 0) {
+        ctx.moveTo(canvas.x, canvas.y);
+      } else {
+        ctx.lineTo(canvas.x, canvas.y);
+      }
+    });
+    ctx.stroke();
+    ctx.restore();
   }
 
   /**
