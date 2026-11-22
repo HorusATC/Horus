@@ -378,8 +378,15 @@ RESTful APIを提供しており、詳細なAPI仕様は`UranosAPI.yml`ファイ
    - `POST /api/aircraft/{callsign}/squawk` - **スクオークコード**を割り当て（Body: `{ "squawk": "1200" }`、4桁オクタル）
 
 2. **位置情報取得**（JSON 形式）
-   - `GET /aircraft/location/all` - 全航空機の現在位置を取得（各要素に `atcClearance`、未割当時は `null` の `squawk`、および `navigationMode` を含む）
+   - `GET /aircraft/location/all` - 全航空機の現在位置を取得（各要素に `atcClearance`、未割当時は `null` の `squawk`、`navigationMode`、および **`msawAlert`** を含む。`msawAlert` は未警報時 `null`、警報時は `{ type: "MSA"|"LOW", msaFt, trigger: "CURRENT"|"PREDICTED" }`）
    - `GET /aircraft/location?callsign={callsign}` - 特定航空機の位置を取得
+
+#### MSAW（最低安全高度警報・簡易版）
+
+- 検出はドメインサービス `MsawDetector` が行い、位置 API の `msawAlert` に載せる（専用エンドポイントなし）。
+- 区域最低高度はクラスパス `fix/msa-areas.json`（訓練用の簡略ポリゴン）。**AIP Japan の公式 MVA / MSA / 障害物データではない。**
+- 現在高度、またはカタログ定数の先読み秒数（45 s）後の予測高度が区域最低高度未満なら `MSA`。進入廊内（進入端から外側最大 10 NM=`approachCorridorExtensionNm`・左右 1.0 NM）では簡略フロア未満で `LOW`。進入端から 1.0 NM 未満は抑制。
+- 詳細は [spec/20261122-msaw/spec.md](../spec/20261122-msaw/spec.md)。
 
 3. **シミュレーション・シナリオ**
    - `POST /api/scenario/load` - シナリオ一括ロード（空域クリア＋複数機スポーン）。シミュレーション開始は `POST /simulation/start` で行う ✅。Swagger 用最小例: [docs/test-data/scenario-load-minimal.json](docs/test-data/scenario-load-minimal.json)

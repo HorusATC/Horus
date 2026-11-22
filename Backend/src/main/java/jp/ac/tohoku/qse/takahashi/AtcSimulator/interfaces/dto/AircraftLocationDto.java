@@ -24,7 +24,8 @@ public record AircraftLocationDto(
     String navigationMode,
     @JsonInclude(JsonInclude.Include.ALWAYS) boolean goAround,
     @JsonInclude(JsonInclude.Include.ALWAYS) boolean towerHandoff,
-    double riskLevel
+    double riskLevel,
+    @JsonInclude(JsonInclude.Include.ALWAYS) MsawAlertDto msawAlert
 ) {
     public record PositionDto(double latitude, double longitude, double altitude) {}
     public record VectorDto(double heading, double groundSpeed, double verticalSpeed) {}
@@ -33,4 +34,5 @@ public record AircraftLocationDto(
             double groundSpeed,
             double altitude,
             Integer indicatedAirspeed) {}
+    public record MsawAlertDto(String type, double msaFt, String trigger) {}
 }

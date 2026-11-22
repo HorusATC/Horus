@@ -1,3 +1,5 @@
+import type { MsawAlertDto } from "./msawAlert";
+
 export type AtcClearanceVector = {
   heading: number;
   groundSpeed: number;
@@ -47,6 +49,8 @@ export class Aircraft {
   eta: string;
   label: { x: number; y: number };
   riskLevel: number; // 危険度（0-100）
+  /** MSAW alert from Backend; null when no alert (or older Backend omitting the field). */
+  msawAlert: MsawAlertDto | null;
   positionHistory: PositionHistoryPoint[];
 
   constructor(
@@ -74,7 +78,8 @@ export class Aircraft {
     navigationMode: string = "HEADING",
     indicatedAirspeedKnots: number | null = null,
     goAround: boolean = false,
-    towerHandoff: boolean = false
+    towerHandoff: boolean = false,
+    msawAlert: MsawAlertDto | null = null
   ) {
     this.callsign = callsign;
     this.position = position;
@@ -96,6 +101,7 @@ export class Aircraft {
     this.indicatedAirspeedKnots = indicatedAirspeedKnots;
     this.goAround = goAround;
     this.towerHandoff = towerHandoff;
+    this.msawAlert = msawAlert;
     this.positionHistory = [];
   }
 
@@ -125,6 +131,7 @@ export class Aircraft {
     this.indicatedAirspeedKnots = newAircraft.indicatedAirspeedKnots;
     this.goAround = newAircraft.goAround;
     this.towerHandoff = newAircraft.towerHandoff;
+    this.msawAlert = newAircraft.msawAlert;
   }
 
   public updateAircraftLocationInfo(newAircraft: Aircraft) {
@@ -140,5 +147,6 @@ export class Aircraft {
     this.indicatedAirspeedKnots = newAircraft.indicatedAirspeedKnots;
     this.goAround = newAircraft.goAround;
     this.towerHandoff = newAircraft.towerHandoff;
+    this.msawAlert = newAircraft.msawAlert;
   }
 }

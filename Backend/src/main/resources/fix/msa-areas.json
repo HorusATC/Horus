@@ -1,0 +1,56 @@
+{
+  "_disclaimer": "TRAINING USE ONLY: These altitude values and polygon boundaries are simplified approximations for training purposes and DO NOT represent official MVA (Minimum Vectoring Altitude), MSA (Minimum Sector Altitude), or obstacle data from AIP Japan. Do not use for actual flight operations.",
+  "_description": "Minimum Safe Altitude areas for MSAW (Minimum Safe Altitude Warning) detection around RJTT/RJAA terminal area",
+  "predictionTimeSeconds": 45,
+  "suppressionDistanceNm": 1.0,
+  "approachCorridorWidthNm": 1.0,
+  "approachCorridorExtensionNm": 10.0,
+  "approachFloorGradientFtPerNm": 300,
+  "airports": [
+    {
+      "icao": "RJTT",
+      "name": "Tokyo Haneda",
+      "elevationFt": 20
+    },
+    {
+      "icao": "RJAA",
+      "name": "Narita International",
+      "elevationFt": 140
+    }
+  ],
+  "areas": [
+    {
+      "id": "west-mountains",
+      "name": "Western Mountains (Hakone, Tanzawa, Fuji)",
+      "minimumAltitudeFt": 10000,
+      "polygon": [
+        {"latitude": 34.80, "longitude": 138.20},
+        {"latitude": 35.80, "longitude": 138.20},
+        {"latitude": 35.80, "longitude": 139.25},
+        {"latitude": 34.80, "longitude": 139.25}
+      ]
+    },
+    {
+      "id": "izu-south",
+      "name": "Izu Peninsula South",
+      "minimumAltitudeFt": 6000,
+      "polygon": [
+        {"latitude": 34.20, "longitude": 138.40},
+        {"latitude": 34.80, "longitude": 138.40},
+        {"latitude": 34.80, "longitude": 139.50},
+        {"latitude": 34.20, "longitude": 139.50}
+      ]
+    },
+    {
+      "id": "kanto-plain-and-bay",
+      "name": "Kanto Plain and Tokyo Bay",
+      "minimumAltitudeFt": 2500,
+      "polygon": [
+        {"latitude": 34.80, "longitude": 139.25},
+        {"latitude": 36.20, "longitude": 139.25},
+        {"latitude": 36.20, "longitude": 140.90},
+        {"latitude": 34.80, "longitude": 140.90}
+      ]
+    }
+  ]
+}

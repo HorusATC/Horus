@@ -21,6 +21,11 @@ import {
   EMERGENCY_SQUAWKS,
   type EmergencySquawkCode,
 } from "./emergencySquawk";
+import {
+  MSAW_ALERTS,
+  type MsawAlertDto,
+  type MsawAlertType,
+} from "./msawAlert";
 
 /**
  * Class to draw aircraft on the canvas
@@ -74,13 +79,15 @@ class DrawAircraft {
         aircraft.squawk === squawkHighlight;
       const emergencySquawk: EmergencySquawkCode | null =
         this.getEmergencySquawk(aircraft.squawk);
+      const msawAlert = aircraft.msawAlert;
       this.drawAircraftMarker(
         ctx,
         aircraft.position,
         riskDisplayFloor,
         nowMs,
         isSquawkMatched,
-        emergencySquawk
+        emergencySquawk,
+        msawAlert
       );
       this.drawHeadingLine(
         ctx,
@@ -98,7 +105,8 @@ class DrawAircraft {
         useControllerClearanceAltitudeRow,
         riskDisplayFloor,
         isSquawkMatched,
-        emergencySquawk
+        emergencySquawk,
+        msawAlert
       );
     } finally {
       ctx.restore();
@@ -141,7 +149,8 @@ class DrawAircraft {
     riskDisplayFloor: number,
     nowMs: number,
     isSquawkMatched: boolean,
-    emergencySquawk: EmergencySquawkCode | null
+    emergencySquawk: EmergencySquawkCode | null,
+    msawAlert: MsawAlertDto | null
   ) {
     const radius: number = 5;
     const flashOn = Math.floor(nowMs / 450) % 2 === 0;
@@ -160,6 +169,13 @@ class DrawAircraft {
       const color = EMERGENCY_SQUAWKS[emergencySquawk].color;
       ctx.strokeStyle = `${color}f2`;
       ctx.lineWidth = 3;
+      ctx.stroke();
+    } else if (msawAlert !== null) {
+      ctx.beginPath();
+      ctx.arc(position.x, position.y, radius + 5, 0, 2 * Math.PI);
+      const color = MSAW_ALERTS[msawAlert.type as MsawAlertType].color;
+      ctx.strokeStyle = `${color}f2`;
+      ctx.lineWidth = 2;
       ctx.stroke();
     } else if (riskDisplayFloor >= 30) {
       ctx.beginPath();
@@ -220,7 +236,8 @@ class DrawAircraft {
     useControllerClearanceAltitudeRow: boolean,
     riskDisplayFloor: number,
     isSquawkMatched: boolean,
-    emergencySquawk: EmergencySquawkCode | null
+    emergencySquawk: EmergencySquawkCode | null,
+    msawAlert: MsawAlertDto | null
   ) {
     const airplanePosition = aircraft.position;
     const instructedVector = aircraft.instructedVector;
@@ -348,6 +365,13 @@ class DrawAircraft {
 
     if (emergencySquawk !== null) {
       const config = EMERGENCY_SQUAWKS[emergencySquawk];
+      ctx.fillStyle = config.color;
+      ctx.fillText(config.label, labelX, lineY);
+      lineY += lineHeight;
+    }
+
+    if (msawAlert !== null) {
+      const config = MSAW_ALERTS[msawAlert.type];
       ctx.fillStyle = config.color;
       ctx.fillText(config.label, labelX, lineY);
       lineY += lineHeight;
