@@ -113,6 +113,7 @@ describe("Aircraft", () => {
       null,
       null,
       null,
+      null,
       true
     );
     const next = new Aircraft(

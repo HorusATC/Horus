@@ -78,6 +78,7 @@ export const AIRCRAFT_FIELD_PARTITION = {
   towerHandoff: "polled",
   msawAlert: "polled",
   holding: "polled",
+  unreachableAltitudeConstraints: "polled",
   flightPlanRoute: "polled",
 } as const satisfies Record<AircraftDataKey, AircraftFieldKind>;
 
@@ -131,6 +132,7 @@ export const POLLED_AIRCRAFT_SERVER_FIELD_KEYS = {
   towerHandoff: true,
   msawAlert: true,
   holding: true,
+  unreachableAltitudeConstraints: true,
   flightPlanRoute: true,
 } as const satisfies Record<keyof PolledAircraftServerFields, true>;
 
@@ -179,6 +181,11 @@ export class Aircraft {
    * Cleared automatically when Backend omits `holding` after resume/replace.
    */
   holding: HoldingPatternDto | null;
+  /**
+   * Fixes whose published altitude constraint cannot be met at max climb/descent rate.
+   * Null when none (or older backend omitting the field).
+   */
+  unreachableAltitudeConstraints: string[] | null;
   /** Remaining flight-plan route points for radar; null when none. */
   flightPlanRoute: FlightPlanRoutePoint[] | null;
   positionHistory: PositionHistoryPoint[];
@@ -213,6 +220,7 @@ export class Aircraft {
     msawAlert: MsawAlertDto | null = null,
     holding: HoldingPatternDto | null = null,
     flightPlanRoute: FlightPlanRoutePoint[] | null = null,
+    unreachableAltitudeConstraints: string[] | null = null,
     labelPinned: boolean = false
   ) {
     this.callsign = callsign;
@@ -239,6 +247,7 @@ export class Aircraft {
     this.towerHandoff = towerHandoff;
     this.msawAlert = msawAlert;
     this.holding = holding;
+    this.unreachableAltitudeConstraints = unreachableAltitudeConstraints;
     this.flightPlanRoute = flightPlanRoute;
     this.positionHistory = [];
   }
@@ -282,6 +291,7 @@ export class Aircraft {
       towerHandoff: source.towerHandoff,
       msawAlert: source.msawAlert,
       holding: source.holding,
+      unreachableAltitudeConstraints: source.unreachableAltitudeConstraints,
       flightPlanRoute: source.flightPlanRoute,
     } satisfies PolledAircraftServerFields;
     const _keysMatchChecklist: Record<keyof typeof next, true> =

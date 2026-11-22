@@ -115,6 +115,7 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 riskLevel,
                 toMsawAlertDto(msawAlert),
                 toHoldingDto(base),
+                toUnreachableAltitudeConstraints(base),
                 toFlightPlanRoute(base)
         );
     }
@@ -135,8 +136,14 @@ public class GetAllAircraftLocationsWithRiskUseCase {
                 riskLevel,
                 toMsawAlertDto(msawAlert),
                 null,
+                null,
                 null
         );
+    }
+
+    private static List<String> toUnreachableAltitudeConstraints(AircraftBase base) {
+        List<String> fixes = base.getUnreachableAltitudeConstraintFixes();
+        return fixes.isEmpty() ? null : fixes;
     }
 
     private static List<AircraftLocationDto.FlightPlanRoutePointDto> toFlightPlanRoute(AircraftBase base) {

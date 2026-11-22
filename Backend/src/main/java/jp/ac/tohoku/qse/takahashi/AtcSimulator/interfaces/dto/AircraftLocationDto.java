@@ -32,6 +32,11 @@ public record AircraftLocationDto(
     /** Present only while {@code navigationMode} is HOLDING; omitted otherwise. */
     HoldingDto holding,
     /**
+     * Procedure altitude constraints that cannot be met at the aircraft max climb/descent rate.
+     * Additive; omitted when empty. Does not change existing field meanings.
+     */
+    List<String> unreachableAltitudeConstraints,
+    /**
      * Remaining flight-plan fixes with coordinates for radar polylines (SID/STAR assign).
      * Omitted when the aircraft has no flight plan.
      */

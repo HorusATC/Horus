@@ -1,6 +1,8 @@
 package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.ApproachControlReleasedException;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.behavior.FlightBehavior;
@@ -18,6 +20,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Ho
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldTurnDirection;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldingPatternGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.ProcedureVerticalGuidance;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAltitudeTargetResolver;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureVaConstraint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atmosphere.WindTriangle;
@@ -96,6 +99,12 @@ public abstract class AircraftBase implements Aircraft {
     protected int resumeFlightPlanIndexAfterHold;
     protected Integer instructedIndicatedAirspeedKnots;
     private UniformWind ambientWind = UniformWind.missing();
+    /**
+     * When true (after {@link #assignProcedureRoute}), vertical targeting look-ahead applies.
+     * Plain {@link #setFlightPlan} leaves this false so off-procedure motion stays unchanged.
+     */
+    private boolean procedureVerticalGuidance;
+    private final Set<String> unreachableAltitudeConstraintFixes = new LinkedHashSet<>();
 
     public static final double MAX_TOWER_HANDOFF_DISTANCE_NM = 10.0;
     public static final double TOWER_HANDOFF_REMOVAL_NM = 0.5;
@@ -574,6 +583,19 @@ public abstract class AircraftBase implements Aircraft {
                 || flightPlan == null) {
             return instructedVector.instructedAltitude;
         }
+        if (procedureVerticalGuidance) {
+            List<FlightPlanWaypoint> remaining =
+                    ProcedureVerticalGuidance.remainingFrom(flightPlan, currentWaypointIndex);
+            ProcedureVerticalGuidance.Resolution resolution = ProcedureVerticalGuidance.resolve(
+                    remaining,
+                    aircraftPosition,
+                    flightPlan.getCruiseAltitude().toDouble(),
+                    characteristics.getMaxClimbRate(),
+                    aircraftVector.groundSpeed.toDouble(),
+                    unreachableAltitudeConstraintFixes);
+            unreachableAltitudeConstraintFixes.addAll(resolution.newlyUnreachableFixes());
+            return resolution.targetAltitude();
+        }
         double currentAlt = aircraftPosition.altitude.toDouble();
         return flightPlan.getNextWaypoint(currentWaypointIndex)
                 .map(wp -> {
@@ -744,9 +766,16 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private void onWaypointPassed(FlightPlanWaypoint wp) {
-        if (!WaypointAltitudeTargetResolver.satisfiesConstraintAtPass(
-                wp, aircraftPosition.altitude.toDouble())) {
+        double altitudeFt = aircraftPosition.altitude.toDouble();
+        if (!WaypointAltitudeTargetResolver.satisfiesConstraintAtPass(wp, altitudeFt)) {
             return;
+        }
+        // Domain pass tolerances are wider than published intent. Keep/raise the unreachable
+        // flag when the fly-by altitude still misses the published constraint tightly.
+        if (WaypointAltitudeTargetResolver.meetsPublishedConstraint(wp, altitudeFt)) {
+            unreachableAltitudeConstraintFixes.remove(wp.getFixName());
+        } else if (wp.hasAltitudeConstraint()) {
+            unreachableAltitudeConstraintFixes.add(wp.getFixName());
         }
         if (wp.shouldRemoveAircraft()) {
             markedForRemoval = true;
@@ -1240,10 +1269,20 @@ public abstract class AircraftBase implements Aircraft {
         this.flightPlan = flightPlan;
         this.currentWaypointIndex = 0;
         this.previousDistanceToWaypoint = Double.MAX_VALUE;
+        this.procedureVerticalGuidance = false;
+        this.unreachableAltitudeConstraintFixes.clear();
         clearHoldingState();
         this.lateral = flightPlan != null
                 ? new LateralNavigation.FlightPlanNav()
                 : new LateralNavigation.PlainHeading();
+    }
+
+    public List<String> getUnreachableAltitudeConstraintFixes() {
+        return List.copyOf(unreachableAltitudeConstraintFixes);
+    }
+
+    public boolean isProcedureVerticalGuidance() {
+        return procedureVerticalGuidance;
     }
 
     /**
@@ -1259,6 +1298,8 @@ public abstract class AircraftBase implements Aircraft {
         this.flightPlan = flightPlan;
         this.currentWaypointIndex = 0;
         this.previousDistanceToWaypoint = Double.MAX_VALUE;
+        this.procedureVerticalGuidance = true;
+        this.unreachableAltitudeConstraintFixes.clear();
         clearHoldingState();
         this.directToTarget = null;
         this.directToFixName = null;
@@ -1270,6 +1311,8 @@ public abstract class AircraftBase implements Aircraft {
         } else {
             this.lateral = new LateralNavigation.FlightPlanNav();
         }
+        // Seed unreachable flags from the assigned path at current performance.
+        resolveTargetAltitude();
     }
 
     public boolean isProcedureVaActive() {
@@ -1434,9 +1477,14 @@ public abstract class AircraftBase implements Aircraft {
         if (!(lateral instanceof LateralNavigation.ProcedureVa va)) {
             return;
         }
-        Altitude climbTarget = flightPlan != null
-                ? flightPlan.getCruiseAltitude()
-                : instructedVector.instructedAltitude;
+        Altitude climbTarget;
+        if (procedureVerticalGuidance && flightPlan != null) {
+            climbTarget = resolveTargetAltitude();
+        } else {
+            climbTarget = flightPlan != null
+                    ? flightPlan.getCruiseAltitude()
+                    : instructedVector.instructedAltitude;
+        }
         if (climbTarget.toDouble() < va.atOrAboveAltitudeFt()) {
             climbTarget = new Altitude(va.atOrAboveAltitudeFt());
         }

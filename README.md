@@ -17,7 +17,7 @@ cd Horus
 
 RJTT RNAV STAR（`OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`、RWY 34L/34R カタログ）を割り当てた到着機 5 機が読み込まれ、ATIS の使用滑走路は 34L に揃い、シミュレーションが始まり、Controller レーダーへ遷移します。追加の手続き割当は不要です。停止は Ctrl-C（両方のプロセスを止めます）。
 
-**VAMOS 出発サンプル（別シナリオ）**: 到着既定はそのままです。出発を試すときはトップの「**START VAMOS DEPARTURE SAMPLE (VAMOS出発サンプル)**」を押すか、`Frontend/data/quickstart-departure-sample.json`（`VAMOS4.RWY34L_34R` + TATEYAMA、使用滑走路 34L）を「LOAD SCENARIO JSON FILE」で読み込みます。SID/STAR カタログは `aip/rjtt-sid-star-20261101.json`（スライス 1）と `aip/slice3-20261101.json`（スライス 3: RJTT RNAV SID 66・RJAA RNAV SID/STAR 48）を結合して読みます。Operator から RJTT / RJAA を選んで割当できます。VISIP と従来方式プレートは未コード（不足プレートの残りは `aip/slice2-20261101.md`）。
+**VAMOS 出発サンプル（別シナリオ）**: 到着既定はそのままです。出発を試すときはトップの「**START VAMOS DEPARTURE SAMPLE (VAMOS出発サンプル)**」を押すか、`Frontend/data/quickstart-departure-sample.json`（`VAMOS4.RWY34L_34R` + TATEYAMA、使用滑走路 34L）を「LOAD SCENARIO JSON FILE」で読み込みます。SID/STAR カタログは `aip/rjtt-sid-star-20261101.json`（スライス 1）と `aip/slice3-20261101.json`（スライス 3: RJTT RNAV SID 66・RJAA RNAV SID/STAR 48）を結合して読みます。Operator から RJTT / RJAA を選んで割当できます。割当した SID/STAR 機は機種の上昇・降下率上限の範囲で公示高度制約を先読みして満たし、届かない制約は位置 API の `unreachableAltitudeConstraints` とレーダーの `UNABLE ALT` 印で示します（上昇率の引き上げや座標改変はしません）。VISIP と従来方式プレートは未コード（不足プレートの残りは `aip/slice2-20261101.md`）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
 
 Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
 

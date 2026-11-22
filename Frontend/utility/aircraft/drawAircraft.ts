@@ -321,6 +321,12 @@ class DrawAircraft {
     if (aircraft.msawAlert !== null) {
       lines += 1;
     }
+    if (
+      aircraft.unreachableAltitudeConstraints != null &&
+      aircraft.unreachableAltitudeConstraints.length > 0
+    ) {
+      lines += 1;
+    }
     if (setting.squawk && !emergencySquawk) {
       lines += 1;
     }
@@ -610,6 +616,15 @@ class DrawAircraft {
       const config = MSAW_ALERTS[msawAlert.type];
       ctx.fillStyle = config.color;
       ctx.fillText(config.label, labelX, lineY);
+      lineY += lineHeight;
+    }
+
+    if (
+      aircraft.unreachableAltitudeConstraints != null &&
+      aircraft.unreachableAltitudeConstraints.length > 0
+    ) {
+      ctx.fillStyle = "#fbbf24";
+      ctx.fillText("UNABLE ALT", labelX, lineY);
       lineY += lineHeight;
     }
 
