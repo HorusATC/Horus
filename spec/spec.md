@@ -92,7 +92,7 @@
 
 | # | タスク | 状況 | 優先度 | 難易度 | Issue | 実装の所在 / 次の具体タスク |
 |---|--------|------|--------|--------|-------|---------------------------|
-| 2-1 | 履歴ドット（軌跡） | ✅ | 🔴 | ★☆☆ | [#49](https://github.com/Futty93/Horus/issues/49) | `aircraftClass.ts`（最大 120 点）、`trackHistoryDisplaySamples.ts`（表示 3 点・間隔）、`drawAircraft.ts`。**拡張**: 点数/間隔の設定 UI、Controller 側の更新経路確認（`updateAircraftLocationInfo`）。 |
+| 2-1 | 履歴ドット（軌跡） | ✅ | 🔴 | ★☆☆ | [#49](https://github.com/Futty93/Horus/issues/49) | `aircraftClass.ts`（最大 120 点）、`trackHistoryDisplaySamples.ts`（表示 3 点・間隔）、`drawAircraft.ts`。**拡張**: 点数/間隔の設定 UI。Controller の `updateAircraftLocationInfo` はパイロット目標（`instructedVector`）も同期する（[20261122-controller-stale-target-altitude](20261122-controller-stale-target-altitude/spec.md)）。 |
 | 2-2 | レンジリング | ✅ | 🔴 | ★☆☆ | [#50](https://github.com/Futty93/Horus/issues/50) | `rangeRingsSettingContext` + `rangeRingsSetting.tsx` + `radarCanvas.tsx` の `drawRangeRings`。子 spec [20260318-range-rings-display](20260318-range-rings-display/spec.md) を実装に合わせ更新。 |
 | 2-3 | データブロック項目追加 | 🔄 | 🟡 | ★☆☆ | [#51](https://github.com/Futty93/Horus/issues/51) | `dataBlockDisplaySettingContext` + `drawAircraft.ts`。**スクオーク実値は 3-1 とセット**（現状 `---`）。 |
 | 2-4 | 速度ベクトル線の時間 | ✅ | 🟡 | ★☆☆ | [#52](https://github.com/Futty93/Horus/issues/52) | `velocityVectorLookaheadContext` + `radarCanvas.tsx`。子 spec [20260404-velocity-vector-line-duration](20260404-velocity-vector-line-duration/spec.md) と突合。 |

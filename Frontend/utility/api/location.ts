@@ -148,6 +148,8 @@ function updateControllingAircrafts(
   controllingAircrafts = controllingAircrafts.filter((airplane) => {
     const newAircraft = newAircraftMap.get(airplane.callsign);
     if (newAircraft) {
+      // Both paths must sync instructedVector from the polled DTO (single source
+      // of truth for pilot target altitude on Controller labels).
       if (pathname === "/operator") {
         airplane.updateAircraftInfo(newAircraft);
       } else {

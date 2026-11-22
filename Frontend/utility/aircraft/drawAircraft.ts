@@ -56,7 +56,7 @@ class DrawAircraft {
     displayRange: DisplayRange,
     centerCoordinate: Coordinate,
     dataBlockDisplaySetting: DataBlockDisplaySetting,
-    /** Controller 画面では管制クリアランス高度があれば 2 行目をクリアランス vs 実測にする（パイロット目標の古い値で矢印が狂うのを防ぐ）。 */
+    /** Controller 画面では管制クリアランス高度があれば 2 行目をクリアランス vs 実測にする（管制メモとパイロット目標を混同しない）。 */
     useControllerClearanceAltitudeRow = false,
     durationMinutes = 1,
     nowMs = performance.now(),

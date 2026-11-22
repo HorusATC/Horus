@@ -134,11 +134,17 @@ export class Aircraft {
     this.msawAlert = newAircraft.msawAlert;
   }
 
+  /**
+   * Controller (and non-operator) poll path: keep label/history state, but always
+   * take pilot target (`instructedVector`) from the polled location DTO so the
+   * data-block target altitude cannot stay stale after Operator instructions.
+   */
   public updateAircraftLocationInfo(newAircraft: Aircraft) {
     this.recordPastGeoSample();
     this.position = newAircraft.position;
     this.geoPosition = newAircraft.geoPosition;
     this.vector = newAircraft.vector;
+    this.instructedVector = newAircraft.instructedVector;
     this.atcClearance = newAircraft.atcClearance;
     this.squawk = newAircraft.squawk;
     this.eta = newAircraft.eta;

@@ -14,7 +14,10 @@ describe("Aircraft", () => {
     altitude: 35000,
   };
 
-  it("updateAircraftLocationInfo does NOT update instructedVector", () => {
+  it("updateAircraftLocationInfo syncs instructedVector from polled location (Controller path)", () => {
+    // Regression: Controller polls used updateAircraftLocationInfo and kept a
+    // stale instructedVector, so the data-block target altitude did not move
+    // after Operator altitude instructions (PR #119 / main).
     const aircraft = new Aircraft(
       "JAL123",
       basePosition,
@@ -59,7 +62,7 @@ describe("Aircraft", () => {
 
     expect(aircraft.position).toEqual(newAircraft.position);
     expect(aircraft.vector).toEqual(newAircraft.vector);
-    expect(aircraft.instructedVector).toEqual(baseInstructedVector);
+    expect(aircraft.instructedVector).toEqual(newAircraft.instructedVector);
     expect(aircraft.eta).toBe("12:05");
     expect(aircraft.riskLevel).toBe(30);
     expect(aircraft.atcClearance).toEqual({
