@@ -105,7 +105,7 @@ docker compose up --build
 | Operator | `/operator` | 管制官指示の入力・航空機操作 |
 | Controller | `/controller` | レーダー表示・管制官役（指示メモ） |
 
-レーダー（Controller / Operator 共通）では、進入廊内の到着機に進入端までの沿コース距離・概算時間をデータブロックへ出し、測距線（RBL）ツールで 2 点間の距離と真方位を測れる（詳細は [Frontend/README.md](Frontend/README.md)、[spec/20261122-runway-distance-rbl/spec.md](spec/20261122-runway-distance-rbl/spec.md)）。使用滑走路と ATIS（情報識別つき本文。風・実気象は欠測表示）はレーダー右上パネルで共有し、Controller が滑走路を切り替えると情報識別が進む（[spec/20261122-atis-runway-in-use/spec.md](spec/20261122-atis-runway-in-use/spec.md)）。
+レーダー（Controller / Operator 共通）では、進入廊内の到着機に進入端までの沿コース距離・概算時間をデータブロックへ出し、測距線（RBL）ツールで 2 点間の距離と真方位を測れる（詳細は [Frontend/README.md](Frontend/README.md)、[spec/20261122-runway-distance-rbl/spec.md](spec/20261122-runway-distance-rbl/spec.md)）。データブロックは新規表示時に 8 方位のリーダーオフセットを自動割当し、手動ドラッグで固定できる（API 変更なし。[spec/20261122-leader-line-auto-placement/spec.md](spec/20261122-leader-line-auto-placement/spec.md)）。使用滑走路と ATIS（情報識別つき本文。風・実気象は欠測表示）はレーダー右上パネルで共有し、Controller が滑走路を切り替えると情報識別が進む（[spec/20261122-atis-runway-in-use/spec.md](spec/20261122-atis-runway-in-use/spec.md)）。
 
 > シミュレーションを動作させるにはバックエンドも必要です。`./scripts/dev-up.sh` は両方を起動します。
 

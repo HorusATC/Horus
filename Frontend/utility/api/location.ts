@@ -11,6 +11,12 @@ import {
   type HoldingPatternPointDto,
 } from "../aircraft/holdingPattern";
 import { parseMsawAlert, type MsawAlertDto } from "../aircraft/msawAlert";
+import { GLOBAL_SETTINGS } from "../globals/settings";
+import {
+  computeLabelPlacements,
+  DEFAULT_LABEL_HIT_BOTTOM_OFFSET_PX,
+  type LabelPlacementAircraft,
+} from "../aircraft/labelPlacement";
 
 export type { HoldingPatternDto, HoldingPatternPointDto };
 
@@ -281,11 +287,22 @@ function parseHoldingPattern(
   return holding;
 }
 
+function toLabelPlacementAircraft(aircraft: Aircraft): LabelPlacementAircraft {
+  return {
+    callsign: aircraft.callsign,
+    position: aircraft.position,
+    label: aircraft.label,
+    labelPinned: aircraft.labelPinned,
+    hitBottomOffsetPx: DEFAULT_LABEL_HIT_BOTTOM_OFFSET_PX,
+  };
+}
+
 function updateControllingAircrafts(
   apiResponse: Aircraft[],
   controllingAircrafts: Aircraft[]
 ): Aircraft[] {
   const newAircraftMap = new Map<string, Aircraft>();
+  const newlyAppearedCallsigns = new Set<string>();
 
   apiResponse.forEach((aircraft) => {
     newAircraftMap.set(aircraft.callsign, aircraft);
@@ -303,6 +320,7 @@ function updateControllingAircrafts(
   });
 
   newAircraftMap.forEach((newAircraft) => {
+    newlyAppearedCallsigns.add(newAircraft.callsign);
     const newAirplane = new Aircraft(
       newAircraft.callsign,
       newAircraft.position,
@@ -326,9 +344,18 @@ function updateControllingAircrafts(
       newAircraft.goAround,
       newAircraft.towerHandoff,
       newAircraft.msawAlert,
-      newAircraft.holding
+      newAircraft.holding,
+      false
     );
     controllingAircrafts.push(newAirplane);
+  });
+
+  computeLabelPlacements(controllingAircrafts.map(toLabelPlacementAircraft), {
+    canvas: {
+      width: GLOBAL_SETTINGS.canvasWidth,
+      height: GLOBAL_SETTINGS.canvasHeight,
+    },
+    forcePlaceCallsigns: newlyAppearedCallsigns,
   });
 
   return controllingAircrafts;

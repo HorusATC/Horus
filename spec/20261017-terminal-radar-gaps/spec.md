@@ -20,14 +20,14 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 - フライトプランのウェイポイントには高度制約のデータ型があるが、機体の飛行更新はフィックスへの針路更新が中心で、通過高度・速度制限には従わない。
 - ホールド API は入方向・レグ（分/NM）・左右旋回を受け付ける（[20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。無風の標準率レーストラック飛行と指示経路オーバーレイは [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)。進入セクター（DIRECT／TEARDROP／PARALLEL）は [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)。公示ホールディング（AS PUBLISHED）・EAT／EFC・風修正は未実装。
 - 経路末尾の `REMOVE_AIRCRAFT` は機体削除であり、シナリオ終端の削除として残す。タワー移管は別 API として実装済み（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)）。
-- セクター境界、シミュレーション速度の可変、セッション記録、複数セクター、風、ATIS はロードマップ上の別項目である。
+- セクター境界、シミュレーション速度の可変、セッション記録、複数セクター、風（6-1）はロードマップ上の別項目である。ATIS・使用滑走路（6-2）は [20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md) で実装済み（PR [#132](https://github.com/HorusATC/Horus/pull/132)）。
 
 ### 課題（Problem Statement）
 
 - 到着機をファイナルへ誘導し、滑走路まで届ける一連の指示が出せない。
 - 速度が地速のため、ターミナルで使う指示対気速度（250／210／180／160 など）を出せない。
 - 水平間隔が 5海里固定で、レーダーサイト近傍の 3海里や後方乱気流間隔がない。到着順序の訓練に使えない。
-- 最低安全高度警報、緊急スクオーク（7500／7600／7700）の特別扱い、滑走路までの距離・時間、使用滑走路と風がない。
+- 最低安全高度警報・緊急スクオーク（7500／7600／7700）・滑走路までの距離・時間・使用滑走路と ATIS は実装済み。残る課題の一つは風モデル（6-1）である。
 
 ### なぜ今か（Motivation）
 
@@ -45,7 +45,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
    - ウェイポイントの高度・速度制限を飛行に適用する
    - 水平間隔の 3海里と、後方乱気流カテゴリに応じた海里
    - 滑走路と最終進入（延長線上への会合まで。進入復行は次段）
-3. 既存ロードマップ項目（セクター境界、MSAW、風、ATIS、ハンドオフ、複数セクター、記録・採点）は重複して新 Issue を切らず、本台帳から参照する。
+3. 既存ロードマップ項目（セクター境界、MSAW、風、ハンドオフ、複数セクター、記録・採点）は重複して新 Issue を切らず、本台帳から参照する。ATIS・使用滑走路（6-2）は実装済み。
 4. ホールドの指示要素は [20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)、標準率レーストラック＋経路描画は [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)、進入セクターは [20261122-hold-entry-sectors](../20261122-hold-entry-sectors/spec.md) で実装済み。公示パターン・EAT／EFC・風は後続。
 
 ### 検討した他案（Alternatives Considered）
@@ -110,7 +110,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 
 レーダー画面の残り。
 
-- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。ATIS・使用滑走路 → Done（風なし。[20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md)）。リーダー線の自動配置、方位目盛、セクター境界（ロードマップ 2-5、Deferred）、風モデル（ロードマップ 6-1）は残課題。
+- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。ATIS・使用滑走路 → Done（風なし。[20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md)）。リーダー線の自動配置 → Done（[20261122-leader-line-auto-placement](../20261122-leader-line-auto-placement/spec.md)）。方位目盛、セクター境界（ロードマップ 2-5、Deferred）、風モデル（ロードマップ 6-1）は残課題。
 
 訓練運用の残り。
 

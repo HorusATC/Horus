@@ -12,7 +12,14 @@ import { GLOBAL_CONSTANTS } from "@/utility/globals/constants";
 import { GLOBAL_SETTINGS } from "@/utility/globals/settings";
 import { fetchAircraftLocation } from "@/utility/api/location";
 import { fetchSimulationSpeed } from "@/utility/api/simulation";
-import { DrawAircraft } from "@/utility/aircraft/drawAircraft";
+import {
+  DATA_BLOCK_HIT_LEFT_PAD_PX,
+  DrawAircraft,
+} from "@/utility/aircraft/drawAircraft";
+import {
+  computeLabelPlacements,
+  type LabelPlacementAircraft,
+} from "@/utility/aircraft/labelPlacement";
 import { useRouteInfoDisplaySetting } from "@/context/routeInfoDisplaySettingContext";
 import { useCenterCoordinate } from "@/context/centerCoordinateContext";
 import { useDisplayRange } from "@/context/displayRangeContext";
@@ -172,12 +179,14 @@ const RadarCanvas: React.FC = () => {
       canvas.addEventListener("mousedown", onMouseDown);
       canvas.addEventListener("mousemove", onMouseMove);
       canvas.addEventListener("mouseup", onMouseUp);
+      canvas.addEventListener("dblclick", onLabelDoubleClick);
     };
 
     const removeMouseEvents = (canvas: HTMLCanvasElement) => {
       canvas.removeEventListener("mousedown", onMouseDown);
       canvas.removeEventListener("mousemove", onMouseMove);
       canvas.removeEventListener("mouseup", onMouseUp);
+      canvas.removeEventListener("dblclick", onLabelDoubleClick);
     };
 
     canvasRefs.forEach((canvasRef) => {
@@ -538,9 +547,71 @@ const RadarCanvas: React.FC = () => {
         draggingLabelIndexRef.current = index;
         offsetXRef.current = x - labelX;
         offsetYRef.current = y - labelY;
+        aircraft.labelPinned = true;
         break;
       }
     }
+  };
+
+  const onLabelDoubleClick = (event: MouseEvent) => {
+    if (rblToolEnabledRef.current || isSelectFixModeRef.current.selectFixMode) {
+      return;
+    }
+    const canvas = event.target as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const fleet = controllingAircraftsRef.current;
+    for (const aircraft of fleet) {
+      const labelX = aircraft.position.x + aircraft.label.x;
+      const labelY = aircraft.position.y - aircraft.label.y;
+      if (!isWithinLabelBounds(x, y, labelX, labelY, aircraft)) {
+        continue;
+      }
+      event.preventDefault();
+      aircraft.labelPinned = false;
+      applyLabelPlacements(fleet, new Set([aircraft.callsign]));
+      setControllingAircrafts([...fleet]);
+      break;
+    }
+  };
+
+  const toPlacementAircraft = (aircraft: Aircraft): LabelPlacementAircraft => ({
+    callsign: aircraft.callsign,
+    position: aircraft.position,
+    label: aircraft.label,
+    labelPinned: aircraft.labelPinned,
+    hitBottomOffsetPx: DrawAircraft.labelHitBottomOffsetPx(
+      aircraft,
+      dataBlockDisplaySettingRef.current,
+      controllerClearanceAltitudeRowRef.current,
+      runwayGeometriesRef.current
+    ),
+  });
+
+  const applyLabelPlacements = (
+    fleet: Aircraft[],
+    forcePlaceCallsigns?: ReadonlySet<string>
+  ) => {
+    computeLabelPlacements(fleet.map(toPlacementAircraft), {
+      canvas: {
+        width: GLOBAL_SETTINGS.canvasWidth,
+        height: GLOBAL_SETTINGS.canvasHeight,
+      },
+      forcePlaceCallsigns,
+    });
+  };
+
+  const resetLabelOffsets = () => {
+    const fleet = controllingAircraftsRef.current;
+    for (const aircraft of fleet) {
+      aircraft.labelPinned = false;
+    }
+    applyLabelPlacements(
+      fleet,
+      new Set(fleet.map((aircraft) => aircraft.callsign))
+    );
+    setControllingAircrafts([...fleet]);
   };
 
   const isWithinRadius = (
@@ -571,7 +642,7 @@ const RadarCanvas: React.FC = () => {
       runwayGeometriesRef.current
     );
     return (
-      x >= labelX - 5 &&
+      x >= labelX - DATA_BLOCK_HIT_LEFT_PAD_PX &&
       x <= labelX + DrawAircraft.labelHitWidthPx() &&
       y >= labelY - DrawAircraft.labelHitTopPadPx() &&
       y <= labelY + bottom
@@ -594,6 +665,7 @@ const RadarCanvas: React.FC = () => {
 
     label.x = mouseX - offsetXRef.current - aircraftPosition.x;
     label.y = aircraftPosition.y - (mouseY - offsetYRef.current);
+    aircraft.labelPinned = true;
 
     // Update the label position
     setControllingAircrafts([...controllingAircraftsRef.current]);
@@ -640,7 +712,7 @@ const RadarCanvas: React.FC = () => {
           }
           // console.log("updatedAircrafts", updatedAircrafts);
 
-          // 最新の controllingAircrafts を取得して状態を更新
+          applyLabelPlacements(updatedAircrafts);
           setControllingAircrafts(() => {
             return updatedAircrafts;
           });
@@ -682,6 +754,14 @@ const RadarCanvas: React.FC = () => {
           onClick={() => setSquawkFilterInput("7700")}
         >
           7700
+        </button>
+        <button
+          type="button"
+          className="rounded border border-zinc-500 px-2 py-1"
+          onClick={resetLabelOffsets}
+          title="Unpin all labels and re-run automatic 8-direction placement"
+        >
+          Reset label offsets
         </button>
       </div>
       <canvas ref={canvasRefs[0]} className="w-full h-full bg-black"></canvas>

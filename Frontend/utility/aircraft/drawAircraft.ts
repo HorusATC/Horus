@@ -30,9 +30,14 @@ import {
   type RunwayApproachGeometry,
 } from "@/utility/measure/rangeBearing";
 
-const DATA_BLOCK_LINE_HEIGHT_PX = 15;
-const DATA_BLOCK_HIT_TOP_PAD_PX = 20;
-const DATA_BLOCK_HIT_WIDTH_PX = 70;
+/** Shared with label auto-placement so hit boxes stay one definition. */
+export const DATA_BLOCK_LINE_HEIGHT_PX = 15;
+export const DATA_BLOCK_HIT_TOP_PAD_PX = 20;
+export const DATA_BLOCK_HIT_WIDTH_PX = 70;
+export const DATA_BLOCK_HIT_LEFT_PAD_PX = 5;
+export const DATA_BLOCK_HIT_BOTTOM_SLACK_PX = 5;
+/** Canvas radius of the white aircraft marker (not the 30 px pick box). */
+export const AIRCRAFT_SYMBOL_RADIUS_PX = 5;
 
 /**
  * Class to draw aircraft on the canvas
@@ -138,7 +143,7 @@ class DrawAircraft {
         runways
       ) *
         DATA_BLOCK_LINE_HEIGHT_PX +
-      5
+      DATA_BLOCK_HIT_BOTTOM_SLACK_PX
     );
   }
 
@@ -317,7 +322,7 @@ class DrawAircraft {
     emergencySquawk: EmergencySquawkCode | null,
     msawAlert: MsawAlertDto | null
   ) {
-    const radius: number = 5;
+    const radius: number = AIRCRAFT_SYMBOL_RADIUS_PX;
     const flashOn = Math.floor(nowMs / 450) % 2 === 0;
 
     if (riskDisplayFloor >= 70) {
