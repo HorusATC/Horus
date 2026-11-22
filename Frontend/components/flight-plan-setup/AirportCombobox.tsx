@@ -53,8 +53,10 @@ export function AirportCombobox({
         }}
         onKeyDown={(event) => {
           if (event.key !== "Enter" || matches.length === 0) return;
+          const firstMatch = matches[0];
+          if (!firstMatch) return;
           event.preventDefault();
-          onChange(matches[0].icaoCode);
+          onChange(firstMatch.icaoCode);
           setQuery("");
           setEditing(false);
         }}

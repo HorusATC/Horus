@@ -88,17 +88,17 @@ Phase 1 で導入した静的検査を一段厳しくする。Frontend で `noUn
 
 測定はリポジトリの Frontend / Backend ディレクトリで行う。期待はコマンドの終了コードと、明示した出力である。
 
-- [ ] `spec/YYYYMMDD-static-checks-phase2/spec.md` が本形式でリポジトリにあり、実装中は Status が In Progress（Done は PdM レビュー後）
-- [ ] `Frontend/tsconfig.json` の `compilerOptions.noUncheckedIndexedAccess` が `true`。`cd Frontend && npx tsc --noEmit` の終了コードが 0。差分に、このフラグを黙らせるための `!` や値の型を変える `as` を新たに増やしていない
-- [ ] 上記を入れる前の main（`b295454`）では、同じコマンドに `--noUncheckedIndexedAccess` を足すとエラー 63 件だったことが、PR または本 spec に残っている
-- [ ] Frontend の ESLint が `recommended-type-checked-only` と `switch-exhaustiveness-check`（error）を含む。テストファイルでのみ `unbound-method` が off。`cd Frontend && npm run lint` の終了コードが 0
-- [ ] 型付きルールの証明: 対象ソースに `Promise.resolve()` を await / void / catch なしで置く（または `switch` から union の 1 値を外す）と `npm run lint` が 0 以外で失敗し、取り除くと再び 0 になる。そのログを残す
-- [ ] `ApiContractTest` が Backend の生抽出と正規化後の一意キーを区別してアサートする。`b295454` 相当のソースでは一意キー 14（生 41）。誤ったパスを 1 箇所書き換えると当該テストが失敗する
-- [ ] `spec/20261122-static-checks-phase1/spec.md` に「30+ Backend paths」が残っておらず、Frontend 29 一意・Backend 正規化後 14 一意（必要なら生件数も）が書いてある
-- [ ] Aircraft の全キーと `AircraftLocationDto` の全キーが、それぞれ閉じた分類（client / identity / polled および DTO 側の対応）に入り、次のプローブで `cd Frontend && npx tsc --noEmit` が 0 以外になる: (a) `Aircraft` にだけフィールドを 1 つ足す (b) `AircraftLocationDto` にだけフィールドを 1 つ足す。足した行を戻すと再び 0。ログを残す
-- [ ] `spec/20261122-controller-stale-target-altitude/spec.md` の「DTO/型にフィールド追加しても取りこぼせない」「同期漏れを tsc で検知できる」に相当する文が、#123 時点では Pick と `applyPolledFields` の間だけを守っていたこと、本 Phase でクラスと DTO まで閉じたことを書くように訂正されている
-- [ ] API の動作と応答形式に変更がない（Backend 本番ソースを変えない。`git diff origin/main -- Backend/src/main` が空）
-- [ ] ローカルゲートがすべて終了コード 0:
+- [x] `spec/YYYYMMDD-static-checks-phase2/spec.md` が本形式でリポジトリにあり、実装中は Status が In Progress（Done は PdM レビュー後）
+- [x] `Frontend/tsconfig.json` の `compilerOptions.noUncheckedIndexedAccess` が `true`。`cd Frontend && npx tsc --noEmit` の終了コードが 0。差分に、このフラグを黙らせるための `!` や値の型を変える `as` を新たに増やしていない（PR B）
+- [x] 上記を入れる前の main（`9da904b` / #125 直後）では、同じコマンドに `--noUncheckedIndexedAccess` を足すとエラー **63 件・16 ファイル**だったことが、PR または本 spec に残っている（PR B で再計測）
+- [ ] Frontend の ESLint が `recommended-type-checked-only` と `switch-exhaustiveness-check`（error）を含む。テストファイルでのみ `unbound-method` が off。`cd Frontend && npm run lint` の終了コードが 0（PR C）
+- [ ] 型付きルールの証明: 対象ソースに `Promise.resolve()` を await / void / catch なしで置く（または `switch` から union の 1 値を外す）と `npm run lint` が 0 以外で失敗し、取り除くと再び 0 になる。そのログを残す（PR C）
+- [x] `ApiContractTest` が Backend の生抽出と正規化後の一意キーを区別してアサートする。`b295454` 相当のソースでは一意キー 14（生 41）。誤ったパスを 1 箇所書き換えると当該テストが失敗する（PR A / #125）
+- [x] `spec/20261122-static-checks-phase1/spec.md` に「30+ Backend paths」が残っておらず、Frontend 29 一意・Backend 正規化後 14 一意（必要なら生件数も）が書いてある（PR A / #125）
+- [x] Aircraft の全キーと `AircraftLocationDto` の全キーが、それぞれ閉じた分類（client / identity / polled および DTO 側の対応）に入り、次のプローブで `cd Frontend && npx tsc --noEmit` が 0 以外になる: (a) `Aircraft` にだけフィールドを 1 つ足す (b) `AircraftLocationDto` にだけフィールドを 1 つ足す。足した行を戻すと再び 0。ログを残す（PR A / #125）
+- [x] `spec/20261122-controller-stale-target-altitude/spec.md` の「DTO/型にフィールド追加しても取りこぼせない」「同期漏れを tsc で検知できる」に相当する文が、#123 時点では Pick と `applyPolledFields` の間だけを守っていたこと、本 Phase でクラスと DTO まで閉じたことを書くように訂正されている（PR A / #125）
+- [x] API の動作と応答形式に変更がない（Backend 本番ソースを変えない。`git diff origin/main -- Backend/src/main` が空）
+- [x] ローカルゲートがすべて終了コード 0（PR B Frontend 側を確認。Backend 本番差分なしのため Backend ゲートは本 PR では未再実行）:
   - Frontend: `npm run format:check && npx tsc --noEmit && npm run lint && npm run tailwind:check && npm test && npm run build`
   - Backend（Java 21）: `./gradlew spotlessCheck test`
 - [ ] CI の 4 ジョブ（Detect、Backend、Frontend、Docker Compose）がその head で success
@@ -126,11 +126,15 @@ Phase 1 で導入した静的検査を一段厳しくする。Frontend で `noUn
 
 契約テストの正規化、Phase 1 の誤記訂正、Aircraft / DTO の分割、#123 仕様の文言訂正。件数が少なく、機能フラグも ESLint も触らない。#123 の既知の穴を先に閉じ、契約テストの正解件数を仕様に固定する。
 
-### PR B
+### PR A（完了: #125）
 
-`noUncheckedIndexedAccess` の有効化と、63 件の型修正。レビューの主眼は「`!` / `as` で黙らせていないか」。
+契約テストの正規化、Phase 1 の誤記訂正、Aircraft / DTO の分割、#123 仕様の文言訂正。
 
-### PR C
+### PR B（本 PR）
+
+`noUncheckedIndexedAccess` の有効化と、63 件の型修正。レビューの主眼は「`!` / `as` で黙らせていないか」。あわせて `applyPolledFields` が identity（type / model / origin / destination）を上書きしないことの単体テストを追加（#125 レビューの can-wait）。
+
+### PR C（未着手）
 
 型情報付き ESLint（上記のセット）と 36 件の修正。PR B の後にする。インデックスの型が変わったあとで Promise / `json()` の扱いを直した方が、同じファイルを二度触らずに済む。
 
@@ -138,11 +142,11 @@ Phase 1 で導入した静的検査を一段厳しくする。Frontend で `noUn
 
 ## 検証
 
-- [ ] PR A: 正規化後 14 キーのアサート、誤パスで契約テストが失敗すること、DTO/Aircraft 片方追加の `tsc` 失敗ログ、Phase 1 / #123 の文言
-- [ ] PR B: `npx tsc --noEmit` が 0。差分に新たな `!` / 値の `as` がないこと
+- [x] PR A: 正規化後 14 キーのアサート、誤パスで契約テストが失敗すること、DTO/Aircraft 片方追加の `tsc` 失敗ログ、Phase 1 / #123 の文言（#125）
+- [x] PR B: `npx tsc --noEmit` が 0。差分に新たな `!` / 値の `as` がないこと。有効化前の再計測は 63 件・16 ファイル（main `9da904b`）
 - [ ] PR C: `npm run lint` が 0。未処理 Promise（または非網羅 `switch`）の失敗ログ
 - [ ] 各 PR で Frontend / Backend のゲートと CI 4/4
-- [ ] 各 PR で `git diff origin/main -- Backend/src/main` が空
+- [x] 各 PR で `git diff origin/main -- Backend/src/main` が空（PR B: `git diff origin/main -- Backend` も空）
 
 ---
 

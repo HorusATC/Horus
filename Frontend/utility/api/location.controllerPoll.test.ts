@@ -73,9 +73,14 @@ describe("Controller location poll instructedVector", () => {
     const updated = await fetchAircraftLocation(existing, center, range);
 
     expect(updated).toHaveLength(1);
-    expect(updated[0].instructedVector.altitude).toBe(25000);
-    expect(updated[0].instructedVector.heading).toBe(180);
-    expect(updated[0].instructedVector.groundSpeed).toBe(310);
-    expect(updated[0].position.altitude).toBe(19100);
+    const aircraft = updated[0];
+    expect(aircraft).toBeDefined();
+    if (!aircraft) {
+      throw new Error("expected updated[0]");
+    }
+    expect(aircraft.instructedVector.altitude).toBe(25000);
+    expect(aircraft.instructedVector.heading).toBe(180);
+    expect(aircraft.instructedVector.groundSpeed).toBe(310);
+    expect(aircraft.position.altitude).toBe(19100);
   });
 });

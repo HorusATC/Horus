@@ -18,7 +18,9 @@ function flightPlanRouteSignature(a: ScenarioAircraft): string {
 
 function routesDivergeInGroup(aircraft: ScenarioAircraft[]): boolean {
   if (aircraft.length <= 1) return false;
-  const s0 = flightPlanRouteSignature(aircraft[0]);
+  const first = aircraft[0];
+  if (!first) return false;
+  const s0 = flightPlanRouteSignature(first);
   return aircraft.some((ac) => flightPlanRouteSignature(ac) !== s0);
 }
 

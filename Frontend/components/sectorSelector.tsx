@@ -73,14 +73,16 @@ const SectorSelector = ({
 
   const handleSectorChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const sector = event.target.value;
+    const coords = sectorCenterCoordinates[sector];
+    if (!coords) return;
     if (isControlled) {
       onChange(sector);
     } else {
       setInternalSector(sector);
     }
     setCenterCoordinate({
-      latitude: sectorCenterCoordinates[sector].latitude,
-      longitude: sectorCenterCoordinates[sector].longitude,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
     });
   };
 

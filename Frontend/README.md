@@ -21,7 +21,7 @@
 - **スタイリング**: Tailwind CSS with ATC Theme（Industrial / Utilitarian）
 - **状態管理**: React Context API
 - **ビルドツール**: esbuild
-- **TypeScript Flags**: noImplicitReturns, noUnusedLocals, noUnusedParameters, forceConsistentCasingInFileNames, etc.
+- **TypeScript Flags**: noImplicitReturns, noUnusedLocals, noUnusedParameters, noUncheckedIndexedAccess, forceConsistentCasingInFileNames, etc.
 
 ## 🎨 デザインシステム
 

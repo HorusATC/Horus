@@ -72,12 +72,17 @@ describe("Aircraft", () => {
     });
     expect(aircraft.label).toEqual({ x: 50, y: 50 });
     expect(aircraft.positionHistory).toHaveLength(1);
-    expect(aircraft.positionHistory[0]).toMatchObject({
+    const historyEntry = aircraft.positionHistory[0];
+    expect(historyEntry).toBeDefined();
+    if (!historyEntry) {
+      throw new Error("expected positionHistory[0]");
+    }
+    expect(historyEntry).toMatchObject({
       latitude: baseGeo.latitude,
       longitude: baseGeo.longitude,
       altitude: basePosition.altitude,
     });
-    expect(aircraft.positionHistory[0].recordedAt).toEqual(expect.any(String));
+    expect(historyEntry.recordedAt).toEqual(expect.any(String));
   });
 
   it("applyPolledFields copies goAround", () => {
@@ -171,6 +176,58 @@ describe("Aircraft", () => {
     );
     aircraft.applyPolledFields(next);
     expect(aircraft.towerHandoff).toBe(true);
+  });
+
+  it("applyPolledFields does not overwrite identity fields when source differs", () => {
+    const aircraft = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      50,
+      50,
+      0
+    );
+    const next = new Aircraft(
+      "JAL123",
+      { x: 150, y: 250, altitude: 36000 },
+      { latitude: 35.1, longitude: 139.1 },
+      { heading: 95, groundSpeed: 260, verticalSpeed: 5 },
+      { heading: 180, groundSpeed: 300, altitude: 39000 },
+      null,
+      "Military",
+      "F-15",
+      "OKA",
+      "ROAH",
+      "CTS",
+      "RJCC",
+      "7700",
+      "12:05",
+      50,
+      50,
+      10
+    );
+
+    aircraft.applyPolledFields(next);
+
+    expect(aircraft.type).toBe("Commercial");
+    expect(aircraft.model).toBe("B738");
+    expect(aircraft.originIata).toBe("HND");
+    expect(aircraft.originIcao).toBe("RJTT");
+    expect(aircraft.destinationIata).toBe("NRT");
+    expect(aircraft.destinationIcao).toBe("RJAA");
+    expect(aircraft.position).toEqual(next.position);
+    expect(aircraft.squawk).toBe("7700");
   });
 
   it("caps position history at POSITION_HISTORY_MAX_POINTS", () => {

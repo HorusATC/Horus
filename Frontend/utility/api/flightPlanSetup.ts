@@ -125,8 +125,9 @@ export function groupByOd(aircraft: AircraftForSetup[]): OdPair[] {
     list.push(a);
     map.set(key, list);
   }
-  return Array.from(map.entries()).map(([key, list]) => {
+  return Array.from(map.entries()).flatMap(([key, list]) => {
     const [origin, destination] = key.split("→");
-    return { origin, destination, aircraft: list };
+    if (origin == null || destination == null) return [];
+    return [{ origin, destination, aircraft: list }];
   });
 }
