@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-23
 - **関連**: 外部レビューおよび検証（PR #117–#139）の PR-C（⑤、⑥、P-3）、[spec/20261122-sid-star/spec.md](../20261122-sid-star/spec.md)、[spec/20261122-initial-climb/spec.md](../20261122-initial-climb/spec.md)、[spec/20261122-tower-handoff/spec.md](../20261122-tower-handoff/spec.md)、[spec/20261017-runway-final-approach/spec.md](../20261017-runway-final-approach/spec.md)、[spec/20261017-go-around/spec.md](../20261017-go-around/spec.md)、[spec/20261123-hold-handoff-wind/spec.md](../20261123-hold-handoff-wind/spec.md)（PR-A / #141）、[spec/20261123-atis-revision/spec.md](../20261123-atis-revision/spec.md)（PR-B / #142）
@@ -181,14 +181,14 @@ main `4ce741f`。PR-A（#141）で Hold / ハンドオフの風一貫は入っ�
 
 ## 検証
 
-- [ ] モード型により、⑤ の矛盾状態（`FLIGHT_PLAN` + VA）を表現できない。
-- [ ] Backend コンパイル、Frontend 型検査とビルドが通る。
-- [ ] 反転した `claim5_*` 2 件、`claim6_*`、`preexisting3_*` が通る。
-- [ ] 拒否された指示がスナップショットを変えないテーブルが通る。
-- [ ] 組み合わせ 3 件（VAMOS+Resume、拒否ハンドオフ後の延期針路、JOIN FINAL→STAR 後の針路）が通る。
-- [ ] 有効指示スクリプトのトレースが `4ce741f` のゴールデンとビット同一である。
-- [ ] 既存の Hold / ハンドオフ / ATIS / SID / DEPART テストを、本機能用の期待値追加以外で緩めずに通す。
-- [ ] CI 4 ジョブがマージ SHA で合格する。
+- [x] モード型により、⑤ の矛盾状態（`FLIGHT_PLAN` + VA）を表現できない。
+- [x] Backend コンパイル、Frontend 型検査とビルドが通る。
+- [x] 反転した `claim5_*` 2 件、`claim6_*`、`preexisting3_*` が通る。
+- [x] 拒否された指示がスナップショットを変えないテーブルが通る。
+- [x] 組み合わせ 3 件（VAMOS+Resume、拒否ハンドオフ後の延期針路、JOIN FINAL→STAR 後の針路）が通る。
+- [x] 有効指示スクリプトのトレースが `4ce741f` のゴールデンとビット同一である。
+- [x] 既存の Hold / ハンドオフ / ATIS / SID / DEPART テストを、本機能用の期待値追加以外で緩めずに通す。
+- [x] CI 4 ジョブがマージ SHA で合格する。
 
 再現テストの置き場所（検証 README どおり、恒久化するときはバグ断言を逆にする）:
 
