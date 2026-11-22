@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-23 | RNAV SID/STAR 第三スライス（[20261123-rnav-slice3](20261123-rnav-slice3/spec.md)）。AIRAC 1 Nov 2026 の 22 プレートから 114 本（RJTT 66・RJAA 48）を `aip/slice3-20261101.json` としてカタログ結合。割当 API / Operator 空港切替。VISIP・従来方式・ホールド自動・KIAS 自動は未実装。 |
 | 2026-11-23 | SID/STAR 第二スライス（[20261123-sid-star-slice2](20261123-sid-star-slice2/spec.md)）。手元 PDF で新規完全コード化は無し。VAMOS FOUR 出発サンプル・`aip/slice2-20261101.json` 目録・不足プレート 48。VISIP／残 SID／RJAA は未コード。 |
 | 2026-11-23 | 位置ポーリングの `FetchResult`・通し番号、最寄り中心線滑走路選択、経路折れ線の機体始点（[20261123-frontend-polling-runway](20261123-frontend-polling-runway/spec.md)、PR-D）。 |
 | 2026-11-23 | 単一航法モード型と拒否指示の部分更新禁止（[20261123-nav-mode-validate](20261123-nav-mode-validate/spec.md)、PR-C）。`LateralNavigation` sealed、VA 中 Resume 維持、拒否ハンドオフで DEPART 残存、経路再割当で JOIN FINAL 消去。 |

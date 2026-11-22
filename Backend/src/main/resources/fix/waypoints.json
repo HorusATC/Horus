@@ -16666,5 +16666,269 @@
     "latitude": 34.71225,
     "longitude": 139.41402778,
     "type": "waypoint"
+  },
+  {
+    "name": "A4L11",
+    "latitude": 35.98766667,
+    "longitude": 140.21363889,
+    "type": "waypoint"
+  },
+  {
+    "name": "A4L12",
+    "latitude": 36.04238889,
+    "longitude": 140.27966667,
+    "type": "waypoint"
+  },
+  {
+    "name": "A4L13",
+    "latitude": 36.04352778,
+    "longitude": 140.43325,
+    "type": "waypoint"
+  },
+  {
+    "name": "A4L14",
+    "latitude": 35.99383333,
+    "longitude": 140.53472222,
+    "type": "waypoint"
+  },
+  {
+    "name": "A4R21",
+    "latitude": 35.92483333,
+    "longitude": 140.29144444,
+    "type": "waypoint"
+  },
+  {
+    "name": "A4R22",
+    "latitude": 35.95958333,
+    "longitude": 140.36391667,
+    "type": "waypoint"
+  },
+  {
+    "name": "A4R23",
+    "latitude": 35.94411111,
+    "longitude": 140.43741667,
+    "type": "waypoint"
+  },
+  {
+    "name": "A6L21",
+    "latitude": 35.52719444,
+    "longitude": 140.57830556,
+    "type": "waypoint"
+  },
+  {
+    "name": "A6R11",
+    "latitude": 35.51580556,
+    "longitude": 140.5545,
+    "type": "waypoint"
+  },
+  {
+    "name": "A6R12",
+    "latitude": 35.42875,
+    "longitude": 140.61686111,
+    "type": "waypoint"
+  },
+  {
+    "name": "A6R13",
+    "latitude": 35.44858333,
+    "longitude": 140.41461111,
+    "type": "waypoint"
+  },
+  {
+    "name": "A6R14",
+    "latitude": 35.55686111,
+    "longitude": 140.33663889,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA433",
+    "latitude": 35.74402778,
+    "longitude": 140.28355556,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA451",
+    "latitude": 35.247,
+    "longitude": 140.98647222,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA452",
+    "latitude": 35.32519444,
+    "longitude": 141.04125,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA453",
+    "latitude": 35.41380556,
+    "longitude": 141.06172222,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA455",
+    "latitude": 35.41341667,
+    "longitude": 141.08619444,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA456",
+    "latitude": 35.31825,
+    "longitude": 141.06416667,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA457",
+    "latitude": 35.23427778,
+    "longitude": 141.00533333,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA458",
+    "latitude": 35.41302778,
+    "longitude": 141.11069444,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA459",
+    "latitude": 35.31130556,
+    "longitude": 141.08711111,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA460",
+    "latitude": 35.22152778,
+    "longitude": 141.02416667,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA461",
+    "latitude": 35.13722222,
+    "longitude": 140.89155556,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA631",
+    "latitude": 35.60552778,
+    "longitude": 140.74219444,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA632",
+    "latitude": 35.74630556,
+    "longitude": 140.64136111,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA651",
+    "latitude": 35.77083333,
+    "longitude": 140.91594444,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA652",
+    "latitude": 35.87994444,
+    "longitude": 140.92327778,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA653",
+    "latitude": 35.88269444,
+    "longitude": 140.94558333,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA654",
+    "latitude": 35.76608333,
+    "longitude": 140.93772222,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA655",
+    "latitude": 35.95802778,
+    "longitude": 141.01952778,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA656",
+    "latitude": 35.95816667,
+    "longitude": 141.2025,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA657",
+    "latitude": 35.76433333,
+    "longitude": 141.20252778,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA658",
+    "latitude": 35.76136111,
+    "longitude": 140.95947222,
+    "type": "waypoint"
+  },
+  {
+    "name": "AA659",
+    "latitude": 35.88544444,
+    "longitude": 140.96791667,
+    "type": "waypoint"
+  },
+  {
+    "name": "GUGVA",
+    "latitude": 35.70388889,
+    "longitude": 139.85830556,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6L22",
+    "latitude": 35.41144444,
+    "longitude": 139.89594444,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6L23",
+    "latitude": 35.441,
+    "longitude": 139.92752778,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6L31",
+    "latitude": 35.473,
+    "longitude": 139.94666667,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6L32",
+    "latitude": 35.63636111,
+    "longitude": 139.98116667,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6L43",
+    "latitude": 35.47455556,
+    "longitude": 139.85127778,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6R12",
+    "latitude": 35.40377778,
+    "longitude": 139.87975,
+    "type": "waypoint"
+  },
+  {
+    "name": "T6R13",
+    "latitude": 35.46688889,
+    "longitude": 139.83511111,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT503",
+    "latitude": 35.47444444,
+    "longitude": 139.81122222,
+    "type": "waypoint"
+  },
+  {
+    "name": "TT631",
+    "latitude": 35.3565,
+    "longitude": 139.78016667,
+    "type": "waypoint"
   }
 ]
