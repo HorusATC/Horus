@@ -4,6 +4,7 @@
   "predictionTimeSeconds": 45,
   "suppressionDistanceNm": 1.0,
   "approachCorridorWidthNm": 1.0,
+  "approachCorridorExtensionNm": 10.0,
   "approachFloorGradientFtPerNm": 300,
   "airports": [
     {

@@ -14,12 +14,22 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.GeodeticUtils;
 
 public class MsawDetector {
 
+    /**
+     * Altitudes within this band of a floor are treated as not below it, so
+     * exact-on-floor and floating-point noise near the floor do not alert.
+     */
+    static final double ALTITUDE_FLOOR_EPSILON_FT = 0.5;
+
     private final MsaCatalog msaCatalog;
     private final RunwayCatalog runwayCatalog;
 
     public MsawDetector(MsaCatalog msaCatalog, RunwayCatalog runwayCatalog) {
         this.msaCatalog = msaCatalog;
         this.runwayCatalog = runwayCatalog;
+    }
+
+    static boolean isBelowMinimum(double altitudeFt, double minimumFt) {
+        return altitudeFt < minimumFt - ALTITUDE_FLOOR_EPSILON_FT;
     }
 
     public MsawAlert detectAlert(Aircraft aircraft) {
@@ -64,7 +74,7 @@ public class MsawDetector {
 
     private ApproachCorridorCheck checkApproachCorridor(AircraftPosition position) {
         double corridorWidthNm = msaCatalog.getApproachCorridorWidthNm();
-        double extensionNm = 10.0;
+        double extensionNm = msaCatalog.getApproachCorridorExtensionNm();
 
         for (var runway : runwayCatalog.getAllRunways()) {
             var geometry = runwayCatalog.buildFinalApproachGeometry(runway);
@@ -117,7 +127,7 @@ public class MsawDetector {
         double floorFt = corridorCheck.airportElevationFt +
                 gradientFtPerNm * corridorCheck.distanceFromThresholdNm;
 
-        if (position.altitude.toDouble() < floorFt) {
+        if (isBelowMinimum(position.altitude.toDouble(), floorFt)) {
             return new MsawAlert(MsawAlertType.LOW, floorFt, MsawTrigger.CURRENT);
         }
 
@@ -129,7 +139,7 @@ public class MsawDetector {
             double predictedFloorFt = predictedCorridor.airportElevationFt +
                     gradientFtPerNm * predictedCorridor.distanceFromThresholdNm;
 
-            if (predictedPosition.altitude.toDouble() < predictedFloorFt) {
+            if (isBelowMinimum(predictedPosition.altitude.toDouble(), predictedFloorFt)) {
                 return new MsawAlert(MsawAlertType.LOW, predictedFloorFt, MsawTrigger.PREDICTED);
             }
         }
@@ -140,7 +150,7 @@ public class MsawDetector {
     private MsawAlert checkAreaMinimumAltitude(AircraftPosition position, AircraftVector vector) {
         Double highestMinimum = findHighestMinimumAltitude(position);
 
-        if (highestMinimum != null && position.altitude.toDouble() < highestMinimum) {
+        if (highestMinimum != null && isBelowMinimum(position.altitude.toDouble(), highestMinimum)) {
             return new MsawAlert(MsawAlertType.MSA, highestMinimum, MsawTrigger.CURRENT);
         }
 
@@ -148,7 +158,8 @@ public class MsawDetector {
                 position, vector, msaCatalog.getPredictionTimeSeconds());
         Double predictedHighestMinimum = findHighestMinimumAltitude(predictedPosition);
 
-        if (predictedHighestMinimum != null && predictedPosition.altitude.toDouble() < predictedHighestMinimum) {
+        if (predictedHighestMinimum != null
+                && isBelowMinimum(predictedPosition.altitude.toDouble(), predictedHighestMinimum)) {
             return new MsawAlert(MsawAlertType.MSA, predictedHighestMinimum, MsawTrigger.PREDICTED);
         }
 

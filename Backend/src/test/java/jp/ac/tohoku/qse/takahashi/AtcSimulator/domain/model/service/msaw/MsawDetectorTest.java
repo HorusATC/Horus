@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Aircraft;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.types.commercial.CommercialAircraft;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.airport.RunwayDefinition;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.*;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Msaw.MsawAlert;
@@ -21,9 +22,16 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Type.AircraftType;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.MsaCatalog;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.shared.utility.GeodeticUtils;
 
 @DisplayName("MSAW Detector Tests")
 class MsawDetectorTest {
+
+    private static final double RJTT_THRESHOLD_LAT = 35.5530;
+    private static final double RJTT_THRESHOLD_LON = 139.7810;
+    private static final double RJTT_APPROACH_HEADING = 163.0;
+    private static final double RJTT_ELEVATION_FT = 20.0;
+    private static final double FLOOR_GRADIENT_FT_PER_NM = 300.0;
 
     private MsawDetector msawDetector;
     private MsaCatalog msaCatalog;
@@ -116,7 +124,7 @@ class MsawDetectorTest {
                     new MsaCatalog.LatLon(36.0, 140.0),
                     new MsaCatalog.LatLon(35.0, 140.0));
             MsaCatalog overlappingCatalog = new MsaCatalog(
-                    45.0, 1.0, 1.0, 300.0,
+                    45.0, 1.0, 1.0, 10.0, 300.0,
                     List.of(),
                     List.of(
                             new MsaCatalog.MsaArea("low", "low", 2500.0, square),
@@ -151,30 +159,51 @@ class MsawDetectorTest {
     class ApproachCorridorTests {
 
         @Test
-        @DisplayName("Aircraft below approach floor in corridor triggers LOW alert")
-        void testBelowApproachFloor() {
-            Aircraft aircraft = createAircraft("TEST_APPR",
-                    35.553, 139.781, 1000,
-                    163, 150, -500);
+        @DisplayName("Aircraft below approach floor at ~5 NM on final triggers LOW")
+        void testBelowApproachFloorAtFiveNm() {
+            double distanceNm = 5.0;
+            double floorFt = RJTT_ELEVATION_FT + FLOOR_GRADIENT_FT_PER_NM * distanceNm;
+            double[] point = pointOnFinalNm(distanceNm);
+            Aircraft aircraft = createAircraft("TEST_APPR_LOW",
+                    point[0], point[1], floorFt - 200,
+                    RJTT_APPROACH_HEADING, 150, 0);
 
             MsawAlert alert = msawDetector.detectAlert(aircraft);
 
-            if (alert != null) {
-                assertEquals(MsawAlertType.LOW, alert.type(),
-                        "Should trigger LOW alert on approach");
-            }
+            assertNotNull(alert, "Must alert LOW when below approach floor outside suppression");
+            assertEquals(MsawAlertType.LOW, alert.type());
+            assertEquals(MsawTrigger.CURRENT, alert.trigger());
+            assertEquals(floorFt, alert.msaFt(), 1.0);
         }
 
         @Test
-        @DisplayName("Aircraft on proper approach path does not trigger alert")
-        void testProperApproach() {
-            Aircraft aircraft = createAircraft("TEST_APPR2",
-                    35.553, 139.781, 3500,
-                    163, 150, -500);
+        @DisplayName("Proper 3° ILS altitude at ~5 NM (~1600 ft) does not trigger alert")
+        void testProperIlsAtFiveNm() {
+            double distanceNm = 5.0;
+            double[] point = pointOnFinalNm(distanceNm);
+            // On-path ~3°: elevation + 300*5 = 1520; use ~1600 ft as a proper ILS altitude
+            Aircraft aircraft = createAircraft("TEST_APPR_ILS",
+                    point[0], point[1], 1600,
+                    RJTT_APPROACH_HEADING, 150, 0);
 
             MsawAlert alert = msawDetector.detectAlert(aircraft);
 
-            assertNull(alert, "No alert on proper approach path");
+            assertNull(alert, "Proper ILS altitude at 5 NM must not alert");
+        }
+
+        @Test
+        @DisplayName("Aircraft exactly at approach floor does not trigger alert")
+        void testExactlyAtApproachFloor() {
+            double distanceNm = 5.0;
+            double floorFt = RJTT_ELEVATION_FT + FLOOR_GRADIENT_FT_PER_NM * distanceNm;
+            double[] point = pointOnFinalNm(distanceNm);
+            Aircraft aircraft = createAircraft("TEST_APPR_EXACT",
+                    point[0], point[1], floorFt,
+                    RJTT_APPROACH_HEADING, 150, 0);
+
+            MsawAlert alert = msawDetector.detectAlert(aircraft);
+
+            assertNull(alert, "Exactly-at-floor must be treated as no alert");
         }
     }
 
@@ -183,25 +212,35 @@ class MsawDetectorTest {
     class SuppressionZoneTests {
 
         @Test
-        @DisplayName("Aircraft within 1.0 NM of threshold does not trigger alert")
-        void testSuppressionZone() {
-            Aircraft aircraft = createAircraft("TEST_SUPP",
-                    35.553, 139.781, 50,
-                    163, 80, -300);
+        @DisplayName("Aircraft at 0.9 NM from threshold below floor is suppressed")
+        void testInsideSuppressionZoneAtZeroPointNineNm() {
+            double distanceNm = 0.9;
+            double floorFt = RJTT_ELEVATION_FT + FLOOR_GRADIENT_FT_PER_NM * distanceNm;
+            double[] point = pointOnFinalNm(distanceNm);
+            Aircraft aircraft = createAircraft("TEST_SUPP_IN",
+                    point[0], point[1], Math.max(50, floorFt - 100),
+                    RJTT_APPROACH_HEADING, 80, 0);
 
             MsawAlert alert = msawDetector.detectAlert(aircraft);
 
-            assertNull(alert, "No alert within suppression zone near threshold");
+            assertNull(alert, "Within 1.0 NM of threshold must suppress MSAW");
         }
 
         @Test
-        @DisplayName("Aircraft just outside suppression zone can trigger alert")
-        void testJustOutsideSuppressionZone() {
-            Aircraft aircraft = createAircraft("TEST_OUT",
-                    35.560, 139.781, 500,
-                    163, 150, -500);
+        @DisplayName("Aircraft at 1.1 NM from threshold below floor triggers LOW")
+        void testJustOutsideSuppressionZoneAtOnePointOneNm() {
+            double distanceNm = 1.1;
+            double floorFt = RJTT_ELEVATION_FT + FLOOR_GRADIENT_FT_PER_NM * distanceNm;
+            double[] point = pointOnFinalNm(distanceNm);
+            Aircraft aircraft = createAircraft("TEST_SUPP_OUT",
+                    point[0], point[1], floorFt - 100,
+                    RJTT_APPROACH_HEADING, 150, 0);
 
             MsawAlert alert = msawDetector.detectAlert(aircraft);
+
+            assertNotNull(alert, "Just outside 1.0 NM suppression must still alert when below floor");
+            assertEquals(MsawAlertType.LOW, alert.type());
+            assertEquals(MsawTrigger.CURRENT, alert.trigger());
         }
     }
 
@@ -271,6 +310,28 @@ class MsawDetectorTest {
             assertNotNull(alert, "Should alert for current low altitude");
             assertEquals(MsawTrigger.CURRENT, alert.trigger());
         }
+
+        @Test
+        @DisplayName("isBelowMinimum treats exact floor and within epsilon as not below")
+        void testAltitudeFloorEpsilon() {
+            assertFalse(MsawDetector.isBelowMinimum(1520.0, 1520.0));
+            assertFalse(MsawDetector.isBelowMinimum(1520.0, 1520.0 + MsawDetector.ALTITUDE_FLOOR_EPSILON_FT));
+            assertTrue(MsawDetector.isBelowMinimum(1520.0 - MsawDetector.ALTITUDE_FLOOR_EPSILON_FT - 0.01, 1520.0));
+        }
+    }
+
+    /**
+     * Point on the RJTT 16R final, {@code distanceNm} outbound from the threshold
+     * along the reciprocal of the approach course (same geometry as RunwayCatalog).
+     */
+    private double[] pointOnFinalNm(double distanceNm) {
+        RunwayDefinition rjtt = runwayCatalog.findRunway("RJTT", "16R")
+                .orElseThrow(() -> new IllegalStateException("RJTT 16R missing from RunwayCatalog"));
+        var geometry = runwayCatalog.buildFinalApproachGeometry(rjtt)
+                .orElseThrow(() -> new IllegalStateException("RJTT final geometry missing"));
+        double outbound = (geometry.approachCourseHeading() + 180.0) % 360.0;
+        return GeodeticUtils.offsetPointNm(
+                RJTT_THRESHOLD_LAT, RJTT_THRESHOLD_LON, outbound, distanceNm);
     }
 
     private Aircraft createAircraft(String callsign, double lat, double lon, double altFt,

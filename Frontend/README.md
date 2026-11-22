@@ -294,7 +294,7 @@ React Context APIを使用して、以下の状態を管理しています：
 
 クライアントは同一オリジン（`/api/*`）を呼び出し、Next.js BFF が Java バックエンドへプロキシします。主なエンドポイント：
 
-- `GET /api/aircraft/location/all` - 航空機位置一覧取得（各要素に `atcClearance` / `squawk` / `navigationMode` / `msawAlert` が含まれる場合あり。`navigationMode=HOLDING` はデータブロックで `HLD` 表示。`msawAlert` があるときは `MSA` / `LOW` をデータブロックに表示）
+- `GET /api/aircraft/location/all` - 航空機位置一覧取得（各要素に `atcClearance` / `squawk` / `navigationMode` / `msawAlert` を含む。`msawAlert` は常に存在し、未警報時は `null`、警報時は `{ type, msaFt, trigger }`。`navigationMode=HOLDING` はデータブロックで `HLD` 表示。`msawAlert` が非 null のとき `MSA` / `LOW` をデータブロックに表示）
 - `POST /api/aircraft/create-haneda-samples` - Haneda Samples（約28機）作成
 - `POST /api/aircraft/spawn-with-flightplan` - フライトプラン付き航空機スポーン
 - `POST /api/scenario/load` - シナリオ一括ロード（空域クリア＋複数機スポーン）。**シミュレーション開始は行わない**（`POST /api/simulation/start` は別操作）

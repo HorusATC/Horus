@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In Progress
+- **Status**: Done
 - **Date**: 2026-11-22
 - **関連**: [spec/spec.md](../spec.md) フェーズ 4-4、[spec/20261017-terminal-radar-gaps/spec.md](../20261017-terminal-radar-gaps/spec.md)、Issue [#63](https://github.com/HorusATC/Horus/issues/63)、[spec/20261121-emergency-squawk/spec.md](../20261121-emergency-squawk/spec.md)
 

@@ -23,6 +23,7 @@ class MsaCatalogTest {
         assertEquals(45.0, catalog.getPredictionTimeSeconds());
         assertEquals(1.0, catalog.getSuppressionDistanceNm());
         assertEquals(1.0, catalog.getApproachCorridorWidthNm());
+        assertEquals(10.0, catalog.getApproachCorridorExtensionNm());
         assertEquals(300.0, catalog.getApproachFloorGradientFtPerNm());
     }
 

@@ -18,6 +18,7 @@ public final class MsaCatalog {
     private final double predictionTimeSeconds;
     private final double suppressionDistanceNm;
     private final double approachCorridorWidthNm;
+    private final double approachCorridorExtensionNm;
     private final double approachFloorGradientFtPerNm;
     private final List<AirportElevation> airports;
     private final List<MsaArea> areas;
@@ -27,6 +28,7 @@ public final class MsaCatalog {
         this.predictionTimeSeconds = data.predictionTimeSeconds;
         this.suppressionDistanceNm = data.suppressionDistanceNm;
         this.approachCorridorWidthNm = data.approachCorridorWidthNm;
+        this.approachCorridorExtensionNm = data.approachCorridorExtensionNm;
         this.approachFloorGradientFtPerNm = data.approachFloorGradientFtPerNm;
         this.airports = Collections.unmodifiableList(data.airports);
         this.areas = Collections.unmodifiableList(data.areas);
@@ -37,12 +39,14 @@ public final class MsaCatalog {
             double predictionTimeSeconds,
             double suppressionDistanceNm,
             double approachCorridorWidthNm,
+            double approachCorridorExtensionNm,
             double approachFloorGradientFtPerNm,
             List<AirportElevation> airports,
             List<MsaArea> areas) {
         this.predictionTimeSeconds = predictionTimeSeconds;
         this.suppressionDistanceNm = suppressionDistanceNm;
         this.approachCorridorWidthNm = approachCorridorWidthNm;
+        this.approachCorridorExtensionNm = approachCorridorExtensionNm;
         this.approachFloorGradientFtPerNm = approachFloorGradientFtPerNm;
         this.airports = Collections.unmodifiableList(airports);
         this.areas = Collections.unmodifiableList(areas);
@@ -58,6 +62,10 @@ public final class MsaCatalog {
 
     public double getApproachCorridorWidthNm() {
         return approachCorridorWidthNm;
+    }
+
+    public double getApproachCorridorExtensionNm() {
+        return approachCorridorExtensionNm;
     }
 
     public double getApproachFloorGradientFtPerNm() {
@@ -87,6 +95,7 @@ public final class MsaCatalog {
             double predictionTime = root.get("predictionTimeSeconds").asDouble();
             double suppressionDistance = root.get("suppressionDistanceNm").asDouble();
             double corridorWidth = root.get("approachCorridorWidthNm").asDouble();
+            double corridorExtension = root.get("approachCorridorExtensionNm").asDouble();
             double floorGradient = root.get("approachFloorGradientFtPerNm").asDouble();
 
             List<AirportElevation> airportList = new ArrayList<>();
@@ -113,7 +122,7 @@ public final class MsaCatalog {
             }
 
             return new CatalogData(predictionTime, suppressionDistance, corridorWidth,
-                    floorGradient, airportList, areaList);
+                    corridorExtension, floorGradient, airportList, areaList);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load msa-areas.json", e);
         }
@@ -123,6 +132,7 @@ public final class MsaCatalog {
             double predictionTimeSeconds,
             double suppressionDistanceNm,
             double approachCorridorWidthNm,
+            double approachCorridorExtensionNm,
             double approachFloorGradientFtPerNm,
             List<AirportElevation> airports,
             List<MsaArea> areas) {}
