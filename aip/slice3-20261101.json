@@ -3270,10 +3270,10 @@
           "pathDescriptor": "TF",
           "waypointIdentifier": "CURVA",
           "flyOver": false,
-          "courseMagneticDeg": null,
+          "courseMagneticDeg": 300,
           "courseTrueDeg": 292.2,
           "magneticVariationDeg": -7.9,
-          "distanceNm": null,
+          "distanceNm": 8.2,
           "turnDirection": null,
           "altitude": {
             "constraint": "AT_OR_ABOVE",

@@ -161,6 +161,16 @@ class AipSlice3ProcedureCatalogSchemaTest {
                     assertThat(waypointIds).contains(fix);
                 }
 
+                // TF with a published true course must also carry magnetic course and distance.
+                if (parsed == ProcedurePathDescriptor.TF && leg.hasNonNull("courseTrueDeg")) {
+                    assertThat(leg.hasNonNull("courseMagneticDeg"))
+                            .as("%s serial=%s TF has courseTrueDeg but missing courseMagneticDeg", id, leg.path("serial"))
+                            .isTrue();
+                    assertThat(leg.hasNonNull("distanceNm"))
+                            .as("%s serial=%s TF has courseTrueDeg but missing distanceNm", id, leg.path("serial"))
+                            .isTrue();
+                }
+
                 JsonNode altitude = leg.get("altitude");
                 if (altitude != null && !altitude.isNull()) {
                     assertThat(altitude.hasNonNull("constraint")).isTrue();

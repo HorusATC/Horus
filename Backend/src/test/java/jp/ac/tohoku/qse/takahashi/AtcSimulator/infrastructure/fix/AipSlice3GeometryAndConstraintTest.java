@@ -139,6 +139,17 @@ class AipSlice3GeometryAndConstraintTest {
     }
 
     @Test
+    void ninox22CurvaTfCarriesPlateMagneticCourseAndDistance() {
+        JsonNode curva = leg("NINOX4.RWY22", 7);
+        assertThat(curva.path("pathDescriptor").asText()).isEqualToIgnoringCase("TF");
+        assertThat(curva.path("waypointIdentifier").asText()).isEqualTo("CURVA");
+        assertThat(curva.path("courseTrueDeg").asDouble()).isEqualTo(292.2);
+        // Plate RJTT AD 2.24.14 (AD2.24-SID-26); same values as GUSRO1.RWY22 serial 7.
+        assertThat(curva.path("courseMagneticDeg").asInt()).isEqualTo(300);
+        assertThat(curva.path("distanceNm").asDouble()).isEqualTo(8.2);
+    }
+
+    @Test
     void representativeProcedureConstraintsMatchExtractTable() {
         assertVa("LAXAS4.RWY16R", 158.0, 150.0, 500);
         assertDf("LAXAS4.RWY16R", 2, "T6R11", false);
