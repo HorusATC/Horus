@@ -19,7 +19,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 - コンフリクトは水平 5海里・垂直 1,000フィート固定（`RiskAssessment`）。
 - フライトプランのウェイポイントには高度制約のデータ型があるが、機体の飛行更新はフィックスへの針路更新が中心で、通過高度・速度制限には従わない。
 - ホールド API は右旋回のみを受け付ける。インバウンドコース、レグ時間、左旋回、公示ホールディングは指定できない。
-- 経路末尾の `REMOVE_AIRCRAFT` は機体削除であり、タワー移管の手順ではない。
+- 経路末尾の `REMOVE_AIRCRAFT` は機体削除であり、シナリオ終端の削除として残す。タワー移管は別 API として実装済み（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)）。
 - セクター境界、シミュレーション速度の可変、セッション記録、複数セクター、風、ATIS はロードマップ上の別項目である。
 
 ### 課題（Problem Statement）
@@ -102,7 +102,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 
 到着・出発の残り。
 
-- 進入復行（[go-around](../20261017-go-around/spec.md)）、タワー移管（[tower-handoff](../20261017-tower-handoff/spec.md)。`REMOVE_AIRCRAFT` はシナリオ終端の削除として残す）、SID／STAR としての公開手続き、離陸から初期上昇、ホールドのレグ時間・インバウンド・左旋回・公示パターン。
+- 進入復行 — **実装済み**（[go-around](../20261017-go-around/spec.md)、PR [#110](https://github.com/HorusATC/Horus/pull/110)）。タワー移管 — **実装済み**（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)。`REMOVE_AIRCRAFT` はシナリオ終端の削除として残す）。残り: SID／STAR としての公開手続き、離陸から初期上昇、ホールドのレグ時間・インバウンド・左旋回・公示パターン。
 
 間隔・警報の残り。
 

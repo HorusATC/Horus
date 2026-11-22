@@ -1,11 +1,37 @@
 # Horus: ATCレーダーシミュレーションシステム
 
-## クイックスタート
+## クイックスタート（ローカル・Docker 不要）
+
+Java 21 と Node.js 18 以上があれば、次だけで最初のサンプルシナリオまで到達できます。
 
 ```bash
 git clone https://github.com/HorusATC/Horus.git
 cd Horus
+./scripts/dev-up.sh
 ```
+
+スクリプトが Backend と Frontend を起動し、準備完了後に URL を表示します。
+
+1. ブラウザで [http://localhost:3333](http://localhost:3333) を開く
+2. 「**START WITH SAMPLE (サンプルで始める)**」をクリック
+
+到着機 5 機のサンプルが読み込まれ、シミュレーションが始まり、Controller レーダーへ遷移します。停止は Ctrl-C（両方のプロセスを止めます）。
+
+> Java 21 が見つからない場合は、[Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21) を入れ、`JAVA_HOME` を指すか `~/jdk21` に展開してください。Java 22 / 24 は使えません。
+
+Windows では WSL 上で同スクリプトを使うか、下の Docker 経路を使ってください。
+
+## クイックスタート（Docker・代替）
+
+Docker がある場合は、依存のインストールなしで試せます。
+
+```bash
+git clone https://github.com/HorusATC/Horus.git
+cd Horus
+docker compose up --build
+```
+
+初回はイメージビルドに時間がかかります（約 5〜10 分）。準備ができたら [http://localhost:3333](http://localhost:3333) を開き、「**START WITH SAMPLE (サンプルで始める)**」をクリックします。停止は `docker compose down`。
 
 ## システム概要
 
@@ -37,7 +63,7 @@ cd Horus
    - 2つの主要画面（役割分担を想定した訓練シミュレーション）：
      - **Controller（管制官役）**: レーダーを見ながら音声で指示を出す。自分の発出指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。
      - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume）を行う。
-   - フライトプラン作成・航空機 spawn は現状 Swagger（`/docs.html`）で行う。
+   - 最初のシナリオはトップの「START WITH SAMPLE (サンプルで始める)」で開始できる。独自シナリオは Flight Plan Setup（`/flight-plan-setup`）または JSON アップロードで投入する。
    - 詳細は `Frontend/README.md` を参照
 
 ## システムの特徴
@@ -50,44 +76,9 @@ cd Horus
 - **拡張性**: モジュール化された設計により、新機能の追加が容易
 - **双方向インターフェース**: 管制官役（Controller）とパイロット役（Operator）の役割分担。音声による指示出しと復唱のシミュレーションを想定
 
-## クイックスタート（Docker）
-
-最も簡単な方法で Horus を試すには、Docker Compose を使用します。
-
-### 前提条件
-
-- [Docker](https://docs.docker.com/get-docker/) と [Docker Compose](https://docs.docker.com/compose/install/) がインストールされていること
-
-### 起動手順
-
-1. リポジトリをクローン:
-```bash
-git clone https://github.com/HorusATC/Horus.git
-cd Horus
-```
-
-2. Docker Compose でビルドと起動:
-```bash
-docker compose up --build
-```
-
-初回は Backend と Frontend のイメージビルドに時間がかかります（約 5〜10 分）。
-
-3. ブラウザで [http://localhost:3333](http://localhost:3333) を開く
-
-4. トップページの「**START WITH SAMPLE (サンプルで始める)**」ボタンをクリック
-
-到着機が複数含まれるサンプルシナリオが自動で読み込まれ、シミュレーションが開始されます。
-
-### 停止方法
-
-```bash
-docker compose down
-```
-
 ## 開発環境のセットアップ
 
-各コンポーネントの詳細なセットアップ手順は、それぞれのディレクトリのREADMEを参照してください。
+コンポーネント単位の詳細は `Backend/README.md` / `Frontend/README.md` を参照してください。最短起動はルートの `./scripts/dev-up.sh` です。
 
 ### Git hooks（自動）
 
@@ -105,18 +96,18 @@ docker compose down
 
 ## ブラウザからフロントエンドにアクセス
 
-フロントエンドの開発サーバー（`npm run dev`）起動後、ブラウザで [http://localhost:3333](http://localhost:3333) を開く。
+フロントエンドの開発サーバー（`npm run dev` または `./scripts/dev-up.sh`）起動後、ブラウザで [http://localhost:3333](http://localhost:3333) を開く。
 
 | 画面 | URL | 役割 |
 |------|-----|------|
-| トップ（オモテノス） | `/` | システム概要、各画面へのリンク |
+| トップ（オモテノス） | `/` | システム概要、サンプル開始、各画面へのリンク |
 | フライトプラン設定 | `/flight-plan-setup` | シナリオ作成・編集・「これで始める」 |
 | Operator | `/operator` | 管制官指示の入力・航空機操作 |
 | Controller | `/controller` | レーダー表示・管制官役（指示メモ） |
 
 レーダー（Controller / Operator 共通）では、進入廊内の到着機に進入端までの沿コース距離・概算時間をデータブロックへ出し、測距線（RBL）ツールで 2 点間の距離と真方位を測れる（詳細は [Frontend/README.md](Frontend/README.md)、[spec/20261122-runway-distance-rbl/spec.md](spec/20261122-runway-distance-rbl/spec.md)）。
 
-> シミュレーションを動作させるには、別途バックエンド（`./gradlew bootRun`）の起動が必要です。
+> シミュレーションを動作させるにはバックエンドも必要です。`./scripts/dev-up.sh` は両方を起動します。
 
 # Java環境のセットアップの実行手順
 
@@ -125,25 +116,26 @@ docker compose down
 
 1. **Javaのインストール**
 
-    - [JDKのダウンロードサイト](https://www.oracle.com/jp/java/technologies/downloads/#java21)からJava 21をダウンロードしてインストールします。
+    - [Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21)（推奨）または [Oracle JDK 21](https://www.oracle.com/jp/java/technologies/downloads/#java21) をインストールします。
+    - インストール後、`JAVA_HOME` を Java 21 に合わせるか、`~/jdk21` に展開すると `./scripts/dev-up.sh` が自動検出します。
 
 2. **Javaの環境設定**
 
-    - インストールが完了したら、コマンドラインで `java --version` を実行し、Javaが正しくインストールされていることを確認します。
-    - 複数のJavaバージョンがインストールされている場合は、Java 21を使用するように環境を設定してください。
+    - `java --version` で major が 21 であることを確認します（22 / 24 は不可）。
+    - 複数バージョンがある場合は `JAVA_HOME` を Java 21 に設定してください。
 
 3. **依存関係のダウンロード**
     - Gradle 8.14.8 を使用しています。実行時に自動的にダウンロードされます。
 
 4. **コマンドラインで実行**
 
-`cd ./Backend`と`./gradlew bootRun`を実行してバックエンドを起動します。
+`./scripts/dev-up.sh` で Backend + Frontend をまとめて起動するか、手動なら `cd ./Backend` と `./gradlew bootRun` でバックエンドのみ起動します。
 
 > [!NOTE]
 > Java 22/24がシステムのデフォルトになっている場合は、`JAVA_HOME`環境変数を設定してJava 21を指定してください：
 > `JAVA_HOME=/path/to/java21 ./gradlew bootRun`
 
-ブラウザで<http://localhost:8080/docs.html>にアクセスすることで、サーバー側のコマンドを確認できます。
+API リファレンス（開発者向け）は <http://localhost:8080/docs.html> で確認できます。初回のシナリオ開始にはトップの「START WITH SAMPLE」を使ってください。
 
 ## 開発コマンド
 
