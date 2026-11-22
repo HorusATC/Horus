@@ -34,13 +34,13 @@ class GoAroundTest {
         aircraft.joinFinalApproachIntercept(
                 new FixPosition(new Latitude(35.1), new Longitude(139.1)),
                 "RJTT/16R-FA",
-                163);
+                149.88);
 
-        aircraft.beginGoAround(163, 6000);
+        aircraft.beginGoAround(149.88, 6000);
 
         assertEquals(NavigationMode.HEADING, aircraft.getNavigationMode());
         assertTrue(aircraft.isGoAroundActive());
-        assertEquals(163, aircraft.getInstructedVector().instructedHeading.toDouble(), 0.01);
+        assertEquals(149.88, aircraft.getInstructedVector().instructedHeading.toDouble(), 0.01);
         assertEquals(6000, aircraft.getInstructedVector().instructedAltitude.toDouble(), 0.01);
         assertEquals(180, aircraft.getInstructedVector().instructedGroundSpeed.toDouble(), 0.01);
         assertEquals(160, aircraft.getInstructedIndicatedAirspeedKnots());
@@ -50,14 +50,14 @@ class GoAroundTest {
     @Test
     void climbBelowCurrentPlus500IsRejected() {
         AircraftBase aircraft = createTestAircraft();
-        assertThrows(IllegalArgumentException.class, () -> aircraft.beginGoAround(163, 5400));
+        assertThrows(IllegalArgumentException.class, () -> aircraft.beginGoAround(149.88, 5400));
         assertFalse(aircraft.isGoAroundActive());
     }
 
     @Test
     void headingInstructionClearsGoAround() {
         AircraftBase aircraft = createTestAircraft();
-        aircraft.beginGoAround(163, 6000);
+        aircraft.beginGoAround(149.88, 6000);
         aircraft.setNavigationMode(NavigationMode.HEADING);
         aircraft.setInstructedVector(
                 new InstructedVector(new Heading(90), new Altitude(7000), new GroundSpeed(200)));

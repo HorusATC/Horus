@@ -233,11 +233,19 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
 | POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |
 | GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路。既定は各空港 16R / A。風・実気象は無く、本文に `WIND AND WEATHER NOT AVAILABLE.` を明示。シナリオ load で既定に戻る |
-| PUT | `/api/atis/{airportIcao}` | 使用滑走路を更新（`runwayInUse` 必須）。滑走路変更時は情報識別を A→Z→A に 1 つ進める（同一滑走路の再送では進めない）。任意の `informationIdent` で明示設定可。未知の空港・滑走路は 400。JOIN FINAL／復行／タワー移管／Hold／位置 API の契約は変更しない |
+| PUT | `/api/atis/{airportIcao}` | 使用滑走路を更新（`runwayInUse` 必須）。滑走路変更時は情報識別を A→Z→A に 1 つ進める（同一滑走路の再送では進めない）。任意の `informationIdent` で明示設定可。未知の空港・滑走路は 400。JOIN FINAL／復行／タワー移管／Hold／位置 API の契約は変更しない（RJTT 05 への JOIN FINAL のみ着陸不可で 400） |
 | GET | `/simulation/speed` | シミュレーション時間倍率と実時間ティック間隔（ms） |
 | PUT | `/simulation/speed` | JSON `{"speedMultiplier": …}`（必須。欠落・`null` は 400）。値は離散プリセットのみ（`0.25` / `0.5` / `1` / `2` / `4` / `10`）。他は 400 |
 
-滑走路カタログ（`fix/runways.json`）は空港あたり公表 16R を保持し、対向末端（34L）は既存エントリの方位・長さから派生して加算する（AIP 公式座標そのものではない）。`GET /ats/runways` の要素スキーマは不変で件数が増えるだけ。風モデル（フェーズ 6-1）は未実装。
+滑走路カタログ（`fix/runways.json`）は RJTT の A/B/C/D（16R/34L、16L/34R、04/22、05/23）と RJAA の A/B（16R/34L、16L/34R）の **12 末端**を調査値で保持する。`heading` は AD 2.12 の **真方位（TRUE BRG）** を `double` で保持（例: RJTT 16R = 149.88）。進入端座標は着陸進入端（変位がある 16R/16L/34R は変位後）。`GET /ats/runways` の既存キーは維持し、件数は 12。任意キーとして `usableForLanding` / `source` / `ldaM` 等を加算する。
+
+**16R 数値の訂正（識別子と ATIS 既定 16R/A は維持）**: 旧 RJTT 16R は方位 163・長さ 3360 m・進入端 35.553/139.781（3360 m は 16L/34R の寸法）だったが、調査値は方位 149.88・長さ 3000 m・着陸進入端 35.55624167/139.77171944。旧 RJAA 16R は方位 155・進入端 35.7647/140.3864、調査値は方位 149.50・進入端 35.77438889/140.36829167（長さ 4000 m は一致）。
+
+**RJTT 05** は AD 2.13 どおり着陸不可（`usableForLanding: false`）。`JOIN FINAL` は 400。復行・出発用途の 05 指定は拒否しない。MSAW 進入廊と Frontend の進入端距離は着陸可能末端のみ。
+
+**対向派生**（`deriveReciprocal`）は、JSON に対向 designator が無いときだけのフォールバック。12 末端が揃っている現行カタログでは派生末端は作らない。
+
+**出典と発効日（公式 AIP in force 未照合）**: 定義源は JCAB AIP Japan AD 2.12 / AD 2.13。本リポジトリの値は、ログイン無しで読める AD 2.12 PDF 写し（RJTT 頁フッタ `EFF: 28 NOV 2024`、RJAA 頁フッタ `EFF: 2 OCT 2025`）と [AirBinder RJTT](https://airbinder.jp/airports/rjtt/) / [RJAA](https://airbinder.jp/airports/rjaa/) の AIRAC 2611（本文 2026-10-29、有効 2026-10-29 00:00 JST 〜 2026-11-26 00:00 JST）から採録した。**公式の AIP in force（AIS JAPAN / SWIM）とは照合していない。公式値であると主張しない。** 詳細と Python クロスチェックは [spec/20261122-runway-catalog](../spec/20261122-runway-catalog/spec.md)。風モデル（フェーズ 6-1）は未実装。
 
 統合テスト: `src/test/java/.../FlightPlanApiIntegrationTest.java`、`SimulationSpeedIntegrationTest.java`（`fixtures/scenario-load-minimal.json` は [docs/test-data/scenario-load-minimal.json](docs/test-data/scenario-load-minimal.json) と同一内容）。200 機 `nextStep` 計測は `NextStepTwoHundredAircraftPerformanceTest.java`（1 ティック平均 100ms 超で失敗。多くの環境で 1ms 未満）。200 機 `getAllConflictAlerts` 計測は `ConflictDetectionTwoHundredAircraftPerformanceTest.java`（API と同経路、平均 100ms 超で失敗。README のコンフリクト目安と整合）。
 

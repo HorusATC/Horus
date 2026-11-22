@@ -77,6 +77,9 @@ public class MsawDetector {
         double extensionNm = msaCatalog.getApproachCorridorExtensionNm();
 
         for (var runway : runwayCatalog.getAllRunways()) {
+            if (!runway.usableForLanding()) {
+                continue;
+            }
             var geometry = runwayCatalog.buildFinalApproachGeometry(runway);
             if (geometry.isEmpty()) {
                 continue;

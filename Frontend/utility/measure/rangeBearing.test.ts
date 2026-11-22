@@ -15,9 +15,11 @@ import {
   type RunwayApproachGeometry,
 } from "./rangeBearing";
 
-const RJTT_16R_THRESHOLD = { latitude: 35.553, longitude: 139.781 };
-const RJAA_16R_THRESHOLD = { latitude: 35.7647, longitude: 140.3864 };
-const RJTT_APPROACH_COURSE = 163;
+/** AIP AD 2.12 survey landing threshold (unofficial copy / AirBinder AIRAC 2611). */
+const RJTT_16R_THRESHOLD = { latitude: 35.55624167, longitude: 139.77171944 };
+const RJAA_16R_THRESHOLD = { latitude: 35.77438889, longitude: 140.36829167 };
+const RJTT_APPROACH_COURSE = 149.88;
+const RJTT_OUTBOUND = RJTT_APPROACH_COURSE + 180;
 
 const RJTT_RUNWAY: RunwayApproachGeometry = {
   airportIcao: "RJTT",
@@ -25,17 +27,21 @@ const RJTT_RUNWAY: RunwayApproachGeometry = {
   thresholdLatitude: RJTT_16R_THRESHOLD.latitude,
   thresholdLongitude: RJTT_16R_THRESHOLD.longitude,
   approachCourseHeading: RJTT_APPROACH_COURSE,
+  usableForLanding: true,
 };
 
 describe("rangeBearing haversine / bearing (spec numeric cases)", () => {
-  it("distance/bearing 1: 8 NM at 343° from RJTT 16R threshold", () => {
-    const point = destinationPoint(RJTT_16R_THRESHOLD, 343, 8);
-    expect(point.latitude).toBeCloseTo(35.68027007, 7);
-    expect(point.longitude).toBeCloseTo(139.7330940835, 7);
+  it("distance/bearing 1: 8 NM at outbound from RJTT 16R threshold", () => {
+    const point = destinationPoint(RJTT_16R_THRESHOLD, RJTT_OUTBOUND, 8);
+    expect(point.latitude).toBeCloseTo(35.6713379435, 7);
+    expect(point.longitude).toBeCloseTo(139.6895052175, 7);
     expect(haversineDistanceNm(RJTT_16R_THRESHOLD, point)).toBeCloseTo(8.0, 3);
-    expect(initialBearingDeg(RJTT_16R_THRESHOLD, point)).toBeCloseTo(343.0, 2);
+    expect(initialBearingDeg(RJTT_16R_THRESHOLD, point)).toBeCloseTo(
+      RJTT_OUTBOUND,
+      2
+    );
     expect(initialBearingDeg(point, RJTT_16R_THRESHOLD)).toBeCloseTo(
-      162.972102,
+      149.832125,
       2
     );
   });
@@ -43,13 +49,13 @@ describe("rangeBearing haversine / bearing (spec numeric cases)", () => {
   it("distance/bearing 2: RJTT 16R threshold to RJAA 16R threshold", () => {
     expect(
       haversineDistanceNm(RJTT_16R_THRESHOLD, RJAA_16R_THRESHOLD)
-    ).toBeCloseTo(32.1880525766, 3);
+    ).toBeCloseTo(31.94743, 3);
     expect(
       initialBearingDeg(RJTT_16R_THRESHOLD, RJAA_16R_THRESHOLD)
-    ).toBeCloseTo(66.537584, 2);
+    ).toBeCloseTo(65.594366, 2);
     expect(
       initialBearingDeg(RJAA_16R_THRESHOLD, RJTT_16R_THRESHOLD)
-    ).toBeCloseTo(246.89051, 2);
+    ).toBeCloseTo(245.942199, 2);
   });
 });
 
@@ -78,7 +84,7 @@ describe("rangeBearing time / format", () => {
 
 describe("rangeBearing approach corridor", () => {
   it("includes along-track 8 NM / cross-track 0", () => {
-    const point = destinationPoint(RJTT_16R_THRESHOLD, 343, 8);
+    const point = destinationPoint(RJTT_16R_THRESHOLD, RJTT_OUTBOUND, 8);
     expect(
       isInApproachCorridor(point, RJTT_16R_THRESHOLD, RJTT_APPROACH_COURSE)
     ).toBe(true);
@@ -92,12 +98,11 @@ describe("rangeBearing approach corridor", () => {
   });
 
   it("excludes along-track 8 NM / cross-track 2 NM", () => {
-    // Point with along=8, cross=2 relative to outbound 343° from threshold.
     const bearingDiffDeg = (Math.atan2(2, 8) * 180) / Math.PI;
     const slantNm = Math.hypot(8, 2);
     const offset = destinationPoint(
       RJTT_16R_THRESHOLD,
-      343 + bearingDiffDeg,
+      RJTT_OUTBOUND + bearingDiffDeg,
       slantNm
     );
     const proj = projectOntoApproachCorridor(
@@ -111,18 +116,22 @@ describe("rangeBearing approach corridor", () => {
   });
 
   it("excludes points inside the threshold (departure side)", () => {
-    const inside = destinationPoint(RJTT_16R_THRESHOLD, 163, 1);
+    const inside = destinationPoint(
+      RJTT_16R_THRESHOLD,
+      RJTT_APPROACH_COURSE,
+      1
+    );
     expect(
       isInApproachCorridor(inside, RJTT_16R_THRESHOLD, RJTT_APPROACH_COURSE)
     ).toBe(false);
   });
 
   it("includes along-track 10.0 NM exactly and excludes beyond", () => {
-    const at10 = destinationPoint(RJTT_16R_THRESHOLD, 343, 10);
+    const at10 = destinationPoint(RJTT_16R_THRESHOLD, RJTT_OUTBOUND, 10);
     expect(
       isInApproachCorridor(at10, RJTT_16R_THRESHOLD, RJTT_APPROACH_COURSE)
     ).toBe(true);
-    const beyond = destinationPoint(RJTT_16R_THRESHOLD, 343, 10.01);
+    const beyond = destinationPoint(RJTT_16R_THRESHOLD, RJTT_OUTBOUND, 10.01);
     expect(
       isInApproachCorridor(beyond, RJTT_16R_THRESHOLD, RJTT_APPROACH_COURSE)
     ).toBe(false);
@@ -133,7 +142,7 @@ describe("rangeBearing approach corridor", () => {
     const slantNm = Math.hypot(8, 1);
     const atEdge = destinationPoint(
       RJTT_16R_THRESHOLD,
-      343 + bearingDiffDeg,
+      RJTT_OUTBOUND + bearingDiffDeg,
       slantNm
     );
     const proj = projectOntoApproachCorridor(
@@ -146,11 +155,20 @@ describe("rangeBearing approach corridor", () => {
   });
 
   it("findThresholdDistance returns designator and distance", () => {
-    const point = destinationPoint(RJTT_16R_THRESHOLD, 343, 8);
+    const point = destinationPoint(RJTT_16R_THRESHOLD, RJTT_OUTBOUND, 8);
     const result = findThresholdDistance(point, [RJTT_RUNWAY]);
     expect(result).not.toBeNull();
     expect(result!.designator).toBe("16R");
     expect(result!.alongTrackNm).toBeCloseTo(8.0, 3);
+  });
+
+  it("findThresholdDistance skips ends not usable for landing", () => {
+    const point = destinationPoint(RJTT_16R_THRESHOLD, RJTT_OUTBOUND, 8);
+    const noLanding: RunwayApproachGeometry = {
+      ...RJTT_RUNWAY,
+      usableForLanding: false,
+    };
+    expect(findThresholdDistance(point, [noLanding])).toBeNull();
   });
 });
 
@@ -158,8 +176,8 @@ describe("rangeBearing CPA", () => {
   it("head-on pair at 10 NM / 180 kt each closes in 100 s", () => {
     const aPos = RJTT_16R_THRESHOLD;
     const bPos = destinationPoint(aPos, 90, 10);
-    expect(bPos.latitude).toBeCloseTo(35.552827373, 7);
-    expect(bPos.longitude).toBeCloseTo(139.985490185, 7);
+    expect(bPos.latitude).toBeCloseTo(35.5560690224, 7);
+    expect(bPos.longitude).toBeCloseTo(139.9762178943, 7);
     expect(haversineDistanceNm(aPos, bPos)).toBeCloseTo(10.0, 3);
     expect(initialBearingDeg(aPos, bPos)).toBeCloseTo(90.0, 2);
     const cpa = horizontalCpaSeconds(

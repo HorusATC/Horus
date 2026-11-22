@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-22 | 滑走路カタログ拡張（羽田 A/B/C/D・成田 A/B）（[20261122-runway-catalog](20261122-runway-catalog/spec.md)）。12 末端調査値、16R 数値訂正、heading double、RJTT 05 着陸拒否。公式 AIP in force 未照合。 |
 | 2026-11-22 | リーダー線・データブロックの自動配置（[20261122-leader-line-auto-placement](20261122-leader-line-auto-placement/spec.md)）。Frontend のみ。8 方位・手動固定。API 変更なし。 |
 | 2026-11-22 | 使用滑走路と ATIS 表示（風なし）（[20261122-atis-runway-in-use](20261122-atis-runway-in-use/spec.md)）。`GET`/`PUT /api/atis`、対向末端派生、レーダーパネル。6-1 風モデルは残課題。 |
 | 2026-11-22 | 待機の進入セクター（ダイレクト／ティアドロップ／パラレル）（[20261122-hold-entry-sectors](20261122-hold-entry-sectors/spec.md)）。位置 API に任意 `holding.entryProcedure`。公示・EAT/EFC・風は残課題。 |

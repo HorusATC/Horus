@@ -5,10 +5,12 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.core.io.ClassPathResource;
 
@@ -59,9 +61,7 @@ public final class RunwayCatalog {
         double outboundExtensionHeading = normalizeHeading(runway.heading() + 180);
         double[] intercept = GeodeticUtils.offsetPointNm(
                 runway.thresholdLatitude(), runway.thresholdLongitude(), outboundExtensionHeading, FINAL_INTERCEPT_NM);
-        double lengthNm = runway.lengthM() * NM_PER_METER;
-        double[] departureEnd = GeodeticUtils.offsetPointNm(
-                runway.thresholdLatitude(), runway.thresholdLongitude(), runway.heading(), lengthNm);
+        double[] departureEnd = resolveDepartureEnd(runway);
         double[] extensionEnd = GeodeticUtils.offsetPointNm(
                 runway.thresholdLatitude(), runway.thresholdLongitude(), outboundExtensionHeading, FINAL_EXTENSION_NM);
         return Optional.of(new FinalApproachGeometry(
@@ -75,6 +75,27 @@ public final class RunwayCatalog {
                 extensionEnd[1]));
     }
 
+    /**
+     * Far end for drawing / LDA geometry: opposite physical threshold when surveyed,
+     * else landing threshold offset by LDA (displaced) or pavement length.
+     */
+    private double[] resolveDepartureEnd(RunwayDefinition runway) {
+        Optional<RunwayDefinition> opposite = findRunway(runway.airportIcao(), reciprocalDesignator(runway.designator()));
+        if (opposite.isPresent()) {
+            RunwayDefinition opp = opposite.get();
+            if (opp.physicalThresholdLatitude() != null && opp.physicalThresholdLongitude() != null) {
+                return new double[] {opp.physicalThresholdLatitude(), opp.physicalThresholdLongitude()};
+            }
+            return new double[] {opp.thresholdLatitude(), opp.thresholdLongitude()};
+        }
+        int alongM = runway.ldaM() != null ? runway.ldaM() : runway.lengthM();
+        return GeodeticUtils.offsetPointNm(
+                runway.thresholdLatitude(),
+                runway.thresholdLongitude(),
+                runway.heading(),
+                alongM * NM_PER_METER);
+    }
+
     public List<Map<String, Object>> toApiMaps() {
         List<Map<String, Object>> result = new ArrayList<>();
         for (RunwayDefinition rwy : runways) {
@@ -85,6 +106,7 @@ public final class RunwayCatalog {
 
     /**
      * Opposite runway end derived from one catalog definition (heading + length offset).
+     * Used only when the reciprocal designator is missing from surveyed JSON.
      * Coordinates are geometric derivatives of the source entry, not AIP survey values.
      */
     public static RunwayDefinition deriveReciprocal(RunwayDefinition source) {
@@ -97,10 +119,19 @@ public final class RunwayCatalog {
         return new RunwayDefinition(
                 source.airportIcao(),
                 reciprocalDesignator(source.designator()),
-                (int) Math.round(normalizeHeading(source.heading() + 180)),
+                normalizeHeading(source.heading() + 180),
                 oppositeThreshold[0],
                 oppositeThreshold[1],
-                source.lengthM());
+                source.lengthM(),
+                source.widthM(),
+                null,
+                source.ldaM(),
+                source.toraM(),
+                false,
+                null,
+                null,
+                RunwayDefinition.SOURCE_DERIVED_RECIPROCAL,
+                true);
     }
 
     static String reciprocalDesignator(String designator) {
@@ -123,7 +154,7 @@ public final class RunwayCatalog {
         return String.format(Locale.ROOT, "%02d%s", reciprocalNumber, reciprocalSuffix);
     }
 
-    private static double normalizeHeading(double heading) {
+    static double normalizeHeading(double heading) {
         double h = heading % 360;
         return h < 0 ? h + 360 : h;
     }
@@ -131,22 +162,61 @@ public final class RunwayCatalog {
     private static List<RunwayDefinition> loadRunways() {
         try (InputStream is = new ClassPathResource("fix/runways.json").getInputStream()) {
             JsonNode root = OBJECT_MAPPER.readTree(is);
-            List<RunwayDefinition> list = new ArrayList<>();
+            List<RunwayDefinition> surveyed = new ArrayList<>();
+            Set<String> keys = new HashSet<>();
             for (JsonNode node : root.get("runways")) {
-                RunwayDefinition base = new RunwayDefinition(
-                        node.get("airportIcao").asText(),
-                        node.get("designator").asText(),
-                        node.get("heading").asInt(),
-                        node.get("thresholdLatitude").asDouble(),
-                        node.get("thresholdLongitude").asDouble(),
-                        node.get("lengthM").asInt());
-                list.add(base);
-                list.add(deriveReciprocal(base));
+                RunwayDefinition def = parseRunway(node);
+                surveyed.add(def);
+                keys.add(catalogKey(def.airportIcao(), def.designator()));
+            }
+            List<RunwayDefinition> list = new ArrayList<>(surveyed);
+            for (RunwayDefinition base : surveyed) {
+                String reciprocal = reciprocalDesignator(base.designator());
+                if (!keys.contains(catalogKey(base.airportIcao(), reciprocal))) {
+                    list.add(deriveReciprocal(base));
+                }
             }
             return list;
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load runways.json", e);
         }
+    }
+
+    private static String catalogKey(String airportIcao, String designator) {
+        return airportIcao.toUpperCase(Locale.ROOT) + "/" + designator.toUpperCase(Locale.ROOT);
+    }
+
+    private static RunwayDefinition parseRunway(JsonNode node) {
+        boolean usable = !node.has("usableForLanding") || node.get("usableForLanding").asBoolean(true);
+        boolean displaced = node.has("displacedLandingThreshold")
+                && node.get("displacedLandingThreshold").asBoolean(false);
+        String source = node.has("source")
+                ? node.get("source").asText()
+                : RunwayDefinition.SOURCE_AIP_AD_2_12;
+        return new RunwayDefinition(
+                node.get("airportIcao").asText(),
+                node.get("designator").asText(),
+                node.get("heading").asDouble(),
+                node.get("thresholdLatitude").asDouble(),
+                node.get("thresholdLongitude").asDouble(),
+                node.get("lengthM").asInt(),
+                optionalInt(node, "widthM"),
+                optionalDouble(node, "thresholdElevationFt"),
+                optionalInt(node, "ldaM"),
+                optionalInt(node, "toraM"),
+                displaced,
+                optionalDouble(node, "physicalThresholdLatitude"),
+                optionalDouble(node, "physicalThresholdLongitude"),
+                source,
+                usable);
+    }
+
+    private static Integer optionalInt(JsonNode node, String field) {
+        return node.has(field) && !node.get(field).isNull() ? node.get(field).asInt() : null;
+    }
+
+    private static Double optionalDouble(JsonNode node, String field) {
+        return node.has(field) && !node.get(field).isNull() ? node.get(field).asDouble() : null;
     }
 
     public record FinalApproachGeometry(
@@ -173,6 +243,14 @@ public final class RunwayCatalog {
             map.put("extensionEndLongitude", extensionEndLongitude);
             map.put("interceptLatitude", interceptLatitude);
             map.put("interceptLongitude", interceptLongitude);
+            map.put("usableForLanding", runway.usableForLanding());
+            map.put("source", runway.source());
+            if (runway.lengthM() > 0) {
+                map.put("lengthM", runway.lengthM());
+            }
+            if (runway.ldaM() != null) {
+                map.put("ldaM", runway.ldaM());
+            }
             return map;
         }
     }
