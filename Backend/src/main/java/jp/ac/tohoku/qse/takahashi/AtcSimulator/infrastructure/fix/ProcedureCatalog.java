@@ -24,7 +24,9 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.Pro
 
 /**
  * Loads RJTT SID/STAR extract from classpath.
- * Source notice is preserved for API/README; VISIP and uncertain items stay as in the JSON.
+ * Committed source of truth is {@code aip/rjtt-sid-star-20261101.json}; Gradle
+ * {@code processResources} copies it to this classpath path. VISIP and uncertain
+ * items stay as in the JSON.
  */
 public final class ProcedureCatalog {
 

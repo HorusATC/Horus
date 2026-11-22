@@ -1,0 +1,14 @@
+# Used when docker-compose builds Backend with context: . (repo root).
+.git
+.github
+Frontend
+spec
+docs
+.dev-logs
+node_modules
+**/node_modules
+**/.gradle
+**/build
+Backend/bin
+*.md
+!aip/*.md

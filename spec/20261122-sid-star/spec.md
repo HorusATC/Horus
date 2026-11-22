@@ -7,7 +7,7 @@
 - **Date**: 2026-11-22
 - **関連**: [spec/spec.md](../spec.md)、[spec/20261017-terminal-radar-gaps/spec.md](../20261017-terminal-radar-gaps/spec.md)、Issue [#114](https://github.com/HorusATC/Horus/issues/114)、出発初期上昇 [#137](https://github.com/HorusATC/Horus/pull/137)（[#115](https://github.com/HorusATC/Horus/issues/115)）、ウェイポイント高度制約 `spec/20261017-waypoint-constraints/spec.md`
 - **リポジトリ配置**: `spec/20261122-sid-star/spec.md`
-- **抽出データ（実装の入力）**: `aip/rjtt-sid-star-20261101.json` および同名の要約 `.md`（公式 AIP Japan、AIRAC 1 Nov 2026）
+- **抽出データ（実装の入力）**: `aip/rjtt-sid-star-20261101.json` および同名の要約 `.md`（公式 AIP Japan、AIRAC 1 Nov 2026）。リポジトリにコミットする JSON はこの1本のみ。Backend は Gradle `processResources` で classpath `fix/rjtt-sid-star-20261101.json` へコピーして読む（resources への二重コミットはしない）
 
 ## 概要
 
@@ -111,7 +111,7 @@
 
 ## 実装の手がかり
 
-- 抽出の正本: 本仕様と同時に置く `aip/rjtt-sid-star-20261101.json`。不確実項目は JSON の `uncertain` と要約 MD を正とする（パス表速度の制限種別、A/K/C と滑走路の一対一、頁フッタ日付と AIRAC の差、VISIP の文言と TTE 座標と VISIP 自体の欠測座標）。
+- 抽出の正本: 本仕様と同時に置く `aip/rjtt-sid-star-20261101.json`（唯一のコミット済み JSON）。ビルド時に classpath `fix/` へコピーする。不確実項目は JSON の `uncertain` と要約 MD を正とする（パス表速度の制限種別、A/K/C と滑走路の一対一、頁フッタ日付と AIRAC の差、VISIP の文言と TTE 座標と VISIP 自体の欠測座標）。
 - 高度の符号は既存の `AltitudeConstraint` へそのまま対応できる（AT / AT_OR_ABOVE / AT_OR_BELOW）。`FL150` だけは上記のフィートマッピング。
 - 追加フィックスはスポーンと Direct To からも解決できる場所に置く。
 - レーダー描画は Setup の経路プレビューや ATS 経路描画を参考にしてよいが、航空機の割当経路として Controller / Operator 画面に出すこと。

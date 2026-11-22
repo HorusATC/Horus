@@ -3,8 +3,9 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./Backend
-      dockerfile: Dockerfile
+      # Repo root so Backend can copy aip/rjtt-sid-star-20261101.json into the JAR.
+      context: .
+      dockerfile: Backend/Dockerfile
     ports:
       - "8080:8080"
     networks:
