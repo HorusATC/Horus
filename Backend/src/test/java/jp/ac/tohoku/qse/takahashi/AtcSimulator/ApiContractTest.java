@@ -36,11 +36,11 @@ class ApiContractTest {
     private static final Path BACKEND_TEST_DIR =
             Paths.get("src/test/java").toAbsolutePath().normalize();
 
-    /** Expected raw IntegrationTest call sites (hold validation + location holding.pattern). */
-    private static final int EXPECTED_BACKEND_RAW_CALLS = 49;
+    /** Expected raw IntegrationTest call sites (hold validation + location holding.pattern + ATIS). */
+    private static final int EXPECTED_BACKEND_RAW_CALLS = 53;
 
-    /** Expected unique keys after normalizing callsigns to Spring path variables. */
-    private static final int EXPECTED_BACKEND_NORMALIZED_UNIQUE_KEYS = 14;
+    /** Expected unique keys after normalizing callsigns/airport ICAO to Spring path variables. */
+    private static final int EXPECTED_BACKEND_NORMALIZED_UNIQUE_KEYS = 16;
 
     @Test
     void allFrontendBffCallsShouldMatchActualSpringMappings() throws IOException {
@@ -266,7 +266,8 @@ class ApiContractTest {
                     String method = "";
                     if (before.contains("postForEntity")) method = "POST";
                     else if (before.contains("getForEntity")) method = "GET";
-                    else if (before.contains("putForObject")) method = "PUT";
+                    else if (before.contains("putForObject")
+                            || before.contains("HttpMethod.PUT")) method = "PUT";
                     else if (before.contains("delete(")) method = "DELETE";
                     else if (before.contains("patchForEntity")) method = "PATCH";
 

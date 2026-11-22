@@ -61,4 +61,36 @@ class RunwayCatalogTest {
         double interceptNm = GeodeticUtils.calculateHorizontalDistance(threshold, intercept);
         assertEquals(8.0, interceptNm, 0.1);
     }
+
+    @Test
+    void catalogIncludesDerivedReciprocalEnds() {
+        RunwayCatalog catalog = new RunwayCatalog();
+        assertTrue(catalog.findRunway("RJTT", "16R").isPresent());
+        assertTrue(catalog.findRunway("RJTT", "34L").isPresent());
+        assertTrue(catalog.findRunway("RJAA", "16R").isPresent());
+        assertTrue(catalog.findRunway("RJAA", "34L").isPresent());
+        assertEquals(4, catalog.getAllRunways().size());
+    }
+
+    @Test
+    void reciprocalRoundTripReturnsNearOriginal() {
+        RunwayCatalog catalog = new RunwayCatalog();
+        var original = catalog.findRunway("RJTT", "16R").orElseThrow();
+        var once = RunwayCatalog.deriveReciprocal(original);
+        assertEquals("34L", once.designator());
+        var twice = RunwayCatalog.deriveReciprocal(once);
+        assertEquals("16R", twice.designator());
+        assertEquals(original.heading(), twice.heading(), 1);
+        AircraftPosition a = new AircraftPosition(
+                new Latitude(original.thresholdLatitude()),
+                new Longitude(original.thresholdLongitude()),
+                new Altitude(0));
+        AircraftPosition b = new AircraftPosition(
+                new Latitude(twice.thresholdLatitude()),
+                new Longitude(twice.thresholdLongitude()),
+                new Altitude(0));
+        assertTrue(
+                GeodeticUtils.calculateHorizontalDistance(a, b) < 0.05,
+                "round-trip threshold drift");
+    }
 }

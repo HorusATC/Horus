@@ -109,6 +109,17 @@ public class AtsRouteFixPositionRepository implements FixPositionRepository {
         return icaoToIata.getOrDefault(key, key);
     }
 
+    /**
+     * Resolves airport name from ICAO. Empty when not in airports.json.
+     */
+    public String findAirportNameByIcao(String icaoCode) {
+        if (icaoCode == null || icaoCode.isBlank()) {
+            return "";
+        }
+        String key = icaoCode.toUpperCase().trim();
+        return icaoToName.getOrDefault(key, "");
+    }
+
     private record AirportData(
             Map<String, double[]> positions,
             Map<String, String> icaoToIata,

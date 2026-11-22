@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelectedAircraft } from "@/context/selectedAircraftContext";
 import { resumeNavigation } from "@/utility/api/flightPlan";
 import {
@@ -8,6 +8,7 @@ import {
   handOffToTower,
   joinFinalApproach,
 } from "@/utility/api/finalApproach";
+import { fetchAtisAll } from "@/utility/api/atis";
 
 const FlightPlanControl: React.FC = () => {
   const { callsign } = useSelectedAircraft();
@@ -28,6 +29,21 @@ const FlightPlanControl: React.FC = () => {
     "idle"
   );
   const [towerMessage, setTowerMessage] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const atis = await fetchAtisAll();
+      if (cancelled || atis == null) return;
+      const rjtt = atis.find((s) => s.airportIcao === "RJTT") ?? atis[0];
+      if (rjtt == null) return;
+      setAirportIcao(rjtt.airportIcao);
+      setRunwayDesignator(rjtt.runwayInUse);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleResume = async () => {
     if (!callsign) return;

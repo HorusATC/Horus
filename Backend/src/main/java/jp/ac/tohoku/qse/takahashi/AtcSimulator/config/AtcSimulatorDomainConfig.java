@@ -3,6 +3,7 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.AtisService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ConflictAlertService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.GetAllAircraftLocationsWithRiskUseCase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.RouteSuggestionService;
@@ -67,6 +68,13 @@ public class AtcSimulatorDomainConfig {
     @Bean
     public ScenarioService scenarioService(AirspaceManagement airspaceManagement) {
         return new ScenarioServiceImpl(airspaceManagement);
+    }
+
+    @Bean
+    public AtisService atisService(
+            RunwayCatalog runwayCatalog,
+            AtsRouteFixPositionRepository atsRouteFixPositionRepository) {
+        return new AtisService(runwayCatalog, atsRouteFixPositionRepository);
     }
 
 }
