@@ -1,0 +1,33 @@
+{
+  "scenarioName": "Quickstart RJTT VAMOS FOUR Departure Sample",
+  "description": "Loadable VAMOS FOUR departure sample (not the default START WITH SAMPLE). Single RJTT departure on VAMOS4.RWY34L_34R with TATEYAMA transition; parallel 16L/16R or 34L/34R pairs omitted so the STCA/MSAW guard stays clean. VISIP is not assigned. Starts at TT502 (first SID fix after VA) at 4000 ft above the training MSA floor, then LOCUP / VAMOS / UTIBO. Coordinates from waypoints.json; routes from aip/rjtt-sid-star-20261101.json. Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.",
+  "atis": [
+    {
+      "icao": "RJTT",
+      "runwayInUse": "34L"
+    }
+  ],
+  "aircraft": [
+    {
+      "procedureId": "VAMOS4.RWY34L_34R",
+      "transitionId": "VAMOS4.TATEYAMA",
+      "flightPlan": {
+        "callsign": "JAL900",
+        "aircraftType": "B787",
+        "departureAirport": "RJTT",
+        "arrivalAirport": "RJBB",
+        "cruiseAltitude": 9000,
+        "cruiseSpeed": 250,
+        "route": []
+      },
+      "initialPosition": {
+        "latitude": 35.54011111,
+        "longitude": 139.95575,
+        "altitude": 4000,
+        "heading": 191,
+        "groundSpeed": 250,
+        "verticalSpeed": 1500
+      }
+    }
+  ]
+}

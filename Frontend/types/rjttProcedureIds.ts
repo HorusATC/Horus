@@ -46,3 +46,15 @@ export const QUICKSTART_STAR_PROCEDURE_IDS = [
   "AKSEL2C",
   "GODIN2A",
 ] as const satisfies readonly RjttCatalogProcedureId[];
+
+/**
+ * Loadable VAMOS FOUR departure sample (separate from the arrival default).
+ * Transition ids are optional on the scenario aircraft and checked separately.
+ */
+export const QUICKSTART_DEPARTURE_PROCEDURE_IDS = [
+  "VAMOS4.RWY34L_34R",
+] as const satisfies readonly RjttCatalogProcedureId[];
+
+export const QUICKSTART_DEPARTURE_TRANSITION_IDS = [
+  "VAMOS4.TATEYAMA",
+] as const satisfies readonly RjttCatalogProcedureId[];

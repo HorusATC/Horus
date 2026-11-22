@@ -210,7 +210,7 @@ npm run dev
 
 1. ルートで `./scripts/dev-up.sh`（または Backend / Frontend を個別起動）
 2. ブラウザで http://localhost:3333 を開く
-3. 「**START WITH SAMPLE (サンプルで始める)**」をクリックし、Controller に RJTT RNAV STAR 到着 5 機（OSHIMA1A / AKSEL1K / AROSA2C / AKSEL2C / GODIN2A、経路折れ線あり・ATIS 使用滑走路 34L）が表示されることを確認
+3. 「**START WITH SAMPLE (サンプルで始める)**」をクリックし、Controller に RJTT RNAV STAR 到着 5 機（OSHIMA1A / AKSEL1K / AROSA2C / AKSEL2C / GODIN2A、経路折れ線あり・ATIS 使用滑走路 34L）が表示されることを確認。VAMOS 出発は別途「START VAMOS DEPARTURE SAMPLE」または `Frontend/data/quickstart-departure-sample.json` を JSON 読込
 
 ### フライトプラン機能のマニュアルテスト
 
@@ -397,6 +397,7 @@ jp.ac.tohoku.qse.takahashi.AtcSimulator/
 - **`AtsRouteFixPositionRepository.java`** - Fix 位置・ATS 経路データ (`infrastructure/fix/`)
   - 読み込み元: `fix/waypoints.json`, `fix/radio_navigation_aids.json`, `fix/ats_lower_routes.json`, `fix/rnav_routes.json`, `fix/japan-outline.json`, `fix/airports.json`
   - RJTT SID/STAR カタログのコミット済み正本は `aip/rjtt-sid-star-20261101.json` のみ。`processResources` が classpath の `fix/rjtt-sid-star-20261101.json` へコピーし、`ProcedureCatalog` が読む。Docker はリポジトリルートを build context にし `aip/` を含める
+  - 第二スライス目録は `aip/slice2-20261101.json`（レグは空。不足プレート一覧）。利用者向け出発サンプルは `docs/test-data/quickstart-departure-sample.json`（Frontend と同内容）。VISIP・残 SID・RJAA は未コード
   - SID/STAR 出典: Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
   - `GET /ats/airports` は `icaoCode`・`latitude`・`longitude` に加え、`name` と（ある場合）`iataCode` を返す
   - 経路提案グラフは各ルートの隣接 Fix 同士の辺のみ。ウェイポイントが **ルート定義に一度も出現しない**と最寄り Fix がグラフに載らず A\* が失敗し二点フォールバックになる。欠落は `rnav_routes.json` に **`_HORUS_GAP_*`** のブリッジ区間（各空港の最寄りウェイポイント［`airports.json` 基準］から、距離最短の既存グラフノードへ 1 本つなぐ訓練用ギャップ埋め）で補う。**テンプレ既定 O/D はすべて連結になるよう一括整備済み**（運航の公式ルート複製ではない）。

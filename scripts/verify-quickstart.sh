@@ -11,6 +11,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 MODE="${1:---all}"
 BASE_URL="${QUICKSTART_BASE_URL:-http://localhost:3333}"
 SAMPLE_JSON="${ROOT_DIR}/Frontend/data/quickstart-arrival-sample.json"
+DEPARTURE_SAMPLE_JSON="${ROOT_DIR}/Frontend/data/quickstart-departure-sample.json"
 
 die() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -33,6 +34,9 @@ check_readme() {
 
   printf '%s' "$head80" | grep -q 'START WITH SAMPLE' \
     || die "README first 80 lines must mention START WITH SAMPLE"
+
+  printf '%s' "$head80" | grep -qE 'VAMOS|quickstart-departure-sample' \
+    || die "README first 80 lines must mention VAMOS departure sample / quickstart-departure-sample"
 
   # Reject the outdated "spawn via Swagger / docs.html" guidance in the head.
   if printf '%s' "$head80" | grep -qiE 'docs\.html.*(spawn|航空機|機体)|(spawn|航空機|機体).*(Swagger|docs\.html)'; then
@@ -111,6 +115,27 @@ check_live() {
   fp2="$(lat_lon_fingerprint "$loc2")"
   [ "$fp1" != "$fp2" ] || die "Expected at least one aircraft lat/lon to change after 2s"
   pass "Aircraft positions moved (check 4)"
+
+  [ -f "$DEPARTURE_SAMPLE_JSON" ] || die "Departure sample JSON missing: $DEPARTURE_SAMPLE_JSON"
+  local dep_load_code
+  dep_load_code="$(curl -s -o /tmp/horus-dep-load.json -w '%{http_code}' \
+    -X POST -H 'Content-Type: application/json' \
+    --data-binary @"$DEPARTURE_SAMPLE_JSON" \
+    "${BASE_URL}/api/scenario/load")"
+  [ "$dep_load_code" = "200" ] || die "POST departure /api/scenario/load expected 200, got ${dep_load_code}: $(cat /tmp/horus-dep-load.json)"
+
+  local dep_start_code
+  dep_start_code="$(curl -s -o /tmp/horus-dep-start.txt -w '%{http_code}' \
+    -X POST "${BASE_URL}/api/simulation/start")"
+  [ "$dep_start_code" = "200" ] || die "POST departure /api/simulation/start expected 200, got ${dep_start_code}"
+
+  local dep_loc
+  dep_loc="$(curl -sf "${BASE_URL}/api/aircraft/location/all")" \
+    || die "GET /api/aircraft/location/all after departure sample failed"
+  local dep_count
+  dep_count="$(json_len "$dep_loc")"
+  [ "$dep_count" = "1" ] || die "Expected 1 departure aircraft, got ${dep_count}"
+  pass "VAMOS departure sample load + start + 1 aircraft (check 5)"
 }
 
 case "$MODE" in
