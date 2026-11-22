@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: Draft
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-23
 - **関連**: [spec/20261017-waypoint-constraints/spec.md](../20261017-waypoint-constraints/spec.md)（Done: 次ウェイポイントのみの目標高度）、[spec/20261122-sid-star/spec.md](../20261122-sid-star/spec.md)（#139）、[spec/20261123-rnav-slice3/spec.md](../20261123-rnav-slice3/spec.md)（#146, `7bd7798`）
@@ -263,6 +263,6 @@ STAR の `AT_OR_BELOW` はすべて 50 ft 未満のわずかな超過（POLIX �
 
 ## 未解決事項（Unresolved Questions）
 
-- 割当 API がクルーズを省略したとき、クリア高度を「パス上の最高上昇制約以上」へ上げるか、10000 ft のまま「制約がクリアより上ならフラグ」にするか。10 分サンプルを壊さない方が勝つ。実装 PR で一方を選び、README に一行書く。
+- ~~割当 API がクルーズを省略したとき、クリア高度を「パス上の最高上昇制約以上」へ上げるか、10000 ft のまま「制約がクリアより上ならフラグ」にするか。~~ → **採用 (a)**: SID でクルーズ省略時はパス上の最高上昇制約以上へ上げる（`ProcedureFlightPlanMapper`）。README に記載。
 - STAR のスイープ開始を IF 上 16000 ft とするのは、#146 レビュー録画と揃えた仮定である。製品のスポーン高度が異なるなら、スイープの開始を製品に合わせ、到達不能の分類を再計算する。
-- 到達不能フラグを最初の PR で API / ラベルに出すか、ドメインのみにするか。加法的なら出してよい。必須はドメインで明示することである。
+- ~~到達不能フラグを最初の PR で API / ラベルに出すか、ドメインのみにするか。~~ → **API + 短いレーダー印**（`unreachableAltitudeConstraints` / `UNABLE ALT`）。加法のみ。早期降下 TOD は 10 分到着サンプルの分離を壊すため採らず、届かない STAR AT はフラグする。
