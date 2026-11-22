@@ -67,6 +67,7 @@ export const AIRCRAFT_FIELD_PARTITION = {
   riskLevel: "polled",
   indicatedAirspeedKnots: "polled",
   goAround: "polled",
+  initialClimb: "polled",
   towerHandoff: "polled",
   msawAlert: "polled",
   holding: "polled",
@@ -118,6 +119,7 @@ export const POLLED_AIRCRAFT_SERVER_FIELD_KEYS = {
   riskLevel: true,
   indicatedAirspeedKnots: true,
   goAround: true,
+  initialClimb: true,
   towerHandoff: true,
   msawAlert: true,
   holding: true,
@@ -148,6 +150,8 @@ export class Aircraft {
   navigationMode: string;
   /** True while a go-around climb on runway heading is the active instruction. */
   goAround: boolean;
+  /** True while an initial-climb DEPART from a catalog runway is active. */
+  initialClimb: boolean;
   /** True after the approach seat has transferred the aircraft to the tower. */
   towerHandoff: boolean;
   /** ISO 8601 instant from API; data block shows UTC HH:mm (see spec 20260318-data-block-display-items). */
@@ -193,6 +197,7 @@ export class Aircraft {
     navigationMode: string = "HEADING",
     indicatedAirspeedKnots: number | null = null,
     goAround: boolean = false,
+    initialClimb: boolean = false,
     towerHandoff: boolean = false,
     msawAlert: MsawAlertDto | null = null,
     holding: HoldingPatternDto | null = null,
@@ -218,6 +223,7 @@ export class Aircraft {
     this.navigationMode = navigationMode;
     this.indicatedAirspeedKnots = indicatedAirspeedKnots;
     this.goAround = goAround;
+    this.initialClimb = initialClimb;
     this.towerHandoff = towerHandoff;
     this.msawAlert = msawAlert;
     this.holding = holding;
@@ -259,6 +265,7 @@ export class Aircraft {
       riskLevel: source.riskLevel,
       indicatedAirspeedKnots: source.indicatedAirspeedKnots,
       goAround: source.goAround,
+      initialClimb: source.initialClimb,
       towerHandoff: source.towerHandoff,
       msawAlert: source.msawAlert,
       holding: source.holding,

@@ -80,20 +80,58 @@ public final class RunwayCatalog {
      * else landing threshold offset by LDA (displaced) or pavement length.
      */
     private double[] resolveDepartureEnd(RunwayDefinition runway) {
+        return resolveDerEndpoint(runway).coordinates();
+    }
+
+    /**
+     * Departure start (TORA begin) and DER (far-end physical threshold) for initial climb.
+     */
+    public Optional<DepartureEndpoints> resolveDepartureEndpoints(RunwayDefinition runway) {
+        if (runway == null) {
+            return Optional.empty();
+        }
+        DerEndpoint der = resolveDerEndpoint(runway);
+        return Optional.of(new DepartureEndpoints(
+                runway.departureStartLatitude(),
+                runway.departureStartLongitude(),
+                runway.departureStartElevationFt(),
+                der.latitude(),
+                der.longitude(),
+                der.elevationFt(),
+                normalizeHeading(runway.heading())));
+    }
+
+    private DerEndpoint resolveDerEndpoint(RunwayDefinition runway) {
         Optional<RunwayDefinition> opposite = findRunway(runway.airportIcao(), reciprocalDesignator(runway.designator()));
         if (opposite.isPresent()) {
             RunwayDefinition opp = opposite.get();
-            if (opp.physicalThresholdLatitude() != null && opp.physicalThresholdLongitude() != null) {
-                return new double[] {opp.physicalThresholdLatitude(), opp.physicalThresholdLongitude()};
-            }
-            return new double[] {opp.thresholdLatitude(), opp.thresholdLongitude()};
+            return new DerEndpoint(
+                    opp.departureStartLatitude(),
+                    opp.departureStartLongitude(),
+                    opp.departureStartElevationFt());
         }
         int alongM = runway.ldaM() != null ? runway.ldaM() : runway.lengthM();
-        return GeodeticUtils.offsetPointNm(
+        double[] coords = GeodeticUtils.offsetPointNm(
                 runway.thresholdLatitude(),
                 runway.thresholdLongitude(),
                 runway.heading(),
                 alongM * NM_PER_METER);
+        return new DerEndpoint(coords[0], coords[1], runway.departureStartElevationFt());
+    }
+
+    public record DepartureEndpoints(
+            double startLatitude,
+            double startLongitude,
+            double startElevationFt,
+            double derLatitude,
+            double derLongitude,
+            double derElevationFt,
+            double runwayHeadingDeg) {}
+
+    private record DerEndpoint(double latitude, double longitude, double elevationFt) {
+        double[] coordinates() {
+            return new double[] {latitude, longitude};
+        }
     }
 
     public List<Map<String, Object>> toApiMaps() {
@@ -128,6 +166,7 @@ public final class RunwayCatalog {
                 source.ldaM(),
                 source.toraM(),
                 false,
+                null,
                 null,
                 null,
                 RunwayDefinition.SOURCE_DERIVED_RECIPROCAL,
@@ -207,6 +246,7 @@ public final class RunwayCatalog {
                 displaced,
                 optionalDouble(node, "physicalThresholdLatitude"),
                 optionalDouble(node, "physicalThresholdLongitude"),
+                optionalDouble(node, "physicalThresholdElevationFt"),
                 source,
                 usable);
     }

@@ -171,7 +171,7 @@ Frontend/
 
 **STCA（コンフリクト）BFF**: `app/api/conflict/*` が Java `ConflictAlertController` の `/api/conflict/all`・`filtered`・`critical`・`violations`・`statistics`・`health`・`aircraft/{callsign}` へプロキシする。クライアント型・取得ヘルパーは `utility/api/conflict.ts`。
 
-**ATIS / 使用滑走路・風 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替・**風向真方位／風速 kt** の入力、CALM・欠測へ戻す）と Operator（読取専用）に ATIS 本文と使用滑走路を表示する。風はセッション一様で両空港の本文に反映される。視程・QNH 等は未実装。選択可能滑走路は Backend カタログの調査値末端（RJTT 8・RJAA 4）。既定は各空港 16R / A・風欠測。`JOIN FINAL`／復行／タワー移管の送信契約は従来どおり明示フィールドのまま。RJTT 05 は着陸不可のため `JOIN FINAL` は Backend が 400 を返す。
+**ATIS / 使用滑走路・風 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替・**風向真方位／風速 kt** の入力、CALM・欠測へ戻す）と Operator（読取専用）に ATIS 本文と使用滑走路を表示する。風はセッション一様で両空港の本文に反映される。視程・QNH 等は未実装。選択可能滑走路は Backend カタログの調査値末端（RJTT 8・RJAA 4）。既定は各空港 16R / A・風欠測。`JOIN FINAL`／復行／`DEPART`／タワー移管の送信契約は明示フィールドのまま。RJTT 05 は着陸不可のため `JOIN FINAL` は Backend が 400 を返す（`DEPART` は 05 可）。
 
 **速度ベクトル（トラック）**: レーダーの速度ベクトル線・STCA／RBL の直線予測は、位置 API の `vector.track` があれば **トラック＋GS** を用い、無ければ従来どおり `vector.heading` を用いる（`drawAircraft.ts` / `radarCanvas.tsx`）。
 
@@ -198,7 +198,7 @@ Frontend/
 
 - 航空機の位置表示
 - **履歴ドット**: 位置更新のたびに直前の緯度・経度・高度（WGS-84）をクライアント側に蓄積（最大 **120** 点）。**描画はシミュレーション時間で 10s / 20s / 30s 前**に相当するサンプルを各 1 点ずつ選ぶ（`GET /api/simulation/speed` の倍率で壁時計の遡り幅を補正。例: 10× なら約 1s / 2s / 3s 前の受信サンプル）。`CoordinateManager.calculateCanvasCoordinates` でキャンバス座標へ変換する（パン・中心座標・表示範囲の変更後も軌跡がずれない）。点の半径は `TRACK_DISPLAY_DOT_RADIUS_PX`（既定 **2px**、機体マーカー 5px より小さく）。
-- **速度ベクトル線**（針路方向の白線）の長さは、地速に対し **速度ベクトル予測時間（分）** に比例。`レーダー表示` パネルのスライダーで **0.5～10 分・0.5 分刻み**（既定 1 分）。表示のみでシミュレーション計算は変更しない（[spec/20260404-velocity-vector-line-duration/spec.md](../spec/20260404-velocity-vector-line-duration/spec.md)）。値は `localStorage` に保存し、Controller / Operator で共有。
+- **速度ベクトル線**（位置 API の `vector.track` と GS で引く白線。`track` が無ければ `vector.heading`）の長さは、地速に対し **速度ベクトル予測時間（分）** に比例。`レーダー表示` パネルのスライダーで **0.5～10 分・0.5 分刻み**（既定 1 分）。表示のみでシミュレーション計算は変更しない（[spec/20260404-velocity-vector-line-duration/spec.md](../spec/20260404-velocity-vector-line-duration/spec.md)）。値は `localStorage` に保存し、Controller / Operator で共有。
 - **滑走路描画**: `GET /api/ats/runways`（BFF → Backend `/ats/runways`）の 12 末端（羽田 A/B/C/D・成田 A/B）を地図に描画。真方位・変位進入端・長さは Backend カタログに従う（値は非公式 AD 2.12 写し／AirBinder AIRAC 2611 由来で、公式 AIP in force 未照合。詳細は Backend README と [spec/20261122-runway-catalog](../spec/20261122-runway-catalog/spec.md)）。
 - **進入端までの距離・時間**: 着陸可能末端の進入廊（進入端から外側 0 NM 超〜 10 NM、左右 1.0 NM）内の機体について、データブロックの対地速度／目的地行の次に `16R 8.2NM 3:00` 形式で表示（`usableForLanding: false` の RJTT 05 は対象外）。距離は進入端までの**沿コース投影**（接地点そのものではない）。時間は現在対地速度の単純割り（1 kt 未満または 60 分以上は省略）。計算・書式の定義源は `utility/measure/rangeBearing.ts`。16R の進入端・真方位は調査値へ訂正済み（旧 163°／35.553/139.781 依存のテストも更新）。
 - **測距線（RBL）**: `レーダー表示` パネルのレンジリング設定の近くでツールをオンにし、2 クリックで始点・終点を取る（機体シンボル半径 30 px 内ならスナップ、そうでなければ緯度経度固定）。線ラベルは水平距離（小数 1 桁 + `NM`）と始点→終点の**真方位**（3 桁 + `T`）。両端が機体のときだけ水平 CPA 時間を付ける。同時表示は 1 本。解除ボタンまたは Escape で取り消し。ツールオン中はラベルドラッグを開始しない（オフ時は従来どおり）。
@@ -269,7 +269,7 @@ Operator 専用。航空機の指示先 Fix をレーダー上で選択し、`Di
 
 ### 6. フライトプラン制御 (FlightPlanControl)
 
-Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、その針路のまま末端に入る機体）、Resume Navigation をバックエンドへ送信。空港・滑走路入力は現行 ATIS の使用滑走路で初期表示するが、API には明示して送る（使用滑走路変更だけでは進入中機体は付け替わらない）。復行中の機体はレーダーラベルに `GA`、移管後は `TWR` を出す。
+Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、出発初期上昇（`DEPART`: カタログ物理進入端へ置き、標高+35 ft から滑走路真方位で上昇。任意の初期針路は DER 標高+400 ft まで滑走路方位維持。地上滑走・SID なし。開始高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、その針路のまま末端に入る機体）、Resume Navigation をバックエンドへ送信。空港・滑走路入力は現行 ATIS の使用滑走路で初期表示するが、API には明示して送る（使用滑走路変更だけでは進入中機体は付け替わらない）。復行中は `GA`、初期上昇中は `DEP`、移管後は `TWR` をレーダーラベルに出す。詳細は [spec/20261122-initial-climb](../spec/20261122-initial-climb/spec.md)。
 
 ### 7. 経路情報表示設定 (RouteInfoDisplaySetting)
 
@@ -317,7 +317,7 @@ React Context APIを使用して、以下の状態を管理しています：
 
 クライアントは同一オリジン（`/api/*`）を呼び出し、Next.js BFF が Java バックエンドへプロキシします。主なエンドポイント：
 
-- `GET /api/aircraft/location/all` - 航空機位置一覧取得（各要素に `atcClearance` / `squawk` / `navigationMode` / `msawAlert` を含む。`msawAlert` は常に存在し、未警報時は `null`、警報時は `{ type, msaFt, trigger }`。`navigationMode=HOLDING` はデータブロックで `HLD`（進入方式があれば `HLD DIR` / `HLD TDP` / `HLD PAR`）を表示し、任意の `holding`（指示レーストラックの `pattern` 頂点と任意の `entryProcedure`）があるときレーダーに琥珀色の破線オーバーレイとフィックス付近の進入ラベルを描く。Resume 後や非待機機では `holding` は省略される。`holding` は polled（Controller は Hold を出さないため位置ストリーム経由）。`HoldingPatternDto` のキーは `HOLDING_PATTERN_DTO_FIELD_PARTITION`（`satisfies Record`）で網羅。`msawAlert` が非 null のとき `MSA` / `LOW` をデータブロックに表示）
+- `GET /api/aircraft/location/all` - 航空機位置一覧取得（各要素に `atcClearance` / `squawk` / `navigationMode` / `goAround` / `initialClimb` / `towerHandoff` / `msawAlert` を含む。`msawAlert` は常に存在し、未警報時は `null`、警報時は `{ type, msaFt, trigger }`。`navigationMode=HOLDING` はデータブロックで `HLD`（進入方式があれば `HLD DIR` / `HLD TDP` / `HLD PAR`）を表示し、任意の `holding`（指示レーストラックの `pattern` 頂点と任意の `entryProcedure`）があるときレーダーに琥珀色の破線オーバーレイとフィックス付近の進入ラベルを描く。Resume 後や非待機機では `holding` は省略される。`holding` は polled（Controller は Hold を出さないため位置ストリーム経由）。`HoldingPatternDto` のキーは `HOLDING_PATTERN_DTO_FIELD_PARTITION`（`satisfies Record`）で網羅。`msawAlert` が非 null のとき `MSA` / `LOW` をデータブロックに表示。`goAround` / `initialClimb` / `towerHandoff` が真のときレーダーに `GA` / `DEP` / `TWR`）
 - `POST /api/aircraft/create-haneda-samples` - Haneda Samples（約28機）作成
 - `POST /api/aircraft/spawn-with-flightplan` - フライトプラン付き航空機スポーン
 - `POST /api/scenario/load` - シナリオ一括ロード（空域クリア＋複数機スポーン）。**シミュレーション開始は行わない**（`POST /api/simulation/start` は別操作）
@@ -327,6 +327,10 @@ React Context APIを使用して、以下の状態を管理しています：
 - `POST /api/aircraft/{callsign}/flightplan` - フライトプラン割り当て
 - `POST /api/aircraft/{callsign}/direct-to` - 直行指示
 - `POST /api/aircraft/{callsign}/hold` - ホールディング指示（任意: `inboundCourseDeg` / `legMinutes`|`legNm` / `turnDirection` LEFT|RIGHT。省略時は右旋回・4.0 NM・Fix名ハッシュ入方向）。Backend は到着針路の AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）でフィックスへ合流し、その後無風・標準率のレーストラックで周回する。位置 API の `holding.pattern` / `holding.entryProcedure` で同じ経路と進入方式をレーダー表示する。Hold POST 契約は変更なし。残課題: 公示パターン・EAT／EFC・風
+- `POST /api/aircraft/{callsign}/final-approach` - 最終進入（`JOIN FINAL`）
+- `POST /api/aircraft/{callsign}/go-around` - 進入復行
+- `POST /api/aircraft/{callsign}/depart` - 出発初期上昇（物理進入端へ移動・標高+35 ft・滑走路真方位。任意 `initialHeadingDeg`。SID なし）
+- `POST /api/aircraft/{callsign}/tower-handoff` - タワー移管
 - `POST /api/aircraft/{callsign}/resume-navigation` - ナビゲーション再開
 - `POST /api/simulation/start` - シミュレーション開始
 - `POST /api/simulation/pause` - シミュレーション一時停止

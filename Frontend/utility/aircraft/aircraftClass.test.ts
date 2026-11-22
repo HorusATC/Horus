@@ -109,6 +109,7 @@ describe("Aircraft", () => {
       null,
       false,
       false,
+      false,
       null,
       null,
       true
@@ -176,6 +177,7 @@ describe("Aircraft", () => {
       null,
       false,
       false,
+      false,
       null,
       holding
     );
@@ -199,6 +201,7 @@ describe("Aircraft", () => {
       0,
       "HEADING",
       null,
+      false,
       false,
       false,
       null,
@@ -297,10 +300,58 @@ describe("Aircraft", () => {
       "HEADING",
       null,
       false,
+      false,
       true
     );
     aircraft.applyPolledFields(next);
     expect(aircraft.towerHandoff).toBe(true);
+  });
+
+  it("applyPolledFields copies initialClimb", () => {
+    const aircraft = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      50,
+      50,
+      0
+    );
+    const next = new Aircraft(
+      "JAL123",
+      basePosition,
+      baseGeo,
+      baseVector,
+      baseInstructedVector,
+      null,
+      "Commercial",
+      "B738",
+      "HND",
+      "RJTT",
+      "NRT",
+      "RJAA",
+      null,
+      "12:00",
+      50,
+      50,
+      0,
+      "HEADING",
+      null,
+      false,
+      true
+    );
+    aircraft.applyPolledFields(next);
+    expect(aircraft.initialClimb).toBe(true);
   });
 
   it("applyPolledFields does not overwrite identity fields when source differs", () => {

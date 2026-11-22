@@ -25,6 +25,7 @@ public record AircraftLocationDto(
     @JsonInclude(JsonInclude.Include.ALWAYS) String squawk,
     String navigationMode,
     @JsonInclude(JsonInclude.Include.ALWAYS) boolean goAround,
+    @JsonInclude(JsonInclude.Include.ALWAYS) boolean initialClimb,
     @JsonInclude(JsonInclude.Include.ALWAYS) boolean towerHandoff,
     double riskLevel,
     @JsonInclude(JsonInclude.Include.ALWAYS) MsawAlertDto msawAlert,

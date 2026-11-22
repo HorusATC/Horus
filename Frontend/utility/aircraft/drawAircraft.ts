@@ -261,6 +261,9 @@ class DrawAircraft {
     if (aircraft.goAround) {
       lines += 1;
     }
+    if (aircraft.initialClimb) {
+      lines += 1;
+    }
     if (aircraft.towerHandoff) {
       lines += 1;
     }
@@ -523,6 +526,12 @@ class DrawAircraft {
     if (aircraft.goAround) {
       ctx.fillStyle = "#f43f5e";
       ctx.fillText("GA", labelX, lineY);
+      lineY += lineHeight;
+    }
+
+    if (aircraft.initialClimb) {
+      ctx.fillStyle = "#34d399";
+      ctx.fillText("DEP", labelX, lineY);
       lineY += lineHeight;
     }
 

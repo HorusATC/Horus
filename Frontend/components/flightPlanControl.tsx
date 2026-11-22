@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSelectedAircraft } from "@/context/selectedAircraftContext";
 import { resumeNavigation } from "@/utility/api/flightPlan";
 import {
+  depart,
   goAround,
   handOffToTower,
   joinFinalApproach,
@@ -25,6 +26,12 @@ const FlightPlanControl: React.FC = () => {
     "idle" | "success" | "error"
   >("idle");
   const [goAroundMessage, setGoAroundMessage] = useState("");
+  const [departClimbAltitudeFt, setDepartClimbAltitudeFt] = useState("3000");
+  const [initialHeadingDeg, setInitialHeadingDeg] = useState("");
+  const [departResult, setDepartResult] = useState<
+    "idle" | "success" | "error"
+  >("idle");
+  const [departMessage, setDepartMessage] = useState("");
   const [towerResult, setTowerResult] = useState<"idle" | "success" | "error">(
     "idle"
   );
@@ -162,6 +169,75 @@ const FlightPlanControl: React.FC = () => {
         {goAroundResult === "error" && (
           <p className="text-xs text-atc-danger">
             {goAroundMessage || "Failed to go around"}
+          </p>
+        )}
+        <div className="text-xs font-semibold text-atc-text-muted pt-2">
+          DEPART (initial climb from physical threshold; no taxi)
+        </div>
+        <input
+          className="w-full px-2 py-1 text-xs font-mono bg-atc-surface-elevated border border-atc-border rounded"
+          value={departClimbAltitudeFt}
+          onChange={(e) => setDepartClimbAltitudeFt(e.target.value)}
+          inputMode="numeric"
+          placeholder="Climb altitude ft"
+        />
+        <input
+          className="w-full px-2 py-1 text-xs font-mono bg-atc-surface-elevated border border-atc-border rounded"
+          value={initialHeadingDeg}
+          onChange={(e) => setInitialHeadingDeg(e.target.value)}
+          inputMode="decimal"
+          placeholder="Initial heading deg (optional)"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            void (async () => {
+              if (!callsign) return;
+              const altitude = Number(departClimbAltitudeFt);
+              if (!Number.isFinite(altitude)) {
+                setDepartResult("error");
+                setDepartMessage("Enter a climb altitude in feet");
+                return;
+              }
+              const headingRaw = initialHeadingDeg.trim();
+              let heading: number | undefined;
+              if (headingRaw !== "") {
+                heading = Number(headingRaw);
+                if (
+                  !Number.isFinite(heading) ||
+                  heading < 0 ||
+                  heading >= 360
+                ) {
+                  setDepartResult("error");
+                  setDepartMessage("Initial heading must be 0–360 exclusive");
+                  return;
+                }
+              }
+              setDepartResult("idle");
+              const result = await depart(
+                callsign,
+                airportIcao,
+                runwayDesignator,
+                altitude,
+                heading
+              );
+              setDepartResult(result.ok ? "success" : "error");
+              setDepartMessage(result.message ?? "");
+              if (result.ok) setTimeout(() => setDepartResult("idle"), 2000);
+            })();
+          }}
+          className="w-full px-4 py-2 bg-atc-surface-elevated text-atc-text font-bold text-xs rounded border border-atc-accent hover:bg-atc-accent hover:text-white"
+        >
+          DEPART
+        </button>
+        {departResult === "success" && (
+          <p className="text-xs text-atc-accent">
+            Departure / initial climb set
+          </p>
+        )}
+        {departResult === "error" && (
+          <p className="text-xs text-atc-danger">
+            {departMessage || "Failed to depart"}
           </p>
         )}
         <div className="text-xs font-semibold text-atc-text-muted pt-2">

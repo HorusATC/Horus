@@ -243,6 +243,54 @@ class MsawDetectorTest {
             assertEquals(MsawAlertType.LOW, alert.type());
             assertEquals(MsawTrigger.CURRENT, alert.trigger());
         }
+
+        @Test
+        @DisplayName("initialClimb within departure corridor suppresses MSAW; outside corridor does not")
+        void testInitialClimbDepartureCorridorSuppression() {
+            var rwy = runwayCatalog.findRunway("RJTT", "16R").orElseThrow();
+            var endpoints = runwayCatalog.resolveDepartureEndpoints(rwy).orElseThrow();
+            CommercialAircraft aircraft = (CommercialAircraft) createAircraft(
+                    "TEST_DEP_CORR",
+                    endpoints.startLatitude(),
+                    endpoints.startLongitude(),
+                    200,
+                    endpoints.runwayHeadingDeg(),
+                    180,
+                    0);
+            aircraft.beginInitialClimb(
+                    endpoints.startLatitude(),
+                    endpoints.startLongitude(),
+                    endpoints.startElevationFt(),
+                    endpoints.runwayHeadingDeg(),
+                    endpoints.derElevationFt(),
+                    null,
+                    3000);
+
+            double[] inside = GeodeticUtils.offsetPointNm(
+                    endpoints.startLatitude(),
+                    endpoints.startLongitude(),
+                    endpoints.runwayHeadingDeg(),
+                    3.0);
+            aircraft.setAircraftPosition(new AircraftPosition(
+                    new Latitude(inside[0]),
+                    new Longitude(inside[1]),
+                    new Altitude(200)));
+            assertNull(msawDetector.detectAlert(aircraft),
+                    "initialClimb inside 5 NM × ±1 NM departure corridor must suppress MSAW");
+
+            double[] outside = GeodeticUtils.offsetPointNm(
+                    endpoints.startLatitude(),
+                    endpoints.startLongitude(),
+                    endpoints.runwayHeadingDeg(),
+                    6.0);
+            aircraft.setAircraftPosition(new AircraftPosition(
+                    new Latitude(outside[0]),
+                    new Longitude(outside[1]),
+                    new Altitude(200)));
+            MsawAlert outsideAlert = msawDetector.detectAlert(aircraft);
+            assertNotNull(outsideAlert,
+                    "Beyond 5 NM departure corridor MSAW must apply with existing rules");
+        }
     }
 
     @Nested

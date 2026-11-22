@@ -16,9 +16,13 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Ho
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.WaypointAltitudeTargetResolver;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.atmosphere.WindTriangle;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.departure.InitialClimbGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.GroundSpeed;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Heading;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Latitude;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Longitude;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.VerticalSpeed;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Atmosphere.UniformWind;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Position.AircraftPosition;
@@ -90,6 +94,14 @@ public abstract class AircraftBase implements Aircraft {
     protected Double finalApproachCourseHeading;
     /** True after a go-around until the next navigation instruction. */
     protected boolean goAroundActive;
+    /** True while an initial-climb DEPART is active until the next navigation instruction. */
+    protected boolean initialClimbActive;
+    protected Double initialClimbStartLatitude;
+    protected Double initialClimbStartLongitude;
+    protected Double initialClimbRunwayHeadingDeg;
+    /** When set, turn to this heading only after DER elevation + 400 ft. */
+    protected Double deferredInitialHeadingDeg;
+    protected double derElevationFt;
     /** True after the approach seat has transferred the aircraft to the tower. */
     protected boolean towerHandoffActive;
     protected FixPosition towerThreshold;
@@ -163,6 +175,7 @@ public abstract class AircraftBase implements Aircraft {
 
     @Override
     public void calculateNextAircraftVector(double simDeltaSeconds) {
+        maybeReleaseInitialClimbTurn();
         updateInstructedVectorFromNavigation();
         advanceHoldingPhase(simDeltaSeconds);
 
@@ -864,6 +877,22 @@ public abstract class AircraftBase implements Aircraft {
         return goAroundActive;
     }
 
+    public boolean isInitialClimbActive() {
+        return initialClimbActive;
+    }
+
+    public Double getInitialClimbStartLatitude() {
+        return initialClimbStartLatitude;
+    }
+
+    public Double getInitialClimbStartLongitude() {
+        return initialClimbStartLongitude;
+    }
+
+    public Double getInitialClimbRunwayHeadingDeg() {
+        return initialClimbRunwayHeadingDeg;
+    }
+
     public boolean isTowerHandoffActive() {
         return towerHandoffActive;
     }
@@ -877,6 +906,7 @@ public abstract class AircraftBase implements Aircraft {
         if (goAroundActive) {
             throw new IllegalArgumentException("Cancel the go-around before handing off to the tower");
         }
+        clearInitialClimbActive();
         FixPosition threshold = new FixPosition(
                 new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Latitude(thresholdLatitude),
                 new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Longitude(thresholdLongitude));
@@ -1010,6 +1040,96 @@ public abstract class AircraftBase implements Aircraft {
                 new Altitude(climbAltitudeFeet),
                 this.instructedVector.instructedGroundSpeed);
         this.goAroundActive = true;
+        clearInitialClimbActive();
+    }
+
+    /**
+     * Place the aircraft at the catalog departure start (physical threshold / TORA begin)
+     * at threshold elevation + 35 ft and climb on runway heading (FLY RUNWAY HEADING).
+     * When {@code initialHeadingDeg} differs from the runway heading, runway heading is
+     * held until DER elevation + 400 ft, then the deferred heading is applied.
+     */
+    public void beginInitialClimb(
+            double startLatitude,
+            double startLongitude,
+            double startElevationFt,
+            double runwayHeadingDeg,
+            double derElevationFt,
+            Double initialHeadingDeg,
+            double climbAltitudeFeet) {
+        requireApproachControl();
+        double startAltitudeFt = InitialClimbGeometry.startAltitudeFt(startElevationFt);
+        if (!InitialClimbGeometry.climbAltitudeValid(climbAltitudeFeet, startAltitudeFt)) {
+            throw new IllegalArgumentException(
+                    "Departure climb altitude must be at least 500 ft above the start altitude");
+        }
+        double runwayHeading = InitialClimbGeometry.normalizeHeading(runwayHeadingDeg);
+        Double deferred = null;
+        if (initialHeadingDeg != null
+                && !InitialClimbGeometry.headingsEqual(initialHeadingDeg, runwayHeading)) {
+            deferred = InitialClimbGeometry.normalizeHeading(initialHeadingDeg);
+        }
+
+        setNavigationMode(NavigationMode.HEADING);
+        clearHoldingState();
+        clearGoAroundActive();
+        this.directToTarget = null;
+        this.directToFixName = null;
+        this.resumeFlightPlanAfterDirectTo = false;
+        this.previousDistanceToWaypoint = Double.MAX_VALUE;
+
+        GroundSpeed instructedGs;
+        if (instructedIndicatedAirspeedKnots != null) {
+            instructedGs = this.instructedVector.instructedGroundSpeed;
+        } else {
+            instructedGs = new GroundSpeed(InitialClimbGeometry.DEFAULT_DEPARTURE_GROUND_SPEED_KT);
+        }
+        this.instructedVector = new InstructedVector(
+                new Heading(runwayHeading),
+                new Altitude(climbAltitudeFeet),
+                instructedGs);
+
+        this.aircraftPosition = new AircraftPosition(
+                new Latitude(startLatitude),
+                new Longitude(startLongitude),
+                new Altitude(startAltitudeFt));
+
+        double tasKt = instructedGs.toDouble();
+        if (instructedIndicatedAirspeedKnots != null) {
+            tasKt = resolveEffectiveTargetTrueAirspeedKnots(runwayHeading);
+        } else if (ambientWind.affectsMotion()) {
+            tasKt = WindTriangle.trueAirspeedForGroundSpeed(
+                    runwayHeading, instructedGs.toDouble(), ambientWind);
+        }
+        WindTriangle.GroundVelocity groundVelocity =
+                WindTriangle.groundVelocity(runwayHeading, tasKt, ambientWind);
+        this.aircraftVector = new AircraftVector(
+                new Heading(runwayHeading),
+                new GroundSpeed(groundVelocity.groundSpeedKt()),
+                new VerticalSpeed(0.0),
+                groundVelocity.trackDeg(),
+                tasKt);
+
+        this.initialClimbStartLatitude = startLatitude;
+        this.initialClimbStartLongitude = startLongitude;
+        this.initialClimbRunwayHeadingDeg = runwayHeading;
+        this.deferredInitialHeadingDeg = deferred;
+        this.derElevationFt = derElevationFt;
+        this.initialClimbActive = true;
+    }
+
+    private void maybeReleaseInitialClimbTurn() {
+        if (!initialClimbActive || deferredInitialHeadingDeg == null) {
+            return;
+        }
+        if (aircraftPosition.altitude.toDouble()
+                >= InitialClimbGeometry.turnReleaseAltitudeFt(derElevationFt)) {
+            this.instructedVector = new InstructedVector(
+                    new Heading(deferredInitialHeadingDeg),
+                    this.instructedVector.instructedAltitude,
+                    this.instructedVector.instructedGroundSpeed);
+            this.deferredInitialHeadingDeg = null;
+        }
     }
 
     public void joinFinalApproachIntercept(FixPosition interceptPoint, String fixLabel, double approachCourseHeading) {
@@ -1050,6 +1170,7 @@ public abstract class AircraftBase implements Aircraft {
     public void setFlightPlan(FlightPlan flightPlan) {
         requireApproachControl();
         clearGoAroundActive();
+        clearInitialClimbActive();
         this.flightPlan = flightPlan;
         this.currentWaypointIndex = 0;
         this.navigationMode = flightPlan != null ? NavigationMode.FLIGHT_PLAN : NavigationMode.HEADING;
@@ -1065,6 +1186,7 @@ public abstract class AircraftBase implements Aircraft {
 
     private void applyDirectToNavigation(FixPosition target, String fixName, boolean resumeFlightPlan) {
         clearGoAroundActive();
+        clearInitialClimbActive();
         this.directToTarget = target;
         this.directToFixName = fixName;
         this.resumeFlightPlanAfterDirectTo = resumeFlightPlan;
@@ -1076,6 +1198,7 @@ public abstract class AircraftBase implements Aircraft {
     public void setHoldAtFix(FixPosition fix, HoldInstruction instruction) {
         requireApproachControl();
         clearGoAroundActive();
+        clearInitialClimbActive();
         clearFinalApproachInterceptState();
         this.holdingFix = fix;
         this.holdingFixName = instruction.fixName();
@@ -1186,6 +1309,7 @@ public abstract class AircraftBase implements Aircraft {
     public void setResumeNavigation() {
         requireApproachControl();
         clearGoAroundActive();
+        clearInitialClimbActive();
         clearFinalApproachInterceptState();
         this.directToTarget = null;
         this.directToFixName = null;
@@ -1210,6 +1334,15 @@ public abstract class AircraftBase implements Aircraft {
 
     private void clearGoAroundActive() {
         this.goAroundActive = false;
+    }
+
+    private void clearInitialClimbActive() {
+        this.initialClimbActive = false;
+        this.initialClimbStartLatitude = null;
+        this.initialClimbStartLongitude = null;
+        this.initialClimbRunwayHeadingDeg = null;
+        this.deferredInitialHeadingDeg = null;
+        this.derElevationFt = 0.0;
     }
 
     private void requireApproachControl() {
@@ -1293,6 +1426,7 @@ public abstract class AircraftBase implements Aircraft {
     public void setNavigationMode(NavigationMode mode) {
         requireApproachControl();
         clearGoAroundActive();
+        clearInitialClimbActive();
         if (mode != NavigationMode.DIRECT_TO) {
             clearFinalApproachInterceptState();
         }

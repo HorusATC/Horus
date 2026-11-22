@@ -69,3 +69,40 @@ export async function goAround(
     return { ok: false, message: "Failed to go around" };
   }
 }
+
+export async function depart(
+  callsign: string,
+  airportIcao: string,
+  runwayDesignator: string,
+  climbAltitudeFt: number,
+  initialHeadingDeg?: number
+): Promise<{ ok: boolean; message?: string }> {
+  if (!callsign) return { ok: false, message: "No aircraft selected" };
+  try {
+    const body: {
+      airportIcao: string;
+      runwayDesignator: string;
+      climbAltitudeFt: number;
+      initialHeadingDeg?: number;
+    } = { airportIcao, runwayDesignator, climbAltitudeFt };
+    if (initialHeadingDeg !== undefined && Number.isFinite(initialHeadingDeg)) {
+      body.initialHeadingDeg = initialHeadingDeg;
+    }
+    const response = await fetch(`/api/aircraft/${callsign}/depart`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (response.ok) return { ok: true };
+    const errorBody = (await response.json().catch(() => null)) as {
+      message?: string;
+      detail?: string;
+    } | null;
+    return {
+      ok: false,
+      message: errorBody?.message ?? errorBody?.detail ?? "Failed to depart",
+    };
+  } catch {
+    return { ok: false, message: "Failed to depart" };
+  }
+}
