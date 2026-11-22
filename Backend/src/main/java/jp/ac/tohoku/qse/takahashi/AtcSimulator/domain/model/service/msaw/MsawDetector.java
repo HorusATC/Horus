@@ -3,6 +3,8 @@ package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.msaw;
 import java.util.List;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.Aircraft;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.AircraftBase;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.service.departure.InitialClimbGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Msaw.MsawAlert;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Msaw.MsawAlertType;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Msaw.MsawTrigger;
@@ -44,6 +46,12 @@ public class MsawDetector {
             return null;
         }
 
+        if (aircraft instanceof AircraftBase base
+                && base.isInitialClimbActive()
+                && isWithinDepartureClimbCorridor(base, position)) {
+            return null;
+        }
+
         ApproachCorridorCheck corridorCheck = checkApproachCorridor(position);
         if (corridorCheck.isInCorridor) {
             return checkApproachFloor(position, vector, corridorCheck);
@@ -70,6 +78,33 @@ public class MsawDetector {
             }
         }
         return false;
+    }
+
+    private boolean isWithinDepartureClimbCorridor(AircraftBase base, AircraftPosition position) {
+        Double startLat = base.getInitialClimbStartLatitude();
+        Double startLon = base.getInitialClimbStartLongitude();
+        Double runwayHeading = base.getInitialClimbRunwayHeadingDeg();
+        if (startLat == null || startLon == null || runwayHeading == null) {
+            return false;
+        }
+        AircraftPosition start = new AircraftPosition(
+                new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Latitude(startLat),
+                new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Longitude(startLon),
+                new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude(0.0));
+        double distanceNm = GeodeticUtils.calculateHorizontalDistance(position, start);
+        double bearing = InitialClimbGeometry.bearingDeg(
+                startLat,
+                startLon,
+                position.latitude.toDouble(),
+                position.longitude.toDouble());
+        return InitialClimbGeometry.isWithinDepartureCorridor(
+                startLat,
+                startLon,
+                runwayHeading,
+                position.latitude.toDouble(),
+                position.longitude.toDouble(),
+                distanceNm,
+                bearing);
     }
 
     private ApproachCorridorCheck checkApproachCorridor(AircraftPosition position) {

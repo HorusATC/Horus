@@ -29,6 +29,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Ho
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.Callsign.Callsign;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.AtsRouteFixPositionRepository;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.infrastructure.fix.RunwayCatalog;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.DepartRequestDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.DirectToRequestDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.FinalApproachRequestDto;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.interfaces.dto.FlightPlanDto;
@@ -353,6 +354,54 @@ public class FlightPlanController {
                 "goAround", true,
                 "heading", rwy.heading(),
                 "climbAltitudeFt", request.climbAltitudeFt()));
+    }
+
+    @PostMapping(path = "/{callsign}/depart", consumes = "application/json")
+    public ResponseEntity<Map<String, Object>> depart(
+            @PathVariable String callsign,
+            @Valid @RequestBody DepartRequestDto request) {
+        if (!aircraftRepository.isAircraftExist(new Callsign(callsign))) {
+            throw new AircraftNotFoundException(callsign);
+        }
+        var runway = runwayCatalog.findRunway(request.airportIcao(), request.runwayDesignator());
+        if (runway.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Runway not found: " + request.airportIcao() + " " + request.runwayDesignator()));
+        }
+        var endpoints = runwayCatalog.resolveDepartureEndpoints(runway.get());
+        if (endpoints.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Runway not found: " + request.airportIcao() + " " + request.runwayDesignator()));
+        }
+        var dep = endpoints.get();
+        try {
+            scenarioService.depart(
+                    new Callsign(callsign),
+                    dep.startLatitude(),
+                    dep.startLongitude(),
+                    dep.startElevationFt(),
+                    dep.runwayHeadingDeg(),
+                    dep.derElevationFt(),
+                    request.initialHeadingDeg(),
+                    request.climbAltitudeFt());
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", ex.getMessage()));
+        }
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", true);
+        body.put("callsign", callsign);
+        body.put("navigationMode", "HEADING");
+        body.put("initialClimb", true);
+        body.put("heading", dep.runwayHeadingDeg());
+        body.put("climbAltitudeFt", request.climbAltitudeFt());
+        if (request.initialHeadingDeg() != null) {
+            body.put("initialHeadingDeg", request.initialHeadingDeg());
+        }
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping(path = "/{callsign}/tower-handoff", consumes = "application/json")

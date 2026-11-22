@@ -60,6 +60,7 @@ describe("Controller location poll instructedVector", () => {
       squawk: null,
       navigationMode: "HEADING",
       goAround: false,
+      initialClimb: false,
       towerHandoff: false,
       riskLevel: 0,
       msawAlert: null,

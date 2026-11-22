@@ -101,8 +101,11 @@ describe("FlightPlanControl", () => {
       </SelectedAircraftProvider>
     );
 
-    await user.clear(screen.getByPlaceholderText(/Climb altitude ft/i));
-    await user.type(screen.getByPlaceholderText(/Climb altitude ft/i), "2000");
+    const climbInputs = screen.getAllByPlaceholderText(/Climb altitude ft/i);
+    const goAroundClimb = climbInputs[0];
+    expect(goAroundClimb).toBeDefined();
+    await user.clear(goAroundClimb!);
+    await user.type(goAroundClimb!, "2000");
     await user.click(screen.getByRole("button", { name: /GO AROUND/i }));
 
     await waitFor(() => {
@@ -115,6 +118,42 @@ describe("FlightPlanControl", () => {
       "RJTT",
       "16R",
       2000
+    );
+  });
+
+  it("shows the backend message when depart fails", async () => {
+    (finalApproachApi.depart as jest.Mock).mockResolvedValue({
+      ok: false,
+      message:
+        "Departure climb altitude must be at least 500 ft above the start altitude",
+    });
+    const user = userEvent.setup();
+
+    render(
+      <SelectedAircraftProvider>
+        <StateSetter callsign="JAL123" />
+        <FlightPlanControl />
+      </SelectedAircraftProvider>
+    );
+
+    const climbInputs = screen.getAllByPlaceholderText(/Climb altitude ft/i);
+    const departClimb = climbInputs[1];
+    expect(departClimb).toBeDefined();
+    await user.clear(departClimb!);
+    await user.type(departClimb!, "400");
+    await user.click(screen.getByRole("button", { name: /^DEPART$/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/at least 500 ft above the start altitude/i)
+      ).toBeInTheDocument();
+    });
+    expect(finalApproachApi.depart).toHaveBeenCalledWith(
+      "JAL123",
+      "RJTT",
+      "16R",
+      400,
+      undefined
     );
   });
 

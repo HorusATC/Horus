@@ -230,6 +230,7 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/hold` | Hold At Fix。任意の `inboundCourseDeg`（0以上360未満）、`legMinutes` または `legNm`（同時指定不可。省略時 4.0 NM）、`turnDirection` `LEFT`/`RIGHT`（省略時 RIGHT）。省略時の入方向は Fix 名ハッシュ（運用コースではない）。フィックス到着時の針路で AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）を選び、合流後に標準率（min(3°/s, バンク30°)）のレーストラック。風欠測時は無風と同一。風ありではインバウンド／アウトバウンド直線レグで一次の WCA を掛け、指示オーバーレイ形状は無風式のまま。時間レグはアビーム／ロールアウト後に計時。契約フィールドは #129 のまま（本エンドポイントは変更なし） |
 | POST | `/api/aircraft/{callsign}/final-approach` | 最終進入延長線上の会合点へ向かい、到達後に進入コース針路へ移る。横風時は会合後の `HEADING` で WCA を掛け、地上トラックを進入コースに沿わせる（`JOIN FINAL` 要求形は不変） |
 | POST | `/api/aircraft/{callsign}/go-around` | 進入復行。滑走路方位のまま上昇（上昇高度は現在高度より 500 ft 以上、末端から 120NM 以内） |
+| POST | `/api/aircraft/{callsign}/depart` | 出発・初期上昇。カタログ物理進入端（TORA 始端）へ置き、標高+35 ft・滑走路真方位（FLY RUNWAY HEADING）で指定高度へ上昇。任意 `initialHeadingDeg` は DER 標高+400 ft まで滑走路方位を維持してから旋回。地上滑走・SID・V 速度なし。上昇は開始高度より 500 ft 以上（1,000–45,000）。RJTT 05 可。位置 API に `initialClimb`。出典: FAA JO 7110.65 5-8-2 / 5-8-3 NOTE 1。針路は真方位（磁偏差なし）。200 ft/NM 勾配は既存上昇率任せ |
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
 | POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |
 | GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路。既定は各空港 16R / A。風は欠測（`windAvailable: false`、本文 `WIND AND WEATHER NOT AVAILABLE.`）。任意で `windDirectionDeg` / `windSpeedKt`（真方位・ノット。磁方位変換なし）。視程・QNH 等は未実装。シナリオ load で風含め既定に戻る |
@@ -241,7 +242,14 @@ npm run dev
 
 **16R 数値の訂正（識別子と ATIS 既定 16R/A は維持）**: 旧 RJTT 16R は方位 163・長さ 3360 m・進入端 35.553/139.781（3360 m は 16L/34R の寸法）だったが、調査値は方位 149.88・長さ 3000 m・着陸進入端 35.55624167/139.77171944。旧 RJAA 16R は方位 155・進入端 35.7647/140.3864、調査値は方位 149.50・進入端 35.77438889/140.36829167（長さ 4000 m は一致）。
 
-**RJTT 05** は AD 2.13 どおり着陸不可（`usableForLanding: false`）。`JOIN FINAL` は 400。復行・出発用途の 05 指定は拒否しない。MSAW 進入廊と Frontend の進入端距離は着陸可能末端のみ。
+**RJTT 05** は AD 2.13 どおり着陸不可（`usableForLanding: false`）。`JOIN FINAL` は 400。復行・`DEPART` の 05 指定は拒否しない。MSAW 進入廊と Frontend の進入端距離は着陸可能末端のみ。
+
+**初期上昇（`DEPART`）** — [spec/20261122-initial-climb](../spec/20261122-initial-climb/spec.md):
+
+- 機体を物理進入端へ**訓練用に移動**して空中開始する（連続タクシーではない）。高度は当該端標高 + 35 ft。
+- 既定針路はカタログ真方位。横風では機首は滑走路方位のままトラックが偏流してよい（WCA なし）。
+- IAS 指示があれば維持。無ければ指示 GS 180 kt。
+- `initialClimb` 中かつ出発端から滑走路方位に沿って 5 NM・左右 1.0 NM の廊内では MSAW を抑制する。
 
 **対向派生**（`deriveReciprocal`）は、JSON に対向 designator が無いときだけのフォールバック。12 末端が揃っている現行カタログでは派生末端は作らない。
 
@@ -421,7 +429,8 @@ RESTful APIを提供しており、詳細なAPI仕様は`UranosAPI.yml`ファイ
 - 検出はドメインサービス `MsawDetector` が行い、位置 API の `msawAlert` に載せる（専用エンドポイントなし）。
 - 区域最低高度はクラスパス `fix/msa-areas.json`（訓練用の簡略ポリゴン）。**AIP Japan の公式 MVA / MSA / 障害物データではない。**
 - 現在高度、またはカタログ定数の先読み秒数（45 s）後の予測高度が区域最低高度未満なら `MSA`。進入廊内（進入端から外側最大 10 NM=`approachCorridorExtensionNm`・左右 1.0 NM）では簡略フロア未満で `LOW`。進入端から 1.0 NM 未満は抑制。
-- 詳細は [spec/20261122-msaw/spec.md](../spec/20261122-msaw/spec.md)。
+- `initialClimb` が真で、出発物理進入端から滑走路方位に沿って **5 NM 以内・左右 1.0 NM 以内**にいるあいだも抑制（廊の外またはフラグ解除後は通常どおり）。
+- 詳細は [spec/20261122-msaw/spec.md](../spec/20261122-msaw/spec.md)、[spec/20261122-initial-climb/spec.md](../spec/20261122-initial-climb/spec.md)。
 
 3. **シミュレーション・シナリオ**
    - `POST /api/scenario/load` - シナリオ一括ロード（空域クリア＋複数機スポーン）。シミュレーション開始は `POST /simulation/start` で行う ✅。Swagger 用最小例: [docs/test-data/scenario-load-minimal.json](docs/test-data/scenario-load-minimal.json)

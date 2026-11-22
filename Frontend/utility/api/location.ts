@@ -49,6 +49,7 @@ export interface AircraftLocationDto {
   squawk?: string | null;
   navigationMode: string;
   goAround?: boolean;
+  initialClimb?: boolean;
   towerHandoff?: boolean;
   riskLevel: number;
   /** Absent or null means no MSAW alert (tolerant of older backends). */
@@ -89,6 +90,7 @@ export const AIRCRAFT_LOCATION_DTO_FIELD_PARTITION = {
   squawk: "polledMapped",
   navigationMode: "polledMapped",
   goAround: "polledMapped",
+  initialClimb: "polledMapped",
   towerHandoff: "polledMapped",
   riskLevel: "polledMapped",
   msawAlert: "polledMapped",
@@ -152,6 +154,7 @@ export const POLLED_AIRCRAFT_DTO_SOURCE = {
   navigationMode: "navigationMode",
   riskLevel: "riskLevel",
   goAround: "goAround",
+  initialClimb: "initialClimb",
   towerHandoff: "towerHandoff",
   msawAlert: "msawAlert",
   holding: "holding",
@@ -271,6 +274,7 @@ function mapDtoToAircraft(
     dto.navigationMode ?? "HEADING",
     dto.instructedVector.indicatedAirspeed ?? null,
     dto.goAround === true,
+    dto.initialClimb === true,
     dto.towerHandoff === true,
     parseMsawAlert(dto.msawAlert),
     parseHoldingPattern(dto.holding)
@@ -344,6 +348,7 @@ function updateControllingAircrafts(
       newAircraft.navigationMode,
       newAircraft.indicatedAirspeedKnots,
       newAircraft.goAround,
+      newAircraft.initialClimb,
       newAircraft.towerHandoff,
       newAircraft.msawAlert,
       newAircraft.holding,

@@ -102,7 +102,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 
 到着・出発の残り。
 
-- 進入復行 — **実装済み**（[go-around](../20261017-go-around/spec.md)、PR [#110](https://github.com/HorusATC/Horus/pull/110)）。タワー移管 — **実装済み**（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)。`REMOVE_AIRCRAFT` はシナリオ終端の削除として残す）。ホールド指示要素 — **実装済み**（[hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。標準率レーストラック＋経路オーバーレイ — **実装済み**（[hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)）。進入セクター — **実装済み**（[hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)）。残り: SID／STAR としての公開手続き、離陸から初期上昇、ホールドの公示パターン・EAT／EFC・風。
+- 進入復行 — **実装済み**（[go-around](../20261017-go-around/spec.md)、PR [#110](https://github.com/HorusATC/Horus/pull/110)）。タワー移管 — **実装済み**（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)。`REMOVE_AIRCRAFT` はシナリオ終端の削除として残す）。ホールド指示要素 — **実装済み**（[hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。標準率レーストラック＋経路オーバーレイ — **実装済み**（[hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)）。進入セクター — **実装済み**（[hold-entry-sectors](../20261122-hold-entry-sectors/spec.md)）。離陸から初期上昇 — **実装済み**（[initial-climb](../20261122-initial-climb/spec.md)、Issue [#115](https://github.com/HorusATC/Horus/issues/115)）。残り: SID／STAR としての公開手続き（公式 AIP 待ち、[#114](https://github.com/HorusATC/Horus/issues/114)）、ホールドの公示パターン・EAT／EFC、待機レグ時間の公式風補正。
 
 間隔・警報の残り。
 

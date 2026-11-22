@@ -59,7 +59,7 @@
 
 | 観点 | コード上の事実 | 計画への反映 |
 |------|----------------|-------------|
-| **Phase 1（入口）** | 上記フローは実装済み。 | 1-1〜1-4 は**コア Done**（子 spec 2026-05-09 更新済）。**残り**: Optional・手動 E2E・Issue #45–#47 の Close 運用。1-5 は未着手。 |
+| **Phase 1（入口）** | 上記フローは実装済み。 | 1-1〜1-5 は**コア Done**（1-5 は PR [#118](https://github.com/HorusATC/Horus/pull/118) / Issue [#48](https://github.com/HorusATC/Horus/issues/48)）。**残り**: Optional・手動 E2E・Issue #45–#47 の Close 運用。 |
 | **Phase 2（レーダー）** | 履歴ドット・レンジリング・速度ベクトル時間は **Canvas ＋ Context で動作**。データブロックは **表示トグルと描画**あり。スクオーク行は **プレースホルダ**（`drawAircraft.ts`、Backend 未連携）。 | 2-1・2-2・2-4 はロードマップ上「未着手」扱いが不整合。**残りは拡張（点数・間隔の設定、子 spec の DoD との一致確認）** と 2-3 の **実データ連携（3-1 と接続）**、2-5・2-6。 |
 | **Phase 4（安全 UI）** | `riskLevel` は API → `Aircraft` → ラベル色（赤/黄）と `R` 行表示。**BFF・ストリップ・シンボル**は [20260509-phase4-conflict-bff-ui](20260509-phase4-conflict-bff-ui/spec.md)。**選択機ペア数値・違反バナー**は [20260509-phase4-conflict-pair-ui-alerts](20260509-phase4-conflict-pair-ui-alerts/spec.md)。加えて 2026-05 に **片側不足のみで赤張り付きしないよう H/V 同時性を反映したリスク合成へ調整**。 | **残り**: シンボル/閾値 UI の仕上げ（4-1）など。 |
 | **シミュレーション速度（5-1）** | `AtcSimulatorConstants.REFRESH_RATE` が静的。 | 子 spec [20260509-phase5-simulation-speed](20260509-phase5-simulation-speed/spec.md): 時間倍率 API、`TaskScheduler` 再スケジュール、ドメイン dt の単一供給。 |
@@ -84,7 +84,7 @@
 | 1-2 | JSON エクスポート/インポート | ✅ | 🔴 | ★☆☆ | [#45](https://github.com/Futty93/Horus/issues/45) | コア Done（[20260308-json-export-import](20260308-json-export-import/spec.md)）。**残り**: Optional（厳密バリデーション・トースト）、`exportScenario` の直接テスト。 |
 | 1-3 | 「これで始める」 | ✅ | 🔴 | ★★☆ | [#46](https://github.com/Futty93/Horus/issues/46) | Must/Should 完了（[20260315-start-with-this-button](20260315-start-with-this-button/spec.md)、`scenario.test.ts`）。**残り**: 手動 E2E、ネットワーク文言 Optional。 |
 | 1-4 | 航空機テーブル編集 | ✅ | 🔴 | ★★☆ | [#47](https://github.com/Futty93/Horus/issues/47) | コア Done（[20260315-aircraft-table-edit](20260315-aircraft-table-edit/spec.md)）。**残り**: 手動 E2E、行内 FP 編集は Optional。 |
-| 1-5 | トップ等から JSON アップロード起動 | ⬜ | 🟡 | ★☆☆ | [#48](https://github.com/Futty93/Horus/issues/48) | `app/page.tsx` はリンクのみ。**新規: ファイル選択 → `parseScenarioJson` → `loadScenarioAndStart` または setup へ引き渡し**の要否を決める。 |
+| 1-5 | トップ等から JSON アップロード起動 | ✅ | 🟡 | ★☆☆ | [#48](https://github.com/HorusATC/Horus/issues/48) | Done（PR [#118](https://github.com/HorusATC/Horus/pull/118)）。`app/page.tsx` でファイル選択 → `parseScenarioJson` → `loadScenarioAndStart`。 |
 
 ---
 

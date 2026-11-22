@@ -215,6 +215,44 @@ paths:
         "400":
           description: Unknown runway, climb too low, or aircraft too far from the threshold
 
+  "/api/aircraft/{callsign}/depart":
+    post:
+      tags: ["aircraft"]
+      summary: "Depart for initial climb from a catalog runway"
+      description: "Places the aircraft at the catalog physical threshold (TORA begin) at threshold elevation + 35 ft and climbs on runway true heading (FLY RUNWAY HEADING). Optional initialHeadingDeg holds runway heading until DER elevation + 400 ft, then turns. Climb altitude must be at least 500 ft above the start altitude. No taxi or SID. RJTT 05 is allowed for DEPART (unlike JOIN FINAL)."
+      parameters:
+        - name: callsign
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [airportIcao, runwayDesignator, climbAltitudeFt]
+              properties:
+                airportIcao:
+                  type: string
+                runwayDesignator:
+                  type: string
+                climbAltitudeFt:
+                  type: integer
+                  minimum: 1000
+                  maximum: 45000
+                initialHeadingDeg:
+                  type: number
+                  minimum: 0
+                  exclusiveMaximum: 360
+                  description: Optional. When omitted or equal to runway heading, fly runway heading. Otherwise turn after DER+400 ft.
+      responses:
+        "200":
+          description: Departure / initial climb applied
+        "400":
+          description: Unknown runway, unknown callsign, or climb altitude below start + 500 ft
+
   "/api/aircraft/{callsign}/tower-handoff":
     post:
       tags: ["aircraft"]
@@ -758,6 +796,8 @@ components:
           type: string
           nullable: true
         goAround:
+          type: boolean
+        initialClimb:
           type: boolean
         towerHandoff:
           type: boolean
