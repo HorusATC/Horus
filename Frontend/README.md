@@ -6,15 +6,15 @@
 
 ### 想定ワークフロー（訓練シミュレーション）
 
-| 画面                  | 役割         | 操作                                                                                                                                                                                                            |
-| --------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Controller**        | 管制官役     | レーダーを見ながら音声で指示を出す。発出した指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。                                                                                            |
-| **Operator**          | パイロット役 | 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。航空機の実際の操作（高度・速度・針路、Direct To、Hold、最終進入、進入復行、出発初期上昇（`DEPART`）、タワー移管、Resume、RJTT SID/STAR 割当）を行う。 |
-| **Flight Plan Setup** | シナリオ準備 | 機体選択で経路編集（Suggest / ATS）、任意で O/D バルク同一化、JSON 入出力、シナリオ投入。                                                                                                                       |
+| 画面                  | 役割         | 操作                                                                                                                                                                                                                   |
+| --------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Controller**        | 管制官役     | レーダーを見ながら音声で指示を出す。発出した指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。                                                                                                   |
+| **Operator**          | パイロット役 | 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。航空機の実際の操作（高度・速度・針路、Direct To、Hold、最終進入、進入復行、出発初期上昇（`DEPART`）、タワー移管、Resume、RJTT / RJAA SID/STAR 割当）を行う。 |
+| **Flight Plan Setup** | シナリオ準備 | 機体選択で経路編集（Suggest / ATS）、任意で O/D バルク同一化、JSON 入出力、シナリオ投入。                                                                                                                              |
 
-**SID / STAR 割当**: Operator の `procedureAssignControl` から RJTT RNAV STAR / VAMOS FOUR を選択して割当。VAMOS 各滑走路 SID には **TATEYAMA / DRAKY** エンルート・トランジションが選べる（接続点 VAMOS）。割当経路は飛行計画パネル（割当直後に更新）とレーダー折れ線に出る。VAMOS の VA は公示高度到達まで真方位を保持してから DF/TF。VISIP・公示ホールド自動・KIAS 自動適用は未実装。出典は README / データファイルのみ（UI 警告バナーなし）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
+**SID / STAR 割当**: Operator の `procedureAssignControl` から空港（RJTT / RJAA）を選んで割当。スライス 1 の RJTT RNAV STAR / VAMOS FOUR に加え、スライス 3 の RJTT RNAV SID と RJAA RNAV SID/STAR も選択可。VAMOS 各滑走路 SID には **TATEYAMA / DRAKY**、TETRA / ROVER / OLVAN 系には公示トランジションが選べる。割当経路は飛行計画パネル（割当直後に更新）とレーダー折れ線に出る。VA は公示高度到達まで真方位を保持してから DF/TF。VISIP・公示ホールド自動・KIAS 自動適用は未実装。出典は README / データファイルのみ（UI 警告バナーなし）。Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
 
-最初のシナリオはトップの「**START WITH SAMPLE (サンプルで始める)**」で開始できる。既定サンプル（`data/quickstart-arrival-sample.json`）は RJTT RNAV STAR **`OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`**（RWY 34L/34R）到着 5 機で、シナリオ読込時に ATIS 使用滑走路を **34L** に揃える。POLIX 系は CHIPS フィーダー共有による STCA を避けるため既定に含めない。レーダー既定中心は RJTT。VAMOS 出発機は到着既定に含めない。出発を試すときはトップの「**START VAMOS DEPARTURE SAMPLE (VAMOS出発サンプル)**」、または `data/quickstart-departure-sample.json`（`VAMOS4.RWY34L_34R` + TATEYAMA、使用滑走路 34L）を JSON アップロードで読む。VISIP・残る RJTT SID・RJAA の SID/STAR は未コード（不足プレートは `aip/slice2-20261101.md`）。旧い空ルートサンプルは `data/quickstart-arrival-open-vector.json`（および `public/samples/`）に残しており、JSON アップロードで読める。独自シナリオは **Flight Plan Setup**（`/flight-plan-setup`）またはトップの JSON アップロードで投入する。
+最初のシナリオはトップの「**START WITH SAMPLE (サンプルで始める)**」で開始できる。既定サンプル（`data/quickstart-arrival-sample.json`）は RJTT RNAV STAR **`OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`**（RWY 34L/34R）到着 5 機で、シナリオ読込時に ATIS 使用滑走路を **34L** に揃える。POLIX 系は CHIPS フィーダー共有による STCA を避けるため既定に含めない。レーダー既定中心は RJTT。VAMOS 出発機は到着既定に含めない。出発を試すときはトップの「**START VAMOS DEPARTURE SAMPLE (VAMOS出発サンプル)**」、または `data/quickstart-departure-sample.json`（`VAMOS4.RWY34L_34R` + TATEYAMA、使用滑走路 34L）を JSON アップロードで読む。カタログはスライス 1＋スライス 3（`types/rjttProcedureIds.ts`）。VISIP・従来方式プレートは未コード（不足プレートの残りは `aip/slice2-20261101.md`）。旧い空ルートサンプルは `data/quickstart-arrival-open-vector.json`（および `public/samples/`）に残しており、JSON アップロードで読める。独自シナリオは **Flight Plan Setup**（`/flight-plan-setup`）またはトップの JSON アップロードで投入する。
 
 ## 技術スタック
 
@@ -331,7 +331,7 @@ React Context APIを使用して、以下の状態を管理しています：
 - `POST /api/aircraft/{callsign}/hold` - ホールディング指示（任意: `inboundCourseDeg` / `legMinutes`|`legNm` / `turnDirection` LEFT|RIGHT。省略時は右旋回・4.0 NM・Fix名ハッシュ入方向）。Backend は到着針路の AIM 進入セクター（DIRECT／TEARDROP／PARALLEL）でフィックスへ合流し、標準率レーストラックで周回する。風ありでは直線レグに WCA + cross-track 収束（[spec/20261123-hold-handoff-wind](../spec/20261123-hold-handoff-wind/spec.md)）。位置 API の `holding.pattern` / `holding.entryProcedure` で指示形状（無風式）をレーダー表示する。Hold POST 契約は変更なし。残課題: 公示パターン・EAT／EFC・レグ時間の公式風補正
 - `POST /api/aircraft/{callsign}/final-approach` - 最終進入（`JOIN FINAL`）
 - `POST /api/aircraft/{callsign}/go-around` - 進入復行
-- `GET /api/procedures?airport=RJTT` / `GET /api/procedures/{id}` - RJTT SID/STAR カタログ
+- `GET /api/procedures?airport=RJTT|RJAA` / `GET /api/procedures/{id}` - RJTT / RJAA SID/STAR カタログ（スライス 1＋3）
 - `POST /api/aircraft/{callsign}/assign-procedure` - SID/STAR を飛行計画へ割当（レーダー折れ線表示）
 - `POST /api/aircraft/{callsign}/depart` - 出発初期上昇（物理進入端へ移動・標高+35 ft・滑走路真方位。任意 `initialHeadingDeg`。SID なし）
 - `POST /api/aircraft/{callsign}/tower-handoff` - タワー移管（予測はライブと同じ風対応運動。受理 ⇔ 末端 0.5 NM 到達）

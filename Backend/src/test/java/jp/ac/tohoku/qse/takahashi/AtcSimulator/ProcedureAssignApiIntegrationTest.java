@@ -63,8 +63,24 @@ class ProcedureAssignApiIntegrationTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> procedures =
                 (List<Map<String, Object>>) response.getBody().get("procedures");
-        assertThat(procedures).isNotEmpty();
+        assertThat(procedures).hasSize(90);
         assertThat(procedures.stream().anyMatch(p -> "OSHIMA1A".equals(p.get("id")))).isTrue();
+        assertThat(procedures.stream().anyMatch(p -> "LAXAS4.RWY16R".equals(p.get("id")))).isTrue();
+        assertThat(procedures.stream().anyMatch(p -> "VAMOS4.RWY34L_34R".equals(p.get("id")))).isTrue();
+    }
+
+    @Test
+    void listProceduresReturnsRjaaSlice3Catalog() {
+        ResponseEntity<Map> response = restTemplate.getForEntity(
+                baseUrl() + "/api/procedures?airport=RJAA", Map.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> procedures =
+                (List<Map<String, Object>>) response.getBody().get("procedures");
+        assertThat(procedures).hasSize(48);
+        assertThat(procedures.stream().anyMatch(p -> "TETRA8.RWY16R".equals(p.get("id")))).isTrue();
+        assertThat(procedures.stream().anyMatch(p -> "RUTASE".equals(p.get("id")))).isTrue();
     }
 
     @Test

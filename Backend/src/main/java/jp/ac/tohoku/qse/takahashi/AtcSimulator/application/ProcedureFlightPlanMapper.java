@@ -70,33 +70,34 @@ public class ProcedureFlightPlanMapper {
         ProcedureVaConstraint vaConstraint = null;
 
         for (ProcedureLeg leg : primary.legs()) {
-            if (leg.pathDescriptor() == ProcedurePathDescriptor.HOLD
-                    || leg.pathDescriptor() == ProcedurePathDescriptor.UNKNOWN) {
-                continue;
+            switch (mapAction(leg.pathDescriptor())) {
+                case SKIP -> {
+                    // HOLD / UNKNOWN stay catalog-only.
+                }
+                case VA -> vaConstraint = ProcedureVaConstraint.fromVaLeg(leg);
+                case FIX -> appendFixLeg(waypoints, leg);
             }
-            if (leg.pathDescriptor() == ProcedurePathDescriptor.VA) {
-                vaConstraint = ProcedureVaConstraint.fromVaLeg(leg);
-                continue;
-            }
-            appendFixLeg(waypoints, leg);
         }
 
         if (transition.isPresent()) {
             for (ProcedureLeg leg : transition.get().legs()) {
-                if (leg.pathDescriptor() == ProcedurePathDescriptor.HOLD
-                        || leg.pathDescriptor() == ProcedurePathDescriptor.UNKNOWN
-                        || leg.pathDescriptor() == ProcedurePathDescriptor.VA) {
-                    continue;
+                switch (mapAction(leg.pathDescriptor())) {
+                    case SKIP, VA -> {
+                        // Transitions do not re-arm VA; HOLD / UNKNOWN stay catalog-only.
+                    }
+                    case FIX -> {
+                        if (leg.pathDescriptor() == ProcedurePathDescriptor.IF
+                                && !waypoints.isEmpty()
+                                && leg.waypointIdentifier() != null
+                                && leg.waypointIdentifier()
+                                        .equalsIgnoreCase(
+                                                waypoints.get(waypoints.size() - 1).getFixName())) {
+                            // Connect transition at shared fix already present (e.g. VAMOS).
+                            break;
+                        }
+                        appendFixLeg(waypoints, leg);
+                    }
                 }
-                if (leg.pathDescriptor() == ProcedurePathDescriptor.IF
-                        && !waypoints.isEmpty()
-                        && leg.waypointIdentifier() != null
-                        && leg.waypointIdentifier()
-                                .equalsIgnoreCase(waypoints.get(waypoints.size() - 1).getFixName())) {
-                    // Connect transition at shared fix already present (e.g. VAMOS).
-                    continue;
-                }
-                appendFixLeg(waypoints, leg);
             }
         }
 
@@ -119,6 +120,24 @@ public class ProcedureFlightPlanMapper {
 
         List<String> names = waypoints.stream().map(FlightPlanWaypoint::getFixName).toList();
         return new MappedProcedureRoute(plan, vaConstraint, names);
+    }
+
+    /**
+     * Exhaustive path-descriptor dispatch. New enum values fail compilation here
+     * instead of silently becoming TF-like fixes.
+     */
+    private static LegMapAction mapAction(ProcedurePathDescriptor descriptor) {
+        return switch (descriptor) {
+            case HOLD, UNKNOWN -> LegMapAction.SKIP;
+            case VA -> LegMapAction.VA;
+            case IF, TF, DF -> LegMapAction.FIX;
+        };
+    }
+
+    private enum LegMapAction {
+        SKIP,
+        VA,
+        FIX
     }
 
     private void appendFixLeg(List<FlightPlanWaypoint> waypoints, ProcedureLeg leg) {

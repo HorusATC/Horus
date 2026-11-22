@@ -41,11 +41,14 @@ class ProcedureCatalogGoldenTest {
         long transitions = catalog.all().stream()
                 .filter(p -> p.type() == ProcedureType.SID_TRANSITION)
                 .count();
-        assertThat(stars).isEqualTo(15);
+        // Slice 1 STAR 15 + slice 3 STAR 16; VAMOS runway SIDs unchanged; transitions 2 + 7.
+        assertThat(stars).isEqualTo(31);
         assertThat(vamosRunways).isEqualTo(6);
-        assertThat(transitions).isEqualTo(2);
+        assertThat(transitions).isEqualTo(9);
         assertThat(catalog.findById("VISIP1")).isPresent();
         assertThat(catalog.findById("VISIP1").orElseThrow().isAssignablePrimary()).isFalse();
+        assertThat(catalog.listByAirport("RJTT")).hasSize(90);
+        assertThat(catalog.listByAirport("RJAA")).hasSize(48);
     }
 
     @Test
@@ -159,7 +162,17 @@ class ProcedureCatalogGoldenTest {
     void missingProcedureFixesAreInWaypointCatalog() {
         AtsRouteFixPositionRepository fixes = new AtsRouteFixPositionRepository();
         for (String name : List.of(
-                "XAC", "T6R11", "T6L21", "TT450", "TT468", "TT501", "TT502")) {
+                "XAC",
+                "T6R11",
+                "T6L21",
+                "TT450",
+                "TT468",
+                "TT501",
+                "TT502",
+                "A6R11",
+                "AA657",
+                "GUGVA",
+                "TT503")) {
             assertThat(fixes.findFixPositionByName(name))
                     .as(name)
                     .isPresent();
@@ -168,5 +181,37 @@ class ProcedureCatalogGoldenTest {
         FixPosition anzac = fixes.findFixPositionByName("ANZAC").orElseThrow();
         assertThat(anzac.latitude.toDouble()).isCloseTo(34.841339, within(1e-9));
         assertThat(anzac.longitude.toDouble()).isCloseTo(139.696308, within(1e-9));
+    }
+
+    @Test
+    void laxas16rMapsVaThenDfTfFixes() {
+        InstrumentProcedure laxas = catalog.findById("LAXAS4.RWY16R").orElseThrow();
+        ProcedureFlightPlanMapper.MappedProcedureRoute mapped = mapper.map(
+                new Callsign("JAL910"),
+                laxas,
+                Optional.empty(),
+                17000,
+                250);
+        assertThat(mapped.vaConstraint()).isNotNull();
+        assertThat(mapped.vaConstraint().courseTrueDeg()).isEqualTo(150.0);
+        assertThat(mapped.vaConstraint().atOrAboveAltitudeFt()).isEqualTo(500);
+        assertThat(mapped.waypointNames()).containsExactly("T6R11", "TAURA", "IMOLA", "LAXAS");
+    }
+
+    @Test
+    void tetra16rWithAgrisMapsThroughAgris() {
+        InstrumentProcedure tetra = catalog.findById("TETRA8.RWY16R").orElseThrow();
+        InstrumentProcedure agris = catalog.findById("TETRA8.AGRIS").orElseThrow();
+        assertThat(tetra.enrouteTransitions()).contains("TETRA8.AGRIS");
+        ProcedureFlightPlanMapper.MappedProcedureRoute mapped = mapper.map(
+                new Callsign("ANA910"),
+                tetra,
+                Optional.of(agris),
+                20000,
+                250);
+        assertThat(mapped.vaConstraint()).isNotNull();
+        assertThat(mapped.vaConstraint().courseTrueDeg()).isEqualTo(149.6);
+        assertThat(mapped.waypointNames())
+                .containsExactly("ASPEN", "A6R11", "A6R13", "A6R14", "TETRA", "RADIX", "WHARF", "AGRIS");
     }
 }

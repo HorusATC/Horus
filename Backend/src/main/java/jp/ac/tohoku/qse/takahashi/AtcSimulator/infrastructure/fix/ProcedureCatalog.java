@@ -23,14 +23,19 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.Pro
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.procedure.ProcedureType;
 
 /**
- * Loads RJTT SID/STAR extract from classpath.
- * Committed source of truth is {@code aip/rjtt-sid-star-20261101.json}; Gradle
- * {@code processResources} copies it to this classpath path. VISIP and uncertain
- * items stay as in the JSON.
+ * Loads RJTT/RJAA SID/STAR extracts from classpath.
+ * Committed sources of truth are {@code aip/rjtt-sid-star-20261101.json} (slice 1)
+ * and {@code aip/slice3-20261101.json} (slice 3). Gradle {@code processResources}
+ * copies both to these classpath paths. Slice 1 is never overwritten by slice 3.
  */
 public final class ProcedureCatalog {
 
     public static final String CLASS_PATH_RESOURCE = "fix/rjtt-sid-star-20261101.json";
+    public static final String SLICE3_CLASS_PATH_RESOURCE = "fix/slice3-20261101.json";
+
+    /** Slice-1 then slice-3; load order is stable for merge and conflict detection. */
+    public static final List<String> CLASS_PATH_RESOURCES =
+            List.of(CLASS_PATH_RESOURCE, SLICE3_CLASS_PATH_RESOURCE);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -39,11 +44,12 @@ public final class ProcedureCatalog {
 
     public ProcedureCatalog() {
         try {
-            Loaded loaded = load(CLASS_PATH_RESOURCE);
+            Loaded loaded = loadAll(CLASS_PATH_RESOURCES);
             this.sourceNotice = loaded.sourceNotice();
             this.proceduresById = Collections.unmodifiableMap(loaded.proceduresById());
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to load procedure catalog from " + CLASS_PATH_RESOURCE, e);
+            throw new IllegalStateException(
+                    "Failed to load procedure catalog from " + CLASS_PATH_RESOURCES, e);
         }
     }
 
@@ -82,6 +88,25 @@ public final class ProcedureCatalog {
         return List.copyOf(proceduresById.values());
     }
 
+    private static Loaded loadAll(List<String> resourcePaths) throws IOException {
+        String notice = "";
+        Map<String, InstrumentProcedure> byId = new LinkedHashMap<>();
+        for (String resourcePath : resourcePaths) {
+            Loaded part = load(resourcePath);
+            if (notice.isBlank() && !part.sourceNotice().isBlank()) {
+                notice = part.sourceNotice();
+            }
+            for (Map.Entry<String, InstrumentProcedure> entry : part.proceduresById().entrySet()) {
+                InstrumentProcedure previous = byId.put(entry.getKey(), entry.getValue());
+                if (previous != null) {
+                    throw new IllegalStateException(
+                            "Duplicate procedure id across catalog resources: " + entry.getKey());
+                }
+            }
+        }
+        return new Loaded(notice, attachSidTransitions(byId));
+    }
+
     private static Loaded load(String resourcePath) throws IOException {
         try (InputStream is = new ClassPathResource(resourcePath).getInputStream()) {
             JsonNode root = OBJECT_MAPPER.readTree(is);
@@ -94,7 +119,7 @@ public final class ProcedureCatalog {
                     byId.put(procedure.id(), procedure);
                 }
             }
-            return new Loaded(notice, attachSidTransitions(byId));
+            return new Loaded(notice, byId);
         }
     }
 

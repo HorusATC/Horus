@@ -17,7 +17,9 @@ cd Horus
 
 RJTT RNAV STAR（`OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`、RWY 34L/34R カタログ）を割り当てた到着機 5 機が読み込まれ、ATIS の使用滑走路は 34L に揃い、シミュレーションが始まり、Controller レーダーへ遷移します。追加の手続き割当は不要です。停止は Ctrl-C（両方のプロセスを止めます）。
 
-**VAMOS 出発サンプル（別シナリオ）**: 到着既定はそのままです。出発を試すときはトップの「**START VAMOS DEPARTURE SAMPLE (VAMOS出発サンプル)**」を押すか、`Frontend/data/quickstart-departure-sample.json`（`VAMOS4.RWY34L_34R` + TATEYAMA、使用滑走路 34L）を「LOAD SCENARIO JSON FILE」で読み込みます。VISIP・残る RJTT SID・RJAA の SID/STAR は未コード（不足プレート一覧は `aip/slice2-20261101.md`）。
+**VAMOS 出発サンプル（別シナリオ）**: 到着既定はそのままです。出発を試すときはトップの「**START VAMOS DEPARTURE SAMPLE (VAMOS出発サンプル)**」を押すか、`Frontend/data/quickstart-departure-sample.json`（`VAMOS4.RWY34L_34R` + TATEYAMA、使用滑走路 34L）を「LOAD SCENARIO JSON FILE」で読み込みます。SID/STAR カタログは `aip/rjtt-sid-star-20261101.json`（スライス 1）と `aip/slice3-20261101.json`（スライス 3: RJTT RNAV SID 66・RJAA RNAV SID/STAR 48）を結合して読みます。Operator から RJTT / RJAA を選んで割当できます。VISIP と従来方式プレートは未コード（不足プレートの残りは `aip/slice2-20261101.md`）。
+
+Derived from AIP Japan (AIRAC 1 Nov 2026), may not be current, edited by the Horus project and not government-made.
 
 > Java 21 が見つからない場合は、[Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21) を入れ、`JAVA_HOME` を指すか `~/jdk21` に展開してください。Java 22 / 24 は使えません。
 
@@ -65,8 +67,8 @@ docker compose up --build
    - Tailwind CSSによるモダンなUI
    - 2つの主要画面（役割分担を想定した訓練シミュレーション）：
      - **Controller（管制官役）**: レーダーを見ながら音声で指示を出す。自分の発出指示をメモとして入力・反映する。航空機の直接操作（API 送信）は行わない。
-     - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume（SID VA 中は VA 維持）、JOIN FINAL／復行／DEPART 初期上昇／タワー移管（拒否時は DEPART 状態を残す）、RJTT SID/STAR 割当（VAMOS は TATEYAMA / DRAKY トランジション可。再割当は JOIN FINAL 進入コースを消す））を行う。レーダーの `GA` / `DEP` / `TWR` は位置 API 射影のまま。
-   - 最初のシナリオはトップの「START WITH SAMPLE (サンプルで始める)」で開始できる（既定サンプルは RJTT RNAV STAR `OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`・使用滑走路 34L。レーダー既定中心は RJTT）。VAMOS FOUR 出発は別ボタン／`quickstart-departure-sample.json` から読込（到着既定は変えない）。VISIP・残 SID・RJAA は未コード（`aip/slice2-20261101.md`）。独自シナリオは Flight Plan Setup（`/flight-plan-setup`）または JSON アップロードで投入する。
+     - **Operator（パイロット役）**: 管制官の音声指示を復唱しながら入力し、バックエンドへ送信。実際の航空機操作（高度・速度・針路、Direct To、Resume（SID VA 中は VA 維持）、JOIN FINAL／復行／DEPART 初期上昇／タワー移管（拒否時は DEPART 状態を残す）、RJTT / RJAA SID/STAR 割当（空港切替可。VAMOS は TATEYAMA / DRAKY トランジション可。再割当は JOIN FINAL 進入コースを消す））を行う。レーダーの `GA` / `DEP` / `TWR` は位置 API 射影のまま。
+   - 最初のシナリオはトップの「START WITH SAMPLE (サンプルで始める)」で開始できる（既定サンプルは RJTT RNAV STAR `OSHIMA1A` / `AKSEL1K` / `AROSA2C` / `AKSEL2C` / `GODIN2A`・使用滑走路 34L。レーダー既定中心は RJTT）。VAMOS FOUR 出発は別ボタン／`quickstart-departure-sample.json` から読込（到着既定は変えない）。スライス 3 の RJTT / RJAA RNAV 手続きもカタログ割当可。VISIP・従来方式プレートは未コード（`aip/slice2-20261101.md`）。独自シナリオは Flight Plan Setup（`/flight-plan-setup`）または JSON アップロードで投入する。
    - 詳細は `Frontend/README.md` を参照
 
 ## システムの特徴

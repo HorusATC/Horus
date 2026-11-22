@@ -35,10 +35,11 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-// Single committed source: aip/rjtt-sid-star-20261101.json → classpath fix/
+// Committed sources: slice-1 + slice-3 AIP JSON → classpath fix/
 tasks.named('processResources') {
 	from("${projectDir}/../aip") {
 		include 'rjtt-sid-star-20261101.json'
+		include 'slice3-20261101.json'
 		into 'fix'
 	}
 }

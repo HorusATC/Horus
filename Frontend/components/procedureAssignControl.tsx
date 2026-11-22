@@ -8,9 +8,15 @@ import {
   type ProcedureSummary,
 } from "@/utility/api/procedures";
 import { notifyFlightPlanChanged } from "@/utility/api/flightPlanChanged";
+import {
+  PROCEDURE_CATALOG_AIRPORTS,
+  type ProcedureCatalogAirport,
+  isProcedureCatalogAirport,
+} from "@/types/rjttProcedureIds";
 
 const ProcedureAssignControl: React.FC = () => {
   const { callsign } = useSelectedAircraft();
+  const [airport, setAirport] = useState<ProcedureCatalogAirport>("RJTT");
   const [procedures, setProcedures] = useState<ProcedureSummary[]>([]);
   const [procedureId, setProcedureId] = useState("");
   const [transitionId, setTransitionId] = useState("");
@@ -20,19 +26,20 @@ const ProcedureAssignControl: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const data = await fetchProcedures("RJTT");
+      const data = await fetchProcedures(airport);
       if (cancelled || data == null) return;
       const assignable = data.procedures.filter((p) => p.assignable);
       setProcedures(assignable);
-      const first = assignable[0];
-      if (first != null) {
-        setProcedureId((current) => current || first.id);
-      }
+      setProcedureId((current) =>
+        assignable.some((p) => p.id === current)
+          ? current
+          : (assignable[0]?.id ?? "")
+      );
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [airport]);
 
   const selected = useMemo(
     () => procedures.find((p) => p.id === procedureId) ?? null,
@@ -91,6 +98,25 @@ const ProcedureAssignControl: React.FC = () => {
       <div className="text-xs font-semibold text-atc-text">
         SID / STAR ASSIGN
       </div>
+      <label className="block text-xs text-atc-text-muted">
+        Airport
+        <select
+          className="mt-1 w-full px-2 py-1 text-xs font-mono bg-atc-surface-elevated border border-atc-border rounded"
+          value={airport}
+          onChange={(e) => {
+            const next = e.target.value;
+            if (isProcedureCatalogAirport(next)) {
+              setAirport(next);
+            }
+          }}
+        >
+          {PROCEDURE_CATALOG_AIRPORTS.map((icao) => (
+            <option key={icao} value={icao}>
+              {icao}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="block text-xs text-atc-text-muted">
         Procedure
         <select
