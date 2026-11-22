@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-23
 - **関連**: 外部レビューおよび検証（PR #117–#139）の PR-D（⑦、⑨、MSAW 決定、P-1、P-2、P-4）、[spec/20261122-runway-distance-rbl/spec.md](../20261122-runway-distance-rbl/spec.md)、[spec/20261122-msaw/spec.md](../20261122-msaw/spec.md)、[spec/20261123-nav-mode-validate/spec.md](../20261123-nav-mode-validate/spec.md)（PR-C / #143）、[spec/20261123-atis-revision/spec.md](../20261123-atis-revision/spec.md)（PR-B / #142）
@@ -177,14 +177,14 @@ main `6413499`。PR-A〜C はマージ済み。表示とポーリングの契約
 
 ## 検証
 
-- [ ] `fetchAircraftLocation` が `FetchResult` を返し、失敗を `[]` として表せない。
-- [ ] 滑走路選択関数の名前が greppable で、表示と MSAW の唯一の選択実装である。
-- [ ] 反転した `geometry.repro`、`drawRoute.repro`、`locationAndPanel.repro`（P-1 と P-4）、`MsawOverlapReproTest` が通る。
-- [ ] 共通ゴールデン表（16L / 16R / 34L / 34R × 1 / 5 / 9 NM）で、両側が自分の中心線を選ぶ。
-- [ ] 組み合わせ 3 件（位置の順序逆転、失敗を挟んでも機とピンが残る、残 1 フィックスの線→通過後に消える）が通る。
-- [ ] 位置 API・`flightPlanRoute`・滑走路 API のキーが本スライスで変わっていない。
-- [ ] `spec/20261122-runway-distance-rbl` §2 と README が最寄り中心線規則と経路・ポーリング契約を述べている。
-- [ ] 既存テストを、本機能用の期待値修正以外で緩めずに通す。CI 4 ジョブがマージ SHA で合格する。
+- [x] `fetchAircraftLocation` が `FetchResult` を返し、失敗を `[]` として表せない。
+- [x] 滑走路選択関数の名前が greppable で、表示と MSAW の唯一の選択実装である。
+- [x] 反転した `geometry.repro`、`drawRoute.repro`、`locationAndPanel.repro`（P-1 と P-4）、`MsawOverlapReproTest` が通る。
+- [x] 共通ゴールデン表（16L / 16R / 34L / 34R × 1 / 5 / 9 NM）で、両側が自分の中心線を選ぶ。
+- [x] 組み合わせ 3 件（位置の順序逆転、失敗を挟んでも機とピンが残る、残 1 フィックスの線→通過後に消える）が通る。
+- [x] 位置 API・`flightPlanRoute`・滑走路 API のキーが本スライスで変わっていない。
+- [x] `spec/20261122-runway-distance-rbl` §2 と README が最寄り中心線規則と経路・ポーリング契約を述べている。
+- [x] 既存テストを、本機能用の期待値修正以外で緩めずに通す。CI 4 ジョブがマージ SHA で合格する。
 
 再現テストの置き場所（検証 README どおり、恒久化するときはバグ断言を逆にする）:
 
