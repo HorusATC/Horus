@@ -2,7 +2,7 @@
 
 ## メタデータ
 
-- **Status**: In progress
+- **Status**: Done
 - **Author**: Kazuki Futawatari
 - **Date**: 2026-11-23
 - **関連**: [spec/20261122-sid-star/spec.md](../20261122-sid-star/spec.md)（#139）、[spec/20261123-star-quickstart-scenario/spec.md](../20261123-star-quickstart-scenario/spec.md)（#140）、Issue [#114](https://github.com/HorusATC/Horus/issues/114)
@@ -158,12 +158,12 @@
 
 ## 検証
 
-- [ ] スライス 2 JSON と既存カタログのスキーマ検査が通る。割り当て可能手続きのフィックスがすべて解決できる。
-- [ ] 新しい完全コード化レグを発明していない（`slice2` の `procedures` は空、または既存カタログへの参照のみ）。
-- [ ] 出発サンプルを置く場合、衝突／MSAW ガードが通り、VISIP を含まない。
-- [ ] 既定の到着クイックスタートと既存の SID 割当テストが退行しない。
-- [ ] README に出典一行があり、未コード範囲を実装済みと書かない。
-- [ ] CI 4 ジョブがマージ SHA で合格する。
+- [x] スライス 2 JSON と既存カタログのスキーマ検査が通る。割り当て可能手続きのフィックスがすべて解決できる。
+- [x] 新しい完全コード化レグを発明していない（`slice2` の `procedures` は空、または既存カタログへの参照のみ）。
+- [x] 出発サンプルを置く場合、衝突／MSAW ガードが通り、VISIP を含まない。
+- [x] 既定の到着クイックスタートと既存の SID 割当テストが退行しない。
+- [x] README に出典一行があり、未コード範囲を実装済みと書かない。
+- [x] CI 4 ジョブがマージ SHA で合格する。
 
 ## README
 
