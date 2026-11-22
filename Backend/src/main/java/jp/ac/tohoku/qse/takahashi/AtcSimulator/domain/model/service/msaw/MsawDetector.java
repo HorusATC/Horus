@@ -111,52 +111,18 @@ public class MsawDetector {
         double corridorWidthNm = msaCatalog.getApproachCorridorWidthNm();
         double extensionNm = msaCatalog.getApproachCorridorExtensionNm();
 
-        for (var runway : runwayCatalog.getAllRunways()) {
-            if (!runway.usableForLanding()) {
-                continue;
-            }
-            var geometry = runwayCatalog.buildFinalApproachGeometry(runway);
-            if (geometry.isEmpty()) {
-                continue;
-            }
-
-            var geom = geometry.get();
-            double thresholdLat = runway.thresholdLatitude();
-            double thresholdLon = runway.thresholdLongitude();
-            double approachHeading = geom.approachCourseHeading();
-
-            double distanceFromThresholdNm = GeodeticUtils.calculateHorizontalDistance(
-                    position,
-                    new AircraftPosition(
-                            new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Latitude(thresholdLat),
-                            new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Longitude(thresholdLon),
-                            new jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.valueObject.AircraftAttributes.Altitude(0.0)
-                    )
-            );
-
-            double bearing = calculateBearing(thresholdLat, thresholdLon,
-                    position.latitude.toDouble(), position.longitude.toDouble());
-            double reciprocalHeading = (approachHeading + 180.0) % 360.0;
-            double bearingDiff = Math.abs(normalizeAngle(bearing - reciprocalHeading));
-
-            if (bearingDiff > 90.0) {
-                continue;
-            }
-
-            double projectedDistanceNm = distanceFromThresholdNm * Math.cos(Math.toRadians(bearingDiff));
-            if (projectedDistanceNm < 0 || projectedDistanceNm > extensionNm) {
-                continue;
-            }
-
-            double lateralOffsetNm = distanceFromThresholdNm * Math.sin(Math.toRadians(bearingDiff));
-            if (Math.abs(lateralOffsetNm) <= corridorWidthNm) {
-                String airportIcao = runway.airportIcao();
-                double elevationFt = msaCatalog.getAirportElevationFt(airportIcao);
-                return new ApproachCorridorCheck(true, projectedDistanceNm, elevationFt);
-            }
+        ClosestCenterlineRunway.Selection selected =
+                ClosestCenterlineRunway.selectClosestCenterlineRunway(
+                        position,
+                        runwayCatalog.getAllRunways(),
+                        corridorWidthNm,
+                        extensionNm);
+        if (selected == null) {
+            return new ApproachCorridorCheck(false, 0, 0);
         }
 
-        return new ApproachCorridorCheck(false, 0, 0);
+        double elevationFt = msaCatalog.getAirportElevationFt(selected.airportIcao());
+        return new ApproachCorridorCheck(true, selected.alongTrackNm(), elevationFt);
     }
 
     private MsawAlert checkApproachFloor(AircraftPosition position, AircraftVector vector,
@@ -247,30 +213,6 @@ public class MsawDetector {
         }
 
         return (intersections % 2) == 1;
-    }
-
-    private double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
-        double lat1Rad = Math.toRadians(lat1);
-        double lat2Rad = Math.toRadians(lat2);
-        double deltaLonRad = Math.toRadians(lon2 - lon1);
-
-        double y = Math.sin(deltaLonRad) * Math.cos(lat2Rad);
-        double x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
-                Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(deltaLonRad);
-
-        double bearingRad = Math.atan2(y, x);
-        return (Math.toDegrees(bearingRad) + 360.0) % 360.0;
-    }
-
-    private double normalizeAngle(double angle) {
-        double normalized = angle % 360.0;
-        if (normalized < 0) {
-            normalized += 360.0;
-        }
-        if (normalized > 180.0) {
-            normalized = 360.0 - normalized;
-        }
-        return normalized;
     }
 
     private record ApproachCorridorCheck(

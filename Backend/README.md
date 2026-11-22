@@ -439,7 +439,7 @@ RESTful APIを提供しており、詳細なAPI仕様は`UranosAPI.yml`ファイ
 
 - 検出はドメインサービス `MsawDetector` が行い、位置 API の `msawAlert` に載せる（専用エンドポイントなし）。
 - 区域最低高度はクラスパス `fix/msa-areas.json`（訓練用の簡略ポリゴン）。**AIP Japan の公式 MVA / MSA / 障害物データではない。**
-- 現在高度、またはカタログ定数の先読み秒数（45 s）後の予測高度が区域最低高度未満なら `MSA`。進入廊内（進入端から外側最大 10 NM=`approachCorridorExtensionNm`・左右 1.0 NM）では簡略フロア未満で `LOW`。進入端から 1.0 NM 未満は抑制。
+- 現在高度、またはカタログ定数の先読み秒数（45 s）後の予測高度が区域最低高度未満なら `MSA`。進入廊内（進入端から外側最大 10 NM=`approachCorridorExtensionNm`・左右 1.0 NM）では簡略フロア未満で `LOW`。重なる進入廊では Frontend の進入端距離と同じ最寄り中心線規則（`selectClosestCenterlineRunway`: `|xtk|` 最小、同値なら沿トラック短い方）で末端を選び、その沿トラックでフロアを計算する。進入端から 1.0 NM 未満は抑制。
 - `initialClimb` が真で、出発物理進入端から滑走路方位に沿って **5 NM 以内・左右 1.0 NM 以内**にいるあいだも抑制（廊の外またはフラグ解除後は通常どおり）。
 - 詳細は [spec/20261122-msaw/spec.md](../spec/20261122-msaw/spec.md)、[spec/20261122-initial-climb/spec.md](../spec/20261122-initial-climb/spec.md)。
 

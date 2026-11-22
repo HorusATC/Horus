@@ -19,8 +19,10 @@ import {
   DEFAULT_LABEL_HIT_BOTTOM_OFFSET_PX,
   type LabelPlacementAircraft,
 } from "../aircraft/labelPlacement";
+import type { FetchResult } from "./fetchResult";
 
 export type { HoldingPatternDto, HoldingPatternPointDto };
+export type { FetchResult };
 
 export interface AircraftLocationDto {
   callsign: string;
@@ -193,8 +195,7 @@ export const fetchAircraftLocation = async (
   controllingAircrafts: Aircraft[],
   centerCoordinate: Coordinate,
   displayRange: DisplayRange
-) => {
-  let updatedControllingAircraft: Aircraft[] = [];
+): Promise<FetchResult<Aircraft[]>> => {
   try {
     const response = await fetch("/api/aircraft/location/all", {
       method: "GET",
@@ -204,22 +205,23 @@ export const fetchAircraftLocation = async (
       cache: "no-store",
     });
 
-    if (response.ok) {
-      const data = (await response.json()) as AircraftLocationDto[];
-      const aircraftData = data.map((dto) =>
-        mapDtoToAircraft(dto, centerCoordinate, displayRange)
-      );
-      updatedControllingAircraft = updateControllingAircrafts(
-        aircraftData,
-        controllingAircrafts
-      );
-    } else {
+    if (!response.ok) {
       console.error("Request failed with status:", response.status);
+      return { kind: "error" };
     }
+
+    const data = (await response.json()) as AircraftLocationDto[];
+    const aircraftData = data.map((dto) =>
+      mapDtoToAircraft(dto, centerCoordinate, displayRange)
+    );
+    return {
+      kind: "ok",
+      data: updateControllingAircrafts(aircraftData, controllingAircrafts),
+    };
   } catch (error) {
     console.error("Error occurred while fetching aircraft location:", error);
+    return { kind: "error" };
   }
-  return updatedControllingAircraft;
 };
 
 function mapDtoToAircraft(

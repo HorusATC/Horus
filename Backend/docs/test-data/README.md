@@ -44,6 +44,7 @@
 ## 自動テストとの対応
 
 - `SimulationSpeedIntegrationTest`（Backend）は `scenario-load-minimal.json` と同一内容を `src/test/resources/fixtures/scenario-load-minimal.json` に置き、`PUT /simulation/speed` とシミュ進行後の位置変化を検証します。
+- `closest-centerline-golden.json`（本ディレクトリが正本）は Frontend `testdata/` と Backend `src/test/resources/fixtures/` に同一内容を置き、PR-D の最寄り中心線選択ゴールデン表として両側テストが参照する。
 
 ## 注意
 

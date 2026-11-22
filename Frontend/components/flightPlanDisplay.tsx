@@ -16,48 +16,52 @@ const FlightPlanDisplay: React.FC = () => {
   const [status, setStatus] = useState<FlightPlanStatus | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const refresh = React.useCallback(() => {
-    if (!callsign) return;
-    void fetchFlightPlan(callsign).then(setStatus);
-  }, [callsign]);
-
   useEffect(() => {
     if (!callsign) {
       setStatus(null);
+      setLoading(false);
       return;
     }
     setStatus(null);
     let cancelled = false;
+    const requestedCallsign = callsign;
     setLoading(true);
-    void fetchFlightPlan(callsign)
-      .then((data) => {
-        if (!cancelled) setStatus(data);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
+
+    const applyIfCurrent = (data: FlightPlanStatus | null) => {
+      if (cancelled || requestedCallsign !== callsign) {
+        return;
+      }
+      setStatus(data);
     };
-  }, [callsign]);
 
-  useEffect(() => {
-    if (!callsign) return;
+    void fetchFlightPlan(requestedCallsign)
+      .then(applyIfCurrent)
+      .finally(() => {
+        if (!cancelled && requestedCallsign === callsign) {
+          setLoading(false);
+        }
+      });
+
+    const refresh = () => {
+      if (cancelled) return;
+      void fetchFlightPlan(requestedCallsign).then(applyIfCurrent);
+    };
+
     const interval = setInterval(refresh, 5000);
-    return () => clearInterval(interval);
-  }, [callsign, refresh]);
 
-  useEffect(() => {
-    if (!callsign) return;
     const onChanged = (event: Event) => {
       const detail = (event as CustomEvent<FlightPlanChangedDetail>).detail;
-      if (detail?.callsign !== callsign) return;
+      if (detail?.callsign !== requestedCallsign) return;
       refresh();
     };
     window.addEventListener(FLIGHT_PLAN_CHANGED_EVENT, onChanged);
-    return () =>
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
       window.removeEventListener(FLIGHT_PLAN_CHANGED_EVENT, onChanged);
-  }, [callsign, refresh]);
+    };
+  }, [callsign]);
 
   if (!callsign) {
     return (

@@ -144,8 +144,12 @@ export function isInApproachCorridor(
     .inCorridor;
 }
 
-/** Prefer the shortest along-track among catalog runways whose corridor contains the point. */
-export function findThresholdDistance(
+/**
+ * Among landing-usable catalog ends whose approach corridor contains the point,
+ * pick the closest centerline: minimum |cross-track|, then shorter along-track.
+ * Single greppable selection implementation for the Frontend distance readout.
+ */
+export function selectClosestCenterlineRunway(
   point: LatLon,
   runways: readonly RunwayApproachGeometry[]
 ): ThresholdDistanceResult | null {
@@ -165,17 +169,35 @@ export function findThresholdDistance(
     if (!projection.inCorridor) {
       continue;
     }
-    if (best == null || projection.alongTrackNm < best.alongTrackNm) {
-      best = {
-        airportIcao: rwy.airportIcao,
-        designator: rwy.designator,
-        approachCourseHeading: rwy.approachCourseHeading,
-        alongTrackNm: projection.alongTrackNm,
-        crossTrackNm: projection.crossTrackNm,
-      };
+    const candidate: ThresholdDistanceResult = {
+      airportIcao: rwy.airportIcao,
+      designator: rwy.designator,
+      approachCourseHeading: rwy.approachCourseHeading,
+      alongTrackNm: projection.alongTrackNm,
+      crossTrackNm: projection.crossTrackNm,
+    };
+    if (best == null) {
+      best = candidate;
+      continue;
+    }
+    const absXtk = Math.abs(candidate.crossTrackNm);
+    const bestAbsXtk = Math.abs(best.crossTrackNm);
+    if (
+      absXtk < bestAbsXtk ||
+      (absXtk === bestAbsXtk && candidate.alongTrackNm < best.alongTrackNm)
+    ) {
+      best = candidate;
     }
   }
   return best;
+}
+
+/** Threshold distance readout: delegates to {@link selectClosestCenterlineRunway}. */
+export function findThresholdDistance(
+  point: LatLon,
+  runways: readonly RunwayApproachGeometry[]
+): ThresholdDistanceResult | null {
+  return selectClosestCenterlineRunway(point, runways);
 }
 
 /** Time to cover `distanceNm` at constant ground speed; null if GS too low or ≥ 60 min. */

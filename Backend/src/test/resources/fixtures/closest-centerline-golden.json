@@ -1,0 +1,78 @@
+{
+  "description": "Closest-centerline golden cases for FE threshold distance and BE MSAW corridor selection. Points are on each centerline at alongTrackNm outbound from the catalog landing threshold (approach heading + 180). Both sides must select expectedDesignator.",
+  "catalogNote": "Threshold coordinates come from Backend/src/main/resources/fix/runways.json (current RJTT survey values). Recompute points from catalog at test time; do not hardcode lat/lon here.",
+  "cases": [
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "16L",
+      "alongTrackNm": 1,
+      "expectedDesignator": "16L"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "16L",
+      "alongTrackNm": 5,
+      "expectedDesignator": "16L"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "16L",
+      "alongTrackNm": 9,
+      "expectedDesignator": "16L"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "16R",
+      "alongTrackNm": 1,
+      "expectedDesignator": "16R"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "16R",
+      "alongTrackNm": 5,
+      "expectedDesignator": "16R"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "16R",
+      "alongTrackNm": 9,
+      "expectedDesignator": "16R"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "34L",
+      "alongTrackNm": 1,
+      "expectedDesignator": "34L"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "34L",
+      "alongTrackNm": 5,
+      "expectedDesignator": "34L"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "34L",
+      "alongTrackNm": 9,
+      "expectedDesignator": "34L"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "34R",
+      "alongTrackNm": 1,
+      "expectedDesignator": "34R"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "34R",
+      "alongTrackNm": 5,
+      "expectedDesignator": "34R"
+    },
+    {
+      "airportIcao": "RJTT",
+      "centerlineDesignator": "34R",
+      "alongTrackNm": 9,
+      "expectedDesignator": "34R"
+    }
+  ]
+}

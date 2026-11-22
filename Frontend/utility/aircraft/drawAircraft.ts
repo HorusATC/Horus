@@ -167,7 +167,7 @@ class DrawAircraft {
     displayRange: DisplayRange
   ): void {
     const route = aircraft.flightPlanRoute;
-    if (route == null || route.length < 2) {
+    if (route == null || route.length < 1) {
       return;
     }
     ctx.save();
@@ -175,18 +175,23 @@ class DrawAircraft {
     ctx.lineWidth = 1.5;
     ctx.setLineDash([]);
     ctx.beginPath();
-    route.forEach((point, index) => {
+    const aircraftCanvas = CoordinateManager.calculateCanvasCoordinates(
+      {
+        latitude: aircraft.geoPosition.latitude,
+        longitude: aircraft.geoPosition.longitude,
+      },
+      centerCoordinate,
+      displayRange
+    );
+    ctx.moveTo(aircraftCanvas.x, aircraftCanvas.y);
+    for (const point of route) {
       const canvas = CoordinateManager.calculateCanvasCoordinates(
         { latitude: point.latitude, longitude: point.longitude },
         centerCoordinate,
         displayRange
       );
-      if (index === 0) {
-        ctx.moveTo(canvas.x, canvas.y);
-      } else {
-        ctx.lineTo(canvas.x, canvas.y);
-      }
-    });
+      ctx.lineTo(canvas.x, canvas.y);
+    }
     ctx.stroke();
     ctx.restore();
   }

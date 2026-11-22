@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-23 | 位置ポーリングの `FetchResult`・通し番号、最寄り中心線滑走路選択、経路折れ線の機体始点（[20261123-frontend-polling-runway](20261123-frontend-polling-runway/spec.md)、PR-D）。 |
 | 2026-11-23 | 単一航法モード型と拒否指示の部分更新禁止（[20261123-nav-mode-validate](20261123-nav-mode-validate/spec.md)、PR-C）。`LateralNavigation` sealed、VA 中 Resume 維持、拒否ハンドオフで DEPART 残存、経路再割当で JOIN FINAL 消去。 |
 | 2026-11-23 | Hold / タワー移管の風一貫ガイダンス（[20261123-hold-handoff-wind](20261123-hold-handoff-wind/spec.md)）。`Guidance` + 共有 `KinematicStep`。N1／outbound WCA／移管予測を修正。 |
 | 2026-11-23 | 既定クイックスタートを RJTT RNAV STAR 到着シナリオに（[20261123-star-quickstart-scenario](20261123-star-quickstart-scenario/spec.md)）。`procedureId` / ATIS シードはシナリオ load に加算。VAMOS・VISIP・KIAS 自動は既定に含めない。 |
