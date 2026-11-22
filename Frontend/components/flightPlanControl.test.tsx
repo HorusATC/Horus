@@ -10,9 +10,11 @@ import {
 } from "@/context/selectedAircraftContext";
 import * as flightPlanApi from "@/utility/api/flightPlan";
 import * as finalApproachApi from "@/utility/api/finalApproach";
+import * as atisApi from "@/utility/api/atis";
 
 jest.mock("@/utility/api/flightPlan");
 jest.mock("@/utility/api/finalApproach");
+jest.mock("@/utility/api/atis");
 
 function StateSetter({ callsign }: { callsign: string | null }) {
   const { setCallsign } = useSelectedAircraft();
@@ -23,6 +25,19 @@ function StateSetter({ callsign }: { callsign: string | null }) {
 }
 
 describe("FlightPlanControl", () => {
+  beforeEach(() => {
+    (atisApi.fetchAtisAll as jest.Mock).mockResolvedValue([
+      {
+        airportIcao: "RJTT",
+        airportName: "Tokyo International Airport",
+        runwayInUse: "16R",
+        informationIdent: "A",
+        text: "ATIS",
+        availableRunways: ["16R", "34L"],
+      },
+    ]);
+  });
+
   it("shows 'Select aircraft' when no callsign", () => {
     render(
       <SelectedAircraftProvider>

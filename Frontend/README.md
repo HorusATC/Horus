@@ -151,6 +151,7 @@ Frontend/
 ├── components/            # 再利用可能なコンポーネント
 │   ├── radarCanvas.tsx    # レーダー表示キャンバス
 │   ├── conflictSummaryStrip.tsx # STCA 統計をレーダー左上にポーリング表示
+│   ├── atisPanel.tsx      # 使用滑走路・ATIS 本文（Controller 編集可 / Operator 読取専用）
 │   ├── separationViolationAlerts.tsx # 新規違反ペア / Sep 増のバナー（レーダー下）
 │   ├── selectedAircraftConflictsPanel.tsx # 選択機の STCA ペア数値（サイドパネル）
 │   ├── controlAircraft.tsx # 航空機制御パネル（Operator 専用）
@@ -169,6 +170,8 @@ Frontend/
 ```
 
 **STCA（コンフリクト）BFF**: `app/api/conflict/*` が Java `ConflictAlertController` の `/api/conflict/all`・`filtered`・`critical`・`violations`・`statistics`・`health`・`aircraft/{callsign}` へプロキシする。クライアント型・取得ヘルパーは `utility/api/conflict.ts`。
+
+**ATIS / 使用滑走路 BFF**: `app/api/atis`（GET）と `app/api/atis/[airportIcao]`（PUT）が Backend `/api/atis` へプロキシする。クライアントは `utility/api/atis.ts`。レーダー右上の `atisPanel.tsx` が Controller（滑走路切替可）と Operator（読取専用）に現行 ATIS 本文と使用滑走路を表示する。風・気象の造値は出さない。`JOIN FINAL`／復行／タワー移管の送信契約は従来どおり明示フィールドのまま（Operator 入力の初期表示に使用滑走路を反映するだけ）。
 
 **STCA 距離の単位（UI と一致）**: バックエンド `RiskAssessment` に合わせ、**水平隔離 `closestHorizontalDistance` は海里（NM）**、**鉛直隔離 `closestVerticalDistance` はフィート（ft）**、**最接近までの時間 `timeToClosest` は秒**。選択機のペア一覧は `selectedAircraftConflictsPanel.tsx`（`fetchAircraftConflicts`、位置更新と同じ 1s 間隔）。API は `pairId` 文字列ではなく `callsignA` / `callsignB` を返すため、相手機表示は構造化データで解決できる。**違反・高リスクの強通知**は `separationViolationAlerts.tsx` が `/api/conflict/all` の差分から新規ペアを検知してレーダー下にバナーを出す（約 10s で自動消去）。同一ペアは **30s クールダウン**で連打を抑制。Controller / Operator でそれぞれマウントするため通知は画面ごとに独立。
 
@@ -262,7 +265,7 @@ Operator 専用。航空機の指示先 Fix をレーダー上で選択し、`Di
 
 ### 6. フライトプラン制御 (FlightPlanControl)
 
-Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、その針路のまま末端に入る機体）、Resume Navigation をバックエンドへ送信。復行中の機体はレーダーラベルに `GA`、移管後は `TWR` を出す。
+Operator 専用。Direct To（Fix 名入力）、Hold At Fix（入方向コース・レグ分/NM・右/左旋回。既定は右旋回、高度 ≤14,000 ft なら 1 分レグ・超えなら 1.5 分、入方向は機体から Fix への方位）、最終進入（`JOIN FINAL`）、進入復行（`GO AROUND`: 同じ空港・滑走路の方位で、入力した高度まで上昇。現在高度より 500 ft 以上）、タワー移管（`HAND OFF TO TOWER`: 同じ空港・滑走路。`HEADING` で末端 10 NM 以内かつ、その針路のまま末端に入る機体）、Resume Navigation をバックエンドへ送信。空港・滑走路入力は現行 ATIS の使用滑走路で初期表示するが、API には明示して送る（使用滑走路変更だけでは進入中機体は付け替わらない）。復行中の機体はレーダーラベルに `GA`、移管後は `TWR` を出す。
 
 ### 7. 経路情報表示設定 (RouteInfoDisplaySetting)
 

@@ -141,8 +141,8 @@
 
 | # | タスク | 優先度 | 難易度 | Issue | 実装方針のフック |
 |---|--------|--------|--------|-------|------------------|
-| 6-1 | 風と対地速度 | 🟡 | ★★☆ | [#69](https://github.com/Futty93/Horus/issues/69) | `FixedWingFlightBehavior`（または相当）への風ベクトル。 |
-| 6-2 | ATIS 表示 | 🟡 | ★☆☆ | [#71](https://github.com/Futty93/Horus/issues/71) | 静的 JSON + レーダー周辺パネル。 |
+| 6-1 | 風と対地速度 | 🟡 | ★★☆ | [#69](https://github.com/Futty93/Horus/issues/69) | `FixedWingFlightBehavior`（または相当）への風ベクトル。ATIS／使用滑走路（6-2）とは別スライスで残課題。 |
+| 6-2 | ATIS 表示 | ✅ | ★☆☆ | [#71](https://github.com/Futty93/Horus/issues/71) | 使用滑走路セッション状態 + ATIS 合成 + レーダー周辺パネル（風なし）。[20261122-atis-runway-in-use](20261122-atis-runway-in-use/spec.md)。 |
 | 6-3 | 気象レーダー | 🟢 | ★★★ | [#70](https://github.com/Futty93/Horus/issues/70) | 外部データ・タイル。 |
 
 ---
@@ -208,6 +208,7 @@ Phase 1 spec/Issue 整合 ──→ T-3（並行）
 
 | 日付 | 内容 |
 |------|------|
+| 2026-11-22 | 使用滑走路と ATIS 表示（風なし）（[20261122-atis-runway-in-use](20261122-atis-runway-in-use/spec.md)）。`GET`/`PUT /api/atis`、対向末端派生、レーダーパネル。6-1 風モデルは残課題。 |
 | 2026-11-22 | 待機の進入セクター（ダイレクト／ティアドロップ／パラレル）（[20261122-hold-entry-sectors](20261122-hold-entry-sectors/spec.md)）。位置 API に任意 `holding.entryProcedure`。公示・EAT/EFC・風は残課題。 |
 | 2026-11-22 | 待機の標準率レーストラックと指示経路オーバーレイ（[20261122-hold-racetrack-overlay](20261122-hold-racetrack-overlay/spec.md)）。位置 API に任意 `holding`。公示・セクター・EAT/EFC・風は残課題。 |
 | 2026-11-22 | 待機指示の入方向・レグ・左右旋回（[20261122-hold-inbound-leg-turns](20261122-hold-inbound-leg-turns/spec.md)）。3-2 を部分完了に更新。公示パターンは残課題。 |

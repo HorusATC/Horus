@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.AircraftFactory;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.AtisService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.FlightPlanFromDtoConverter;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.application.ScenarioService;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.config.globals.GlobalVariables;
@@ -41,13 +42,16 @@ public class ScenarioController {
     private final AircraftRepository aircraftRepository;
     private final FlightPlanFromDtoConverter flightPlanConverter;
     private final AtsRouteFixPositionRepository airportRepository;
+    private final AtisService atisService;
 
     public ScenarioController(ScenarioService scenarioService, AircraftRepository aircraftRepository,
-            FlightPlanFromDtoConverter flightPlanConverter, AtsRouteFixPositionRepository airportRepository) {
+            FlightPlanFromDtoConverter flightPlanConverter, AtsRouteFixPositionRepository airportRepository,
+            AtisService atisService) {
         this.scenarioService = scenarioService;
         this.aircraftRepository = aircraftRepository;
         this.flightPlanConverter = flightPlanConverter;
         this.airportRepository = airportRepository;
+        this.atisService = atisService;
     }
 
     @PostMapping(path = "/load", consumes = "application/json")
@@ -80,6 +84,7 @@ public class ScenarioController {
 
         GlobalVariables.isSimulationRunning = false;
         aircraftRepository.clear();
+        atisService.resetToDefaults();
 
         int count = 0;
         for (SpawnWithFlightPlanDto ac : dto.aircraft()) {

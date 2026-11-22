@@ -232,8 +232,12 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/go-around` | 進入復行。滑走路方位のまま上昇（上昇高度は現在高度より 500 ft 以上、末端から 120NM 以内） |
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
 | POST | `/api/aircraft/{callsign}/resume-navigation` | フライトプラン経路再開 |
+| GET | `/api/atis` | 空港ごとの使用滑走路・ATIS 情報識別・合成本文・選択可能滑走路。既定は各空港 16R / A。風・実気象は無く、本文に `WIND AND WEATHER NOT AVAILABLE.` を明示。シナリオ load で既定に戻る |
+| PUT | `/api/atis/{airportIcao}` | 使用滑走路を更新（`runwayInUse` 必須）。滑走路変更時は情報識別を A→Z→A に 1 つ進める（同一滑走路の再送では進めない）。任意の `informationIdent` で明示設定可。未知の空港・滑走路は 400。JOIN FINAL／復行／タワー移管／Hold／位置 API の契約は変更しない |
 | GET | `/simulation/speed` | シミュレーション時間倍率と実時間ティック間隔（ms） |
 | PUT | `/simulation/speed` | JSON `{"speedMultiplier": …}`（必須。欠落・`null` は 400）。値は離散プリセットのみ（`0.25` / `0.5` / `1` / `2` / `4` / `10`）。他は 400 |
+
+滑走路カタログ（`fix/runways.json`）は空港あたり公表 16R を保持し、対向末端（34L）は既存エントリの方位・長さから派生して加算する（AIP 公式座標そのものではない）。`GET /ats/runways` の要素スキーマは不変で件数が増えるだけ。風モデル（フェーズ 6-1）は未実装。
 
 統合テスト: `src/test/java/.../FlightPlanApiIntegrationTest.java`、`SimulationSpeedIntegrationTest.java`（`fixtures/scenario-load-minimal.json` は [docs/test-data/scenario-load-minimal.json](docs/test-data/scenario-load-minimal.json) と同一内容）。200 機 `nextStep` 計測は `NextStepTwoHundredAircraftPerformanceTest.java`（1 ティック平均 100ms 超で失敗。多くの環境で 1ms 未満）。200 機 `getAllConflictAlerts` 計測は `ConflictDetectionTwoHundredAircraftPerformanceTest.java`（API と同経路、平均 100ms 超で失敗。README のコンフリクト目安と整合）。
 

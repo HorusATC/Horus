@@ -110,7 +110,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 
 レーダー画面の残り。
 
-- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。リーダー線の自動配置、方位目盛、セクター境界（ロードマップ 2-5、Deferred）、風・ATIS・使用滑走路（ロードマップ 6-1、6-2）。
+- 測距線と滑走路までの距離・時間 → Done（[20261122-runway-distance-rbl](../20261122-runway-distance-rbl/spec.md)）。ATIS・使用滑走路 → Done（風なし。[20261122-atis-runway-in-use](../20261122-atis-runway-in-use/spec.md)）。リーダー線の自動配置、方位目盛、セクター境界（ロードマップ 2-5、Deferred）、風モデル（ロードマップ 6-1）は残課題。
 
 訓練運用の残り。
 

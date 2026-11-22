@@ -17,6 +17,7 @@ import SelectedCallsignDisplay from "@/components/selectedCallsignDisplay";
 import FlightPlanDisplay from "@/components/flightPlanDisplay";
 import InstructionMemo from "@/components/instructionMemo";
 import ConflictSummaryStrip from "@/components/conflictSummaryStrip";
+import AtisPanel from "@/components/atisPanel";
 import MsawAlertBanner from "@/components/msawAlertBanner";
 import SeparationViolationAlerts from "@/components/separationViolationAlerts";
 import SelectedAircraftConflictsPanel from "@/components/selectedAircraftConflictsPanel";
@@ -41,6 +42,7 @@ export default function ControllerPage() {
                         <div className="flex min-h-0 w-full min-w-0 flex-1">
                           <div className="relative h-full min-h-0 min-w-0 flex-1">
                             <ConflictSummaryStrip />
+                            <AtisPanel editable />
                             <MsawAlertBanner />
                             <SeparationViolationAlerts />
                             <RadarCanvas />

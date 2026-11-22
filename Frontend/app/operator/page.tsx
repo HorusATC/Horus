@@ -19,6 +19,7 @@ import SelectedCallsignDisplay from "@/components/selectedCallsignDisplay";
 import FlightPlanControl from "@/components/flightPlanControl";
 import SimulationControlButtons from "@/components/simulationControlButtons";
 import ConflictSummaryStrip from "@/components/conflictSummaryStrip";
+import AtisPanel from "@/components/atisPanel";
 import SeparationViolationAlerts from "@/components/separationViolationAlerts";
 import SelectedAircraftConflictsPanel from "@/components/selectedAircraftConflictsPanel";
 import { Metadata } from "next";
@@ -42,6 +43,7 @@ export default function OperatorPage() {
                         <div className="flex h-full min-h-0 w-full min-w-0 flex-1">
                           <div className="relative h-full min-h-0 min-w-0 flex-1">
                             <ConflictSummaryStrip />
+                            <AtisPanel editable={false} />
                             <SeparationViolationAlerts />
                             <RadarCanvas />
                           </div>

@@ -83,6 +83,46 @@ public final class RunwayCatalog {
         return result;
     }
 
+    /**
+     * Opposite runway end derived from one catalog definition (heading + length offset).
+     * Coordinates are geometric derivatives of the source entry, not AIP survey values.
+     */
+    public static RunwayDefinition deriveReciprocal(RunwayDefinition source) {
+        double lengthNm = source.lengthM() * NM_PER_METER;
+        double[] oppositeThreshold = GeodeticUtils.offsetPointNm(
+                source.thresholdLatitude(),
+                source.thresholdLongitude(),
+                source.heading(),
+                lengthNm);
+        return new RunwayDefinition(
+                source.airportIcao(),
+                reciprocalDesignator(source.designator()),
+                (int) Math.round(normalizeHeading(source.heading() + 180)),
+                oppositeThreshold[0],
+                oppositeThreshold[1],
+                source.lengthM());
+    }
+
+    static String reciprocalDesignator(String designator) {
+        String trimmed = designator.trim().toUpperCase(Locale.ROOT);
+        int i = 0;
+        while (i < trimmed.length() && Character.isDigit(trimmed.charAt(i))) {
+            i++;
+        }
+        if (i == 0) {
+            throw new IllegalArgumentException("Invalid runway designator: " + designator);
+        }
+        int number = Integer.parseInt(trimmed.substring(0, i));
+        String suffix = trimmed.substring(i);
+        int reciprocalNumber = ((number - 1 + 18) % 36) + 1;
+        String reciprocalSuffix = switch (suffix) {
+            case "L" -> "R";
+            case "R" -> "L";
+            default -> suffix;
+        };
+        return String.format(Locale.ROOT, "%02d%s", reciprocalNumber, reciprocalSuffix);
+    }
+
     private static double normalizeHeading(double heading) {
         double h = heading % 360;
         return h < 0 ? h + 360 : h;
@@ -93,13 +133,15 @@ public final class RunwayCatalog {
             JsonNode root = OBJECT_MAPPER.readTree(is);
             List<RunwayDefinition> list = new ArrayList<>();
             for (JsonNode node : root.get("runways")) {
-                list.add(new RunwayDefinition(
+                RunwayDefinition base = new RunwayDefinition(
                         node.get("airportIcao").asText(),
                         node.get("designator").asText(),
                         node.get("heading").asInt(),
                         node.get("thresholdLatitude").asDouble(),
                         node.get("thresholdLongitude").asDouble(),
-                        node.get("lengthM").asInt()));
+                        node.get("lengthM").asInt());
+                list.add(base);
+                list.add(deriveReciprocal(base));
             }
             return list;
         } catch (IOException e) {
