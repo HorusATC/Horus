@@ -6,10 +6,19 @@ const repoRoot = process.cwd();
  * @param {string[]} filenames
  * @returns {string}
  */
+function prettierWrite(filenames) {
+  // Use Frontend's prettier binary so format matches `cd Frontend && npm run format:check`
+  const files = filenames.map((f) => JSON.stringify(f)).join(" ");
+  return `npm exec --prefix Frontend -- prettier --write ${files}`;
+}
+
+/**
+ * @param {string[]} filenames
+ * @returns {string}
+ */
 function eslintFix(filenames) {
   const files = filenames.map((f) => JSON.stringify(f)).join(" ");
   const pluginsRoot = JSON.stringify(path.join(repoRoot, "Frontend"));
-  // Absolute paths + resolve-plugins-relative-to avoids needing a shell `cd`
   return `npm exec --prefix Frontend -- eslint --fix --resolve-plugins-relative-to ${pluginsRoot} ${files}`;
 }
 
@@ -22,8 +31,7 @@ function spotlessApply() {
 }
 
 export default {
-  // lint-staged appends staged file paths to this command
-  "Frontend/**/*.{ts,tsx,js,jsx,json,css,md}": "prettier --write",
+  "Frontend/**/*.{ts,tsx,js,jsx,json,css,md}": prettierWrite,
   "Frontend/**/*.{ts,tsx}": eslintFix,
   "Backend/**/*.java": spotlessApply,
 };

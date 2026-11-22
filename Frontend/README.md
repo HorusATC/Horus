@@ -333,6 +333,7 @@ npm start
 ### よくある問題と解決方法
 
 1. **Tailwindクラスが適用されない**
+
    - `tailwind.config.ts`の設定を確認
    - CSSのビルドとキャッシュクリア
 
