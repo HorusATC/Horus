@@ -1,5 +1,7 @@
 package jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft;
 
+import java.util.List;
+
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.exception.ApproachControlReleasedException;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.behavior.FlightBehavior;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.aircraft.characteristics.AircraftCharacteristics;
@@ -7,6 +9,7 @@ import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.Fl
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.FlightPlanWaypoint;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldInstruction;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldLeg;
+import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldPhase;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldTurnDirection;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.HoldingPatternGeometry;
 import jp.ac.tohoku.qse.takahashi.AtcSimulator.domain.model.entity.flightplan.NavigationMode;
@@ -55,12 +58,19 @@ public abstract class AircraftBase implements Aircraft {
     protected boolean resumeFlightPlanAfterDirectTo;
     protected boolean markedForRemoval;
     protected FixPosition holdingFix;
+    protected String holdingFixName;
     protected FixPosition holdingOutboundTarget;
     protected HoldTurnDirection holdTurnDirection;
     protected HoldLeg holdLeg;
     protected double holdInboundCourseDeg;
-    protected boolean holdingToOutboundLeg;
+    protected HoldPhase holdPhase;
     protected boolean holdingEntryCompleted;
+    protected double holdFrozenTurnRateDegPerSec;
+    protected double holdFrozenTurnRadiusNm;
+    protected double holdFrozenOutboundLegNm;
+    /** Elapsed sim seconds on the outbound leg after abeam/rollout timing start. */
+    protected double holdOutboundLegElapsedSec;
+    protected boolean holdOutboundTimingStarted;
     protected int resumeFlightPlanIndexAfterHold;
     protected Integer instructedIndicatedAirspeedKnots;
     protected boolean finalApproachCoursePending;
@@ -79,7 +89,8 @@ public abstract class AircraftBase implements Aircraft {
     private static final double WAYPOINT_PASS_THRESHOLD_MAX_NM = 5.0;
     private static final double WAYPOINT_PASS_SECONDS = 5.0;
     private static final double HOLD_WAYPOINT_PASS_THRESHOLD_NM = 0.25;
-    private static final double HOLD_TURN_FORCE_THRESHOLD_DEG = 45.0;
+    private static final double HOLD_HEADING_CAPTURE_DEG = 2.0;
+    private static final double HOLD_ABEAM_TOLERANCE_NM = 0.15;
 
     private static final boolean WP_DEBUG = "true".equalsIgnoreCase(System.getProperty("flightplan.wp.debug"));
 
@@ -103,12 +114,18 @@ public abstract class AircraftBase implements Aircraft {
         this.resumeFlightPlanAfterDirectTo = false;
         this.markedForRemoval = false;
         this.holdingFix = null;
+        this.holdingFixName = null;
         this.holdingOutboundTarget = null;
         this.holdTurnDirection = HoldTurnDirection.RIGHT;
         this.holdLeg = new HoldLeg.DistanceNm(HoldLeg.DEFAULT_OUTBOUND_LEG_NM);
         this.holdInboundCourseDeg = 0.0;
-        this.holdingToOutboundLeg = false;
+        this.holdPhase = HoldPhase.ENTRY;
         this.holdingEntryCompleted = false;
+        this.holdFrozenTurnRateDegPerSec = HoldingPatternGeometry.STANDARD_RATE_DEG_PER_SEC;
+        this.holdFrozenTurnRadiusNm = 0.0;
+        this.holdFrozenOutboundLegNm = HoldLeg.DEFAULT_OUTBOUND_LEG_NM;
+        this.holdOutboundLegElapsedSec = 0.0;
+        this.holdOutboundTimingStarted = false;
         this.resumeFlightPlanIndexAfterHold = -1;
     }
 
@@ -124,23 +141,25 @@ public abstract class AircraftBase implements Aircraft {
     @Override
     public void calculateNextAircraftVector(double simDeltaSeconds) {
         updateInstructedVectorFromNavigation();
+        advanceHoldingPhase(simDeltaSeconds);
 
+        double turnRate = resolveActiveTurnRateDegPerSec();
         Heading nextHeading;
         if (shouldForceHoldTurn(HoldTurnDirection.RIGHT)) {
             nextHeading = calculateNextHeadingRightTurn(
                     this.aircraftVector.heading.toDouble(),
                     this.instructedVector.instructedHeading.toDouble(),
-                    this.characteristics.getMaxTurnRate());
+                    turnRate);
         } else if (shouldForceHoldTurn(HoldTurnDirection.LEFT)) {
             nextHeading = calculateNextHeadingLeftTurn(
                     this.aircraftVector.heading.toDouble(),
                     this.instructedVector.instructedHeading.toDouble(),
-                    this.characteristics.getMaxTurnRate());
+                    turnRate);
         } else {
             nextHeading = flightBehavior.calculateNextHeading(
                     this.aircraftVector.heading.toDouble(),
                     this.instructedVector.instructedHeading.toDouble(),
-                    this.characteristics.getMaxTurnRate());
+                    turnRate);
         }
 
         double targetGroundSpeedKnots = resolveEffectiveTargetGroundSpeedKnots();
@@ -173,30 +192,28 @@ public abstract class AircraftBase implements Aircraft {
         }
     }
 
+    private double resolveActiveTurnRateDegPerSec() {
+        if (navigationMode == NavigationMode.HOLDING && holdingEntryCompleted) {
+            return holdFrozenTurnRateDegPerSec;
+        }
+        return this.characteristics.getMaxTurnRate();
+    }
+
     private boolean shouldForceHoldTurn(HoldTurnDirection direction) {
         if (navigationMode != NavigationMode.HOLDING
                 || !holdingEntryCompleted
                 || holdTurnDirection != direction) {
             return false;
         }
-        FixPosition target = resolveNavigationTarget();
-        if (target == null) {
-            return false;
-        }
-        double currentHeading = this.aircraftVector.heading.toDouble();
-        double targetHeading = flightBehavior.calculateTurnAngle(aircraftPosition, currentHeading, target);
-        double clockwiseDelta = GeodeticUtils.normalizeAngle(targetHeading - currentHeading);
-        double counterClockwiseDelta = 360.0 - clockwiseDelta;
-        if (direction == HoldTurnDirection.RIGHT) {
-            return counterClockwiseDelta >= HOLD_TURN_FORCE_THRESHOLD_DEG
-                    && counterClockwiseDelta < clockwiseDelta;
-        }
-        return clockwiseDelta >= HOLD_TURN_FORCE_THRESHOLD_DEG
-                && clockwiseDelta < counterClockwiseDelta;
+        return holdPhase == HoldPhase.OUTBOUND_TURN || holdPhase == HoldPhase.INBOUND_TURN;
     }
 
     private void updateInstructedVectorFromNavigation() {
         if (navigationMode == NavigationMode.HEADING) {
+            return;
+        }
+        if (navigationMode == NavigationMode.HOLDING && holdingFix != null && holdingEntryCompleted) {
+            updateInstructedVectorForHoldingRacetrack();
             return;
         }
         FixPosition target = resolveNavigationTarget();
@@ -209,6 +226,22 @@ public abstract class AircraftBase implements Aircraft {
         this.instructedVector = new InstructedVector(new Heading(bearing), targetAltitude, targetSpeed);
     }
 
+    private void updateInstructedVectorForHoldingRacetrack() {
+        Altitude targetAltitude = resolveTargetAltitude();
+        GroundSpeed targetSpeed = resolveTargetSpeed();
+        double heading = switch (holdPhase) {
+            case OUTBOUND_TURN, OUTBOUND_LEG -> HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg);
+            case INBOUND_TURN -> holdInboundCourseDeg;
+            case INBOUND_LEG, ENTRY -> flightBehavior.calculateTurnAngle(
+                    aircraftPosition, aircraftVector.heading.toDouble(), holdingFix);
+        };
+        if (holdPhase == HoldPhase.OUTBOUND_LEG && holdingOutboundTarget != null) {
+            heading = flightBehavior.calculateTurnAngle(
+                    aircraftPosition, aircraftVector.heading.toDouble(), holdingOutboundTarget);
+        }
+        this.instructedVector = new InstructedVector(new Heading(heading), targetAltitude, targetSpeed);
+    }
+
     private FixPosition resolveNavigationTarget() {
         if (navigationMode == NavigationMode.DIRECT_TO && directToTarget != null) {
             return directToTarget;
@@ -219,12 +252,92 @@ public abstract class AircraftBase implements Aircraft {
                     .orElse(null);
         }
         if (navigationMode == NavigationMode.HOLDING && holdingFix != null) {
-            if (!holdingEntryCompleted) {
+            if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY || holdPhase == HoldPhase.INBOUND_LEG) {
                 return holdingFix;
             }
-            return holdingToOutboundLeg ? holdingOutboundTarget : holdingFix;
+            if (holdPhase == HoldPhase.OUTBOUND_LEG) {
+                return holdingOutboundTarget;
+            }
+            return null;
         }
         return null;
+    }
+
+    private void advanceHoldingPhase(double simDeltaSeconds) {
+        if (navigationMode != NavigationMode.HOLDING || !holdingEntryCompleted || holdingFix == null) {
+            return;
+        }
+        double heading = aircraftVector.heading.toDouble();
+        double outbound = HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg);
+        switch (holdPhase) {
+            case OUTBOUND_TURN -> {
+                if (headingCapture(heading, outbound)) {
+                    holdPhase = HoldPhase.OUTBOUND_LEG;
+                    holdOutboundLegElapsedSec = 0.0;
+                    holdOutboundTimingStarted = false;
+                    maybeStartOutboundTiming();
+                }
+            }
+            case OUTBOUND_LEG -> {
+                maybeStartOutboundTiming();
+                if (holdOutboundTimingStarted) {
+                    holdOutboundLegElapsedSec += simDeltaSeconds;
+                }
+                if (outboundLegComplete()) {
+                    holdPhase = HoldPhase.INBOUND_TURN;
+                }
+            }
+            case INBOUND_TURN -> {
+                if (headingCapture(heading, holdInboundCourseDeg)) {
+                    holdPhase = HoldPhase.INBOUND_LEG;
+                    previousDistanceToWaypoint = Double.MAX_VALUE;
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void maybeStartOutboundTiming() {
+        if (holdOutboundTimingStarted || holdingFix == null) {
+            return;
+        }
+        FixPosition here = new FixPosition(aircraftPosition.latitude, aircraftPosition.longitude);
+        boolean abeam = HoldingPatternGeometry.isAbeamOutbound(
+                here,
+                holdingFix,
+                holdInboundCourseDeg,
+                holdTurnDirection,
+                holdFrozenTurnRadiusNm,
+                HOLD_ABEAM_TOLERANCE_NM);
+        boolean rolledOut = headingCapture(
+                aircraftVector.heading.toDouble(),
+                HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg));
+        // FAA AIP ENR 1.5: start at later of abeam/fix; if abeam unknown, at outbound turn complete.
+        if (abeam || rolledOut) {
+            holdOutboundTimingStarted = true;
+        }
+    }
+
+    private boolean outboundLegComplete() {
+        if (!holdOutboundTimingStarted || holdingFix == null) {
+            return false;
+        }
+        if (holdLeg instanceof HoldLeg.TimedMinutes timed) {
+            return holdOutboundLegElapsedSec >= timed.minutes() * 60.0;
+        }
+        FixPosition here = new FixPosition(aircraftPosition.latitude, aircraftPosition.longitude);
+        FixPosition turnExit = HoldingPatternGeometry.outboundTurnExit(
+                holdingFix, holdInboundCourseDeg, holdTurnDirection, holdFrozenTurnRadiusNm);
+        double alongOutbound = HoldingPatternGeometry.alongTrackNm(
+                turnExit, here, HoldingPatternGeometry.outboundBearingDeg(holdInboundCourseDeg));
+        return alongOutbound >= holdFrozenOutboundLegNm - HOLD_WAYPOINT_PASS_THRESHOLD_NM;
+    }
+
+    private static boolean headingCapture(double currentHeading, double targetHeading) {
+        double delta = Math.abs(GeodeticUtils.normalizeAngle(currentHeading) - GeodeticUtils.normalizeAngle(targetHeading));
+        delta = Math.min(delta, 360.0 - delta);
+        return delta <= HOLD_HEADING_CAPTURE_DEG;
     }
 
     private Altitude resolveTargetAltitude() {
@@ -303,7 +416,12 @@ public abstract class AircraftBase implements Aircraft {
             return;
         }
         if (navigationMode == NavigationMode.HOLDING) {
-            onHoldingTargetReached();
+            // Only fix passages advance the racetrack; outbound end is handled in advanceHoldingPhase.
+            if (!holdingEntryCompleted
+                    || holdPhase == HoldPhase.ENTRY
+                    || holdPhase == HoldPhase.INBOUND_LEG) {
+                onHoldingTargetReached();
+            }
             return;
         }
 
@@ -358,22 +476,39 @@ public abstract class AircraftBase implements Aircraft {
     }
 
     private void onHoldingTargetReached() {
-        if (holdingFix == null || holdingOutboundTarget == null) {
+        if (holdingFix == null) {
             setResumeNavigation();
             return;
         }
-        if (!holdingEntryCompleted) {
-            holdingEntryCompleted = true;
-            holdingToOutboundLeg = true;
-            refreshOutboundTargetFromCurrentGroundSpeed();
-            previousDistanceToWaypoint = Double.MAX_VALUE;
+        if (!holdingEntryCompleted || holdPhase == HoldPhase.ENTRY || holdPhase == HoldPhase.INBOUND_LEG) {
+            beginOutboundFromFix();
             return;
         }
-        holdingToOutboundLeg = !holdingToOutboundLeg;
-        if (holdingToOutboundLeg) {
-            refreshOutboundTargetFromCurrentGroundSpeed();
-        }
         previousDistanceToWaypoint = Double.MAX_VALUE;
+    }
+
+    /**
+     * Freeze turn rate / radius / outbound length at the start of each outbound circuit
+     * so flight and overlay stay aligned until the next fix passage.
+     */
+    private void beginOutboundFromFix() {
+        double groundSpeedKt = this.aircraftVector.groundSpeed.toDouble();
+        this.holdFrozenTurnRateDegPerSec = HoldingPatternGeometry.holdTurnRateDegPerSec(groundSpeedKt);
+        this.holdFrozenTurnRadiusNm = HoldingPatternGeometry.turnRadiusNm(
+                groundSpeedKt, this.holdFrozenTurnRateDegPerSec);
+        this.holdFrozenOutboundLegNm = HoldingPatternGeometry.outboundDistanceNm(holdLeg, groundSpeedKt);
+        this.holdingOutboundTarget = HoldingPatternGeometry.outboundLegEnd(
+                holdingFix,
+                holdInboundCourseDeg,
+                holdTurnDirection,
+                holdLeg,
+                groundSpeedKt,
+                holdFrozenTurnRadiusNm);
+        this.holdingEntryCompleted = true;
+        this.holdPhase = HoldPhase.OUTBOUND_TURN;
+        this.holdOutboundLegElapsedSec = 0.0;
+        this.holdOutboundTimingStarted = false;
+        this.previousDistanceToWaypoint = Double.MAX_VALUE;
     }
 
     private double calculateDynamicThreshold() {
@@ -677,17 +812,27 @@ public abstract class AircraftBase implements Aircraft {
         clearGoAroundActive();
         clearFinalApproachInterceptState();
         this.holdingFix = fix;
+        this.holdingFixName = instruction.fixName();
         this.holdTurnDirection = instruction.turnDirection();
         this.holdLeg = instruction.leg();
         this.holdInboundCourseDeg = HoldingPatternGeometry.resolveInboundCourseDeg(
                 instruction.inboundCourseDeg(), instruction.fixName(), fix);
-        this.holdingToOutboundLeg = false;
+        this.holdPhase = HoldPhase.ENTRY;
         this.holdingEntryCompleted = false;
-        this.holdingOutboundTarget = HoldingPatternGeometry.outboundTarget(
+        double groundSpeedKt = this.aircraftVector.groundSpeed.toDouble();
+        this.holdFrozenTurnRateDegPerSec = HoldingPatternGeometry.holdTurnRateDegPerSec(groundSpeedKt);
+        this.holdFrozenTurnRadiusNm = HoldingPatternGeometry.turnRadiusNm(
+                groundSpeedKt, this.holdFrozenTurnRateDegPerSec);
+        this.holdFrozenOutboundLegNm = HoldingPatternGeometry.outboundDistanceNm(holdLeg, groundSpeedKt);
+        this.holdingOutboundTarget = HoldingPatternGeometry.outboundLegEnd(
                 fix,
                 this.holdInboundCourseDeg,
+                this.holdTurnDirection,
                 this.holdLeg,
-                this.aircraftVector.groundSpeed.toDouble());
+                groundSpeedKt,
+                this.holdFrozenTurnRadiusNm);
+        this.holdOutboundLegElapsedSec = 0.0;
+        this.holdOutboundTimingStarted = false;
         this.resumeFlightPlanIndexAfterHold = computeResumeFlightPlanIndexAfterHold(instruction.fixName());
         this.navigationMode = NavigationMode.HOLDING;
         this.directToTarget = null;
@@ -705,14 +850,60 @@ public abstract class AircraftBase implements Aircraft {
         return holdInboundCourseDeg;
     }
 
+    public HoldPhase getHoldPhase() {
+        return holdPhase;
+    }
+
+    public HoldLeg getHoldLeg() {
+        return holdLeg;
+    }
+
+    public String getHoldingFixName() {
+        return holdingFixName;
+    }
+
+    public FixPosition getHoldingFix() {
+        return holdingFix;
+    }
+
+    public double getHoldFrozenTurnRateDegPerSec() {
+        return holdFrozenTurnRateDegPerSec;
+    }
+
+    public double getHoldFrozenTurnRadiusNm() {
+        return holdFrozenTurnRadiusNm;
+    }
+
+    public double getHoldFrozenOutboundLegNm() {
+        return holdFrozenOutboundLegNm;
+    }
+
     public FixPosition getHoldingOutboundTarget() {
         return holdingOutboundTarget;
+    }
+
+    /**
+     * Instructed racetrack vertices from the frozen geometry used for both flight and overlay.
+     */
+    public List<FixPosition> getHoldingPatternVertices() {
+        if (navigationMode != NavigationMode.HOLDING || holdingFix == null) {
+            return List.of();
+        }
+        return HoldingPatternGeometry.buildPattern(
+                holdingFix,
+                holdInboundCourseDeg,
+                holdTurnDirection,
+                holdFrozenOutboundLegNm,
+                holdFrozenTurnRadiusNm);
     }
 
     public void setResumeNavigation() {
         requireApproachControl();
         clearGoAroundActive();
         clearFinalApproachInterceptState();
+        this.directToTarget = null;
+        this.directToFixName = null;
+        this.resumeFlightPlanAfterDirectTo = false;
         if (flightPlan != null) {
             if (resumeFlightPlanIndexAfterHold >= flightPlan.getWaypoints().size()) {
                 this.navigationMode = NavigationMode.HEADING;
@@ -723,24 +914,12 @@ public abstract class AircraftBase implements Aircraft {
                 this.currentWaypointIndex = resumeFlightPlanIndexAfterHold;
             }
             this.navigationMode = NavigationMode.FLIGHT_PLAN;
-            this.directToTarget = null;
-            this.directToFixName = null;
-            this.resumeFlightPlanAfterDirectTo = false;
             clearHoldingState();
-        }
-    }
-
-    private void refreshOutboundTargetFromCurrentGroundSpeed() {
-        if (holdingFix == null || holdLeg == null) {
             return;
         }
-        double groundSpeedKt = this.aircraftVector.groundSpeed.toDouble();
-        if (holdLeg instanceof HoldLeg.TimedMinutes
-                && groundSpeedKt < HoldingPatternGeometry.MIN_GROUND_SPEED_KT_FOR_TIMED_LEG) {
-            return;
-        }
-        this.holdingOutboundTarget = HoldingPatternGeometry.outboundTarget(
-                holdingFix, holdInboundCourseDeg, holdLeg, groundSpeedKt);
+        // No flight plan: still end the hold (and any prior HOLDING) so Resume always clears overlay.
+        this.navigationMode = NavigationMode.HEADING;
+        clearHoldingState();
     }
 
     private void clearGoAroundActive() {
@@ -760,12 +939,18 @@ public abstract class AircraftBase implements Aircraft {
 
     private void clearHoldingState() {
         this.holdingFix = null;
+        this.holdingFixName = null;
         this.holdingOutboundTarget = null;
         this.holdTurnDirection = HoldTurnDirection.RIGHT;
         this.holdLeg = new HoldLeg.DistanceNm(HoldLeg.DEFAULT_OUTBOUND_LEG_NM);
         this.holdInboundCourseDeg = 0.0;
-        this.holdingToOutboundLeg = false;
+        this.holdPhase = HoldPhase.ENTRY;
         this.holdingEntryCompleted = false;
+        this.holdFrozenTurnRateDegPerSec = HoldingPatternGeometry.STANDARD_RATE_DEG_PER_SEC;
+        this.holdFrozenTurnRadiusNm = 0.0;
+        this.holdFrozenOutboundLegNm = HoldLeg.DEFAULT_OUTBOUND_LEG_NM;
+        this.holdOutboundLegElapsedSec = 0.0;
+        this.holdOutboundTimingStarted = false;
         this.resumeFlightPlanIndexAfterHold = -1;
     }
 

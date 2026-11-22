@@ -227,7 +227,7 @@ npm run dev
 | POST | `/api/aircraft/{callsign}/flightplan` | 既存機にフライトプランを付与・差し替え |
 | GET | `/api/aircraft/{callsign}/flightplan` | ナビモード・残ウェイポイント等 |
 | POST | `/api/aircraft/{callsign}/direct-to` | Direct To |
-| POST | `/api/aircraft/{callsign}/hold` | Hold At Fix。任意の `inboundCourseDeg`（0以上360未満）、`legMinutes` または `legNm`（同時指定不可。省略時 4.0 NM）、`turnDirection` `LEFT`/`RIGHT`（省略時 RIGHT）。省略時の入方向は Fix 名ハッシュ（運用コースではない）。時間レグの距離は対地速度×(分/60) |
+| POST | `/api/aircraft/{callsign}/hold` | Hold At Fix。任意の `inboundCourseDeg`（0以上360未満）、`legMinutes` または `legNm`（同時指定不可。省略時 4.0 NM）、`turnDirection` `LEFT`/`RIGHT`（省略時 RIGHT）。省略時の入方向は Fix 名ハッシュ（運用コースではない）。飛行は無風・標準率（min(3°/s, バンク30°)）のレーストラック。時間レグはアビーム／ロールアウト後に計時。契約フィールドは #129 のまま |
 | POST | `/api/aircraft/{callsign}/final-approach` | 最終進入延長線上の会合点へ向かい、到達後に進入コース針路へ移る |
 | POST | `/api/aircraft/{callsign}/go-around` | 進入復行。滑走路方位のまま上昇（上昇高度は現在高度より 500 ft 以上、末端から 120NM 以内） |
 | POST | `/api/aircraft/{callsign}/tower-handoff` | タワー移管。`HEADING` で末端 10NM 以内、かつ指示対気速度を換算した予測軌道が末端 0.5NM 以内を通ること。末端 0.5NM 以内でも `HEADING` は必須。移管後の進入指示は 409。末端 0.5NM 以内でシミュレーションから外れる |
@@ -386,8 +386,13 @@ RESTful APIを提供しており、詳細なAPI仕様は`UranosAPI.yml`ファイ
    - `POST /api/aircraft/{callsign}/squawk` - **スクオークコード**を割り当て（Body: `{ "squawk": "1200" }`、4桁オクタル）
 
 2. **位置情報取得**（JSON 形式）
-   - `GET /aircraft/location/all` - 全航空機の現在位置を取得（各要素に `atcClearance`、未割当時は `null` の `squawk`、`navigationMode`、および **`msawAlert`** を含む。`msawAlert` は未警報時 `null`、警報時は `{ type: "MSA"|"LOW", msaFt, trigger: "CURRENT"|"PREDICTED" }`）
+   - `GET /aircraft/location/all` - 全航空機の現在位置を取得（各要素に `atcClearance`、未割当時は `null` の `squawk`、`navigationMode`、**`msawAlert`**、および待機中のみ **`holding`** を含む。`msawAlert` は未警報時 `null`、警報時は `{ type: "MSA"|"LOW", msaFt, trigger: "CURRENT"|"PREDICTED" }`。`holding` は `navigationMode=HOLDING` のときだけ出る指示レーストラック（`fixName` / 入方向 / 旋回 / レグ / `turnRadiusNm` / 閉じた `pattern` 頂点列）。同一 Backend 幾何が飛行とオーバーレイの両方を駆動する。非待機機では `holding` キー自体が無い）
    - `GET /aircraft/location?callsign={callsign}` - 特定航空機の位置を取得
+
+#### ホールディング（標準率レーストラック）
+
+- フィックス到着後は AIM 5-3-8 / FAA AIP ENR 1.5 にならい、ω = min(3°/s, バンク 30° の旋回率）で 180° 旋回し、出方向レグは旋回直径ぶんオフセットした平行レグを飛ぶ（無風。戦闘機・ヘリの高い `maxTurnRate` も待機中はこの式に落とす）。
+- 残課題（非目標）: 進入セクター（ダイレクト／パラレル／ティアドロップ）、公示パターン、EAT／EFC、風修正。
 
 #### MSAW（最低安全高度警報・簡易版）
 

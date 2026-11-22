@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +32,7 @@ class HoldingPatternGeometryTest {
 
     private static final double DISTANCE_TOLERANCE_NM = 0.05;
     private static final double BEARING_TOLERANCE_DEG = 1.0;
+    private static final double HEADING_TOLERANCE_DEG = 2.0;
 
     @Test
     @DisplayName("inbound 090°, 180 kt, 1.00 min → outbound 3.00 NM / bearing 270°")
@@ -37,6 +40,61 @@ class HoldingPatternGeometryTest {
         double distanceNm = HoldingPatternGeometry.outboundDistanceNm(new HoldLeg.TimedMinutes(1.0), 180.0);
         assertEquals(3.00, distanceNm, DISTANCE_TOLERANCE_NM);
         assertEquals(270.0, HoldingPatternGeometry.outboundBearingDeg(90.0), BEARING_TOLERANCE_DEG);
+    }
+
+    @Test
+    @DisplayName("180 kt / 3°/s → r = 3/π NM")
+    void turnRadius_180ktStandardRate_isThreeOverPiNm() {
+        double rate = HoldingPatternGeometry.holdTurnRateDegPerSec(180.0);
+        assertEquals(3.0, rate, 1e-9);
+        double radius = HoldingPatternGeometry.turnRadiusNm(180.0, rate);
+        assertEquals(3.0 / Math.PI, radius, DISTANCE_TOLERANCE_NM);
+    }
+
+    @Test
+    @DisplayName("250 kt selects bank-30° limit below 3°/s")
+    void turnRate_250kt_isBankLimited() {
+        double rate = HoldingPatternGeometry.holdTurnRateDegPerSec(250.0);
+        double speedMps = 250.0 * HoldingPatternGeometry.KT_TO_M_PER_S;
+        double expectedBank = Math.toDegrees(
+                HoldingPatternGeometry.GRAVITY_M_PER_S2
+                        * Math.tan(Math.toRadians(30.0))
+                        / speedMps);
+        assertEquals(expectedBank, rate, 0.01);
+        assertTrue(rate < 3.0, "250 kt bank-30 rate must be below standard rate, was " + rate);
+        double radius = HoldingPatternGeometry.turnRadiusNm(250.0, rate);
+        assertEquals(250.0 / (20.0 * Math.PI * rate), radius, 1e-9);
+    }
+
+    @Test
+    @DisplayName("RIGHT 090° / 1 min / 180 kt: turn exit at 180° / 2r")
+    void rightTurnExit_inbound090_isSouthAtDiameter() {
+        FixPosition fix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
+        double radius = HoldingPatternGeometry.turnRadiusNm(180.0);
+        FixPosition exit = HoldingPatternGeometry.outboundTurnExit(
+                fix, 90.0, HoldTurnDirection.RIGHT, radius);
+        double bearing = HoldingPatternGeometry.planarBearingDeg(fix, exit);
+        double distance = HoldingPatternGeometry.planarDistanceNm(fix, exit);
+        assertEquals(180.0, bearing, BEARING_TOLERANCE_DEG);
+        assertEquals(2.0 * radius, distance, DISTANCE_TOLERANCE_NM);
+    }
+
+    @Test
+    @DisplayName("LEFT 090° is the north mirror of RIGHT at the same radius")
+    void leftTurnExit_isMirrorOfRight() {
+        FixPosition fix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
+        double radius = HoldingPatternGeometry.turnRadiusNm(180.0);
+        FixPosition right = HoldingPatternGeometry.outboundTurnExit(
+                fix, 90.0, HoldTurnDirection.RIGHT, radius);
+        FixPosition left = HoldingPatternGeometry.outboundTurnExit(
+                fix, 90.0, HoldTurnDirection.LEFT, radius);
+        assertEquals(180.0, HoldingPatternGeometry.planarBearingDeg(fix, right), BEARING_TOLERANCE_DEG);
+        assertEquals(0.0, HoldingPatternGeometry.planarBearingDeg(fix, left), BEARING_TOLERANCE_DEG);
+        assertEquals(
+                HoldingPatternGeometry.planarDistanceNm(fix, right),
+                HoldingPatternGeometry.planarDistanceNm(fix, left),
+                DISTANCE_TOLERANCE_NM);
+        assertNotEquals(right.latitude.toDouble(), left.latitude.toDouble(), 1e-6);
     }
 
     @Test
@@ -60,14 +118,23 @@ class HoldingPatternGeometryTest {
     }
 
     @Test
-    @DisplayName("LEFT and RIGHT share the same outbound point for the same inbound and leg")
-    void leftAndRight_sameOutboundTarget() {
+    @DisplayName("pattern is closed and includes fix and outbound end")
+    void pattern_isClosedAndMatchesGeometry() {
         FixPosition fix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
-        HoldLeg leg = new HoldLeg.DistanceNm(4.0);
-        FixPosition right = HoldingPatternGeometry.outboundTarget(fix, 90.0, leg, 250.0);
-        FixPosition left = HoldingPatternGeometry.outboundTarget(fix, 90.0, leg, 250.0);
-        assertEquals(right.latitude.toDouble(), left.latitude.toDouble(), 1e-9);
-        assertEquals(right.longitude.toDouble(), left.longitude.toDouble(), 1e-9);
+        double radius = HoldingPatternGeometry.turnRadiusNm(180.0);
+        double legNm = 3.0;
+        List<FixPosition> pattern = HoldingPatternGeometry.buildPattern(
+                fix, 90.0, HoldTurnDirection.RIGHT, legNm, radius);
+        assertTrue(pattern.size() >= 4 + 2 * (HoldingPatternGeometry.ARC_SEGMENTS - 1));
+        FixPosition first = pattern.get(0);
+        FixPosition last = pattern.get(pattern.size() - 1);
+        assertEquals(first.latitude.toDouble(), last.latitude.toDouble(), 1e-9);
+        assertEquals(first.longitude.toDouble(), last.longitude.toDouble(), 1e-9);
+        FixPosition outboundEnd = HoldingPatternGeometry.outboundLegEnd(
+                fix, 90.0, HoldTurnDirection.RIGHT, new HoldLeg.DistanceNm(legNm), 180.0, radius);
+        boolean sawOutboundEnd = pattern.stream().anyMatch(p ->
+                HoldingPatternGeometry.planarDistanceNm(p, outboundEnd) < DISTANCE_TOLERANCE_NM);
+        assertTrue(sawOutboundEnd, "pattern must include outbound leg end");
     }
 
     @Test
@@ -96,45 +163,113 @@ class HoldingPatternGeometryTest {
     }
 
     @Test
-    @DisplayName("LEFT vs RIGHT force opposite turn signs after entry")
-    void leftAndRight_forceOppositeTurnSigns() throws Exception {
+    @DisplayName("LEFT vs RIGHT force opposite turn signs after entry (mirror outbound ends)")
+    void leftAndRight_forceOppositeTurnSigns() {
         FixPosition holdFix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
-        AircraftBase right = createAircraftAt(holdFix, 250.0);
-        AircraftBase left = createAircraftAt(holdFix, 250.0);
+        AircraftBase right = createAircraftAt(holdFix, 180.0, 3.0);
+        AircraftBase left = createAircraftAt(holdFix, 180.0, 3.0);
 
         right.setHoldAtFix(holdFix, new HoldInstruction(
-                "ABENO", HoldTurnDirection.RIGHT, 90.0, new HoldLeg.DistanceNm(4.0)));
+                "ABENO", HoldTurnDirection.RIGHT, 90.0, new HoldLeg.TimedMinutes(1.0)));
         left.setHoldAtFix(holdFix, new HoldInstruction(
-                "ABENO", HoldTurnDirection.LEFT, 90.0, new HoldLeg.DistanceNm(4.0)));
+                "ABENO", HoldTurnDirection.LEFT, 90.0, new HoldLeg.TimedMinutes(1.0)));
 
-        markHoldingEntryCompleted(right);
-        markHoldingEntryCompleted(left);
-
-        // Heading north while outbound target is west (270°) — shortest turn is left,
-        // so RIGHT must force clockwise and LEFT must force counter-clockwise.
-        setHeading(right, 0.0);
-        setHeading(left, 0.0);
+        placeOnFixAndStartOutbound(right, holdFix, 90.0);
+        placeOnFixAndStartOutbound(left, holdFix, 90.0);
 
         right.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
         left.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
 
-        double rightDelta = signedHeadingDelta(0.0, right.getAircraftVector().heading.toDouble());
-        double leftDelta = signedHeadingDelta(0.0, left.getAircraftVector().heading.toDouble());
-        assertTrue(rightDelta > 0.0, "RIGHT hold should turn clockwise (positive delta), was " + rightDelta);
-        assertTrue(leftDelta < 0.0, "LEFT hold should turn counter-clockwise (negative delta), was " + leftDelta);
-        assertEquals(
-                right.getHoldingOutboundTarget().latitude.toDouble(),
-                left.getHoldingOutboundTarget().latitude.toDouble(),
-                1e-9);
-        assertEquals(
-                right.getHoldingOutboundTarget().longitude.toDouble(),
-                left.getHoldingOutboundTarget().longitude.toDouble(),
-                1e-9);
+        double rightDelta = signedHeadingDelta(90.0, right.getAircraftVector().heading.toDouble());
+        double leftDelta = signedHeadingDelta(90.0, left.getAircraftVector().heading.toDouble());
+        assertTrue(rightDelta > 0.0, "RIGHT hold should turn clockwise, was " + rightDelta);
+        assertTrue(leftDelta < 0.0, "LEFT hold should turn counter-clockwise, was " + leftDelta);
+
+        double rightCross = HoldingPatternGeometry.crossTrackNm(
+                holdFix, right.getHoldingOutboundTarget(), 90.0);
+        double leftCross = HoldingPatternGeometry.crossTrackNm(
+                holdFix, left.getHoldingOutboundTarget(), 90.0);
+        assertTrue(rightCross > 0.5, "RIGHT outbound end must be right of inbound axis");
+        assertTrue(leftCross < -0.5, "LEFT outbound end must be left of inbound axis");
+        assertEquals(Math.abs(rightCross), Math.abs(leftCross), DISTANCE_TOLERANCE_NM);
+    }
+
+    @Test
+    @DisplayName("fighter maxTurnRate 9°/s is capped to hold formula while holding")
+    void fighterTurnRate_cappedDuringHold() {
+        FixPosition holdFix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
+        AircraftBase fighter = createAircraftAt(holdFix, 180.0, 9.0);
+        fighter.setHoldAtFix(holdFix, new HoldInstruction(
+                "ABENO", HoldTurnDirection.RIGHT, 90.0, new HoldLeg.TimedMinutes(1.0)));
+        placeOnFixAndStartOutbound(fighter, holdFix, 90.0);
+        assertEquals(3.0, fighter.getHoldFrozenTurnRateDegPerSec(), 1e-9);
+        double before = fighter.getAircraftVector().heading.toDouble();
+        fighter.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
+        double after = fighter.getAircraftVector().heading.toDouble();
+        double delta = signedHeadingDelta(before, after);
+        assertEquals(3.0, delta, 0.05);
+    }
+
+    @Test
+    @DisplayName("after fix: 180° standard-rate turn then outbound heading; not axial shuttle")
+    void simulation_racetrackNotAxialShuttle() {
+        FixPosition holdFix = new FixPosition(new Latitude(35.0), new Longitude(139.0));
+        AircraftBase aircraft = createAircraftAt(holdFix, 180.0, 3.0);
+        aircraft.setHoldAtFix(holdFix, new HoldInstruction(
+                "ABENO", HoldTurnDirection.RIGHT, 90.0, new HoldLeg.TimedMinutes(1.0)));
+        placeOnFixAndStartOutbound(aircraft, holdFix, 90.0);
+
+        double radius = aircraft.getHoldFrozenTurnRadiusNm();
+        boolean sawOutboundHeading = false;
+        boolean sawOffsetSouth = false;
+        for (int i = 0; i < 70; i++) {
+            aircraft.calculateNextAircraftVector(SimulationTiming.SIM_DELTA_SECONDS);
+            aircraft.calculateNextAircraftPosition(SimulationTiming.SIM_DELTA_SECONDS);
+            double heading = aircraft.getAircraftVector().heading.toDouble();
+            FixPosition here = new FixPosition(
+                    aircraft.getAircraftPosition().latitude,
+                    aircraft.getAircraftPosition().longitude);
+            double cross = HoldingPatternGeometry.crossTrackNm(holdFix, here, 90.0);
+            if (Math.abs(GeodeticUtils.normalizeAngle(heading - 270.0)) < HEADING_TOLERANCE_DEG
+                    || Math.abs(GeodeticUtils.normalizeAngle(heading - 270.0) - 360.0) < HEADING_TOLERANCE_DEG) {
+                sawOutboundHeading = true;
+            }
+            if (cross > radius) {
+                sawOffsetSouth = true;
+            }
+        }
+        assertTrue(sawOutboundHeading, "should roll out on outbound heading 270°");
+        assertTrue(sawOffsetSouth, "path must leave the inbound axis (racetrack offset)");
+        assertEquals(HoldPhase.OUTBOUND_LEG, aircraft.getHoldPhase());
+
+        FixPosition axialOnly = HoldingPatternGeometry.outboundTarget(
+                holdFix, 90.0, new HoldLeg.TimedMinutes(1.0), 180.0);
+        FixPosition racetrackEnd = aircraft.getHoldingOutboundTarget();
+        assertTrue(
+                HoldingPatternGeometry.planarDistanceNm(axialOnly, racetrackEnd) > DISTANCE_TOLERANCE_NM,
+                "outbound end must not be the old axial shuttle target");
+    }
+
+    /**
+     * Proves r = gs / (20 π ω). Mutating the divisor 20→10 makes
+     * {@link #turnRadius_180ktStandardRate_isThreeOverPiNm} fail against 3/π.
+     */
+    @Test
+    @DisplayName("mutation guard: turn radius must use 20π in the denominator")
+    void mutationGuard_turnRadiusUsesTwentyPi() {
+        double groundSpeedKt = 180.0;
+        double omega = 3.0;
+        double product = HoldingPatternGeometry.turnRadiusNm(groundSpeedKt, omega);
+        double correct = groundSpeedKt / (20.0 * Math.PI * omega);
+        double mutatedTen = groundSpeedKt / (10.0 * Math.PI * omega);
+        assertEquals(correct, product, 1e-9);
+        assertNotEquals(mutatedTen, product, 1e-9);
+        assertEquals(3.0 / Math.PI, product, DISTANCE_TOLERANCE_NM);
     }
 
     /**
      * Proves the timed-leg formula is {@code groundSpeedKt * (minutes / 60)}.
-     * Mutating the product divisor to 30 makes {@link #timedLeg_oneAndHalfMinutesAt200kt_isFiveNm} fail.
+     * Mutating the product divisor to 30 makes the 1.5 min / 200 kt case fail.
      */
     @Test
     @DisplayName("mutation guard: timed distance must use minutes/60 (not /30)")
@@ -157,8 +292,8 @@ class HoldingPatternGeometryTest {
         return delta;
     }
 
-    private static AircraftBase createAircraftAt(FixPosition fix, double speed) {
-        var characteristics = new AircraftCharacteristics(3.0, 3.0, 1640.0, 500.0, 140.0, 42000.0, 0.0,
+    private static AircraftBase createAircraftAt(FixPosition fix, double speed, double maxTurnRate) {
+        var characteristics = new AircraftCharacteristics(3.0, maxTurnRate, 1640.0, 500.0, 140.0, 42000.0, 0.0,
                 AircraftCharacteristics.AircraftCategory.COMMERCIAL_PASSENGER);
         return new AircraftBase(
                 new Callsign("HOLD01"),
@@ -171,18 +306,20 @@ class HoldingPatternGeometryTest {
         };
     }
 
-    private static void markHoldingEntryCompleted(AircraftBase aircraft) throws Exception {
-        var entry = AircraftBase.class.getDeclaredField("holdingEntryCompleted");
-        entry.setAccessible(true);
-        entry.setBoolean(aircraft, true);
-        var toOutbound = AircraftBase.class.getDeclaredField("holdingToOutboundLeg");
-        toOutbound.setAccessible(true);
-        toOutbound.setBoolean(aircraft, true);
-    }
-
-    private static void setHeading(AircraftBase aircraft, double headingDeg) {
-        var v = aircraft.getAircraftVector();
+    private static void placeOnFixAndStartOutbound(AircraftBase aircraft, FixPosition fix, double inboundHeading) {
+        aircraft.setAircraftPosition(new AircraftPosition(
+                fix.latitude, fix.longitude, aircraft.getAircraftPosition().altitude));
         aircraft.setAircraftVector(new AircraftVector(
-                new Heading(headingDeg), v.groundSpeed, v.verticalSpeed));
+                new Heading(inboundHeading),
+                aircraft.getAircraftVector().groundSpeed,
+                aircraft.getAircraftVector().verticalSpeed));
+        // Simulate fix passage: calculateNext alone won't trigger pass without moving-away.
+        try {
+            var method = AircraftBase.class.getDeclaredMethod("beginOutboundFromFix");
+            method.setAccessible(true);
+            method.invoke(aircraft);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

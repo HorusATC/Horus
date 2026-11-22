@@ -310,7 +310,7 @@ React Context APIを使用して、以下の状態を管理しています：
 
 クライアントは同一オリジン（`/api/*`）を呼び出し、Next.js BFF が Java バックエンドへプロキシします。主なエンドポイント：
 
-- `GET /api/aircraft/location/all` - 航空機位置一覧取得（各要素に `atcClearance` / `squawk` / `navigationMode` / `msawAlert` を含む。`msawAlert` は常に存在し、未警報時は `null`、警報時は `{ type, msaFt, trigger }`。`navigationMode=HOLDING` はデータブロックで `HLD` 表示。`msawAlert` が非 null のとき `MSA` / `LOW` をデータブロックに表示）
+- `GET /api/aircraft/location/all` - 航空機位置一覧取得（各要素に `atcClearance` / `squawk` / `navigationMode` / `msawAlert` を含む。`msawAlert` は常に存在し、未警報時は `null`、警報時は `{ type, msaFt, trigger }`。`navigationMode=HOLDING` はデータブロックで `HLD` 表示し、任意の `holding`（指示レーストラックの `pattern` 頂点など）があるときレーダーに琥珀色の破線オーバーレイを描く。Resume 後や非待機機では `holding` は省略される。`holding` は polled（Controller は Hold を出さないため位置ストリーム経由）。`msawAlert` が非 null のとき `MSA` / `LOW` をデータブロックに表示）
 - `POST /api/aircraft/create-haneda-samples` - Haneda Samples（約28機）作成
 - `POST /api/aircraft/spawn-with-flightplan` - フライトプラン付き航空機スポーン
 - `POST /api/scenario/load` - シナリオ一括ロード（空域クリア＋複数機スポーン）。**シミュレーション開始は行わない**（`POST /api/simulation/start` は別操作）
@@ -319,7 +319,7 @@ React Context APIを使用して、以下の状態を管理しています：
 - `GET /api/aircraft/{callsign}/flightplan` - フライトプラン取得
 - `POST /api/aircraft/{callsign}/flightplan` - フライトプラン割り当て
 - `POST /api/aircraft/{callsign}/direct-to` - 直行指示
-- `POST /api/aircraft/{callsign}/hold` - ホールディング指示（任意: `inboundCourseDeg` / `legMinutes`|`legNm` / `turnDirection` LEFT|RIGHT。省略時は右旋回・4.0 NM・Fix名ハッシュ入方向）
+- `POST /api/aircraft/{callsign}/hold` - ホールディング指示（任意: `inboundCourseDeg` / `legMinutes`|`legNm` / `turnDirection` LEFT|RIGHT。省略時は右旋回・4.0 NM・Fix名ハッシュ入方向）。Backend は無風・標準率のレーストラックで周回し、位置 API の `holding.pattern` で同じ経路をレーダー表示する。残課題: 進入セクター・公示パターン・風
 - `POST /api/aircraft/{callsign}/resume-navigation` - ナビゲーション再開
 - `POST /api/simulation/start` - シミュレーション開始
 - `POST /api/simulation/pause` - シミュレーション一時停止

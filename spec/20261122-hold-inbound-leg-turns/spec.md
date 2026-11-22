@@ -142,6 +142,7 @@
 
 ### Phase 2（このスライスの外）
 
+- 標準率レーストラック飛行と指示経路オーバーレイ → [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)
 - 公示待機カタログと `AS PUBLISHED`
 - EAT／EFC
 - 進入セクター

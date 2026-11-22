@@ -73,6 +73,7 @@ class DrawAircraft {
     const riskDisplayFloor = this.computeRiskDisplayFloor(aircraft);
     ctx.save();
     try {
+      this.drawHoldingPattern(ctx, aircraft, centerCoordinate, displayRange);
       this.drawTrack(
         ctx,
         aircraft,
@@ -146,6 +147,41 @@ class DrawAircraft {
 
   public static labelHitWidthPx(): number {
     return DATA_BLOCK_HIT_WIDTH_PX;
+  }
+
+  /**
+   * Instructed hold racetrack from Backend `holding.pattern`.
+   * Amber dashed — distinct from cyan RBL and range rings; drawn under the track.
+   */
+  private static drawHoldingPattern(
+    ctx: CanvasRenderingContext2D,
+    aircraft: Aircraft,
+    centerCoordinate: Coordinate,
+    displayRange: DisplayRange
+  ): void {
+    const holding = aircraft.holding;
+    if (holding == null || holding.pattern.length < 2) {
+      return;
+    }
+    ctx.save();
+    ctx.strokeStyle = "#fbbf24";
+    ctx.lineWidth = 1.25;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    holding.pattern.forEach((point, index) => {
+      const canvas = CoordinateManager.calculateCanvasCoordinates(
+        { latitude: point.latitude, longitude: point.longitude },
+        centerCoordinate,
+        displayRange
+      );
+      if (index === 0) {
+        ctx.moveTo(canvas.x, canvas.y);
+      } else {
+        ctx.lineTo(canvas.x, canvas.y);
+      }
+    });
+    ctx.stroke();
+    ctx.restore();
   }
 
   public static thresholdReadoutLine(

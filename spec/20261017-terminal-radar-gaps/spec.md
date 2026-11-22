@@ -18,7 +18,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 - 操縦目標は針路・高度・地速。経路操作は Direct To、ホールド（入方向・レグ・左右旋回）、Resume。スクオーク割当とフィルタ強調、管制メモ行がある。
 - コンフリクトは水平 5海里・垂直 1,000フィート固定（`RiskAssessment`）。
 - フライトプランのウェイポイントには高度制約のデータ型があるが、機体の飛行更新はフィックスへの針路更新が中心で、通過高度・速度制限には従わない。
-- ホールド API は入方向・レグ（分/NM）・左右旋回を受け付ける（[20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。公示ホールディング（AS PUBLISHED）は未実装。
+- ホールド API は入方向・レグ（分/NM）・左右旋回を受け付ける（[20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。無風の標準率レーストラック飛行と指示経路オーバーレイは [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)。公示ホールディング（AS PUBLISHED）・進入セクター・EAT／EFC・風修正は未実装。
 - 経路末尾の `REMOVE_AIRCRAFT` は機体削除であり、シナリオ終端の削除として残す。タワー移管は別 API として実装済み（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)）。
 - セクター境界、シミュレーション速度の可変、セッション記録、複数セクター、風、ATIS はロードマップ上の別項目である。
 
@@ -46,7 +46,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
    - 水平間隔の 3海里と、後方乱気流カテゴリに応じた海里
    - 滑走路と最終進入（延長線上への会合まで。進入復行は次段）
 3. 既存ロードマップ項目（セクター境界、MSAW、風、ATIS、ハンドオフ、複数セクター、記録・採点）は重複して新 Issue を切らず、本台帳から参照する。
-4. ホールドの指示要素（レグ時間、インバウンド、左旋回）は [20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md) で実装済み。公示パターンは後続。
+4. ホールドの指示要素は [20261122-hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)、標準率レーストラック＋経路描画は [20261122-hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md) で実装済み。公示パターン・進入セクター・EAT／EFC・風は後続。
 
 ### 検討した他案（Alternatives Considered）
 
@@ -102,7 +102,7 @@ Horus を進入・出発のターミナルレーダーとして使うときに�
 
 到着・出発の残り。
 
-- 進入復行 — **実装済み**（[go-around](../20261017-go-around/spec.md)、PR [#110](https://github.com/HorusATC/Horus/pull/110)）。タワー移管 — **実装済み**（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)。`REMOVE_AIRCRAFT` はシナリオ終端の削除として残す）。ホールド指示要素（入方向・レグ・左右旋回）— **実装済み**（[hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。残り: SID／STAR としての公開手続き、離陸から初期上昇、ホールドの公示パターン。
+- 進入復行 — **実装済み**（[go-around](../20261017-go-around/spec.md)、PR [#110](https://github.com/HorusATC/Horus/pull/110)）。タワー移管 — **実装済み**（[tower-handoff](../20261017-tower-handoff/spec.md)、PR [#112](https://github.com/HorusATC/Horus/pull/112)。`REMOVE_AIRCRAFT` はシナリオ終端の削除として残す）。ホールド指示要素 — **実装済み**（[hold-inbound-leg-turns](../20261122-hold-inbound-leg-turns/spec.md)）。標準率レーストラック＋経路オーバーレイ — **実装済み**（[hold-racetrack-overlay](../20261122-hold-racetrack-overlay/spec.md)）。残り: SID／STAR としての公開手続き、離陸から初期上昇、ホールドの公示パターン・進入セクター・EAT／EFC・風。
 
 間隔・警報の残り。
 
