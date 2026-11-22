@@ -34,6 +34,14 @@ public class UpdateAtisRequestDto {
 
     private Integer qnhHpa;
 
+    /**
+     * {@code true} when the JSON body included an {@code expectedRevision} key (value may be null).
+     * Omitted key keeps legacy unconditional update behavior.
+     */
+    private boolean expectedRevisionPresent;
+
+    private Integer expectedRevision;
+
     public String getRunwayInUse() {
         return runwayInUse;
     }
@@ -109,5 +117,20 @@ public class UpdateAtisRequestDto {
             return QnhUpdate.clear();
         }
         return QnhUpdate.set(qnhHpa);
+    }
+
+    @JsonIgnore
+    public boolean isExpectedRevisionPresent() {
+        return expectedRevisionPresent;
+    }
+
+    public Integer getExpectedRevision() {
+        return expectedRevision;
+    }
+
+    @JsonProperty("expectedRevision")
+    public void setExpectedRevision(Integer expectedRevision) {
+        this.expectedRevisionPresent = true;
+        this.expectedRevision = expectedRevision;
     }
 }
